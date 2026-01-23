@@ -1,35 +1,51 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState, useCallback } from 'react';
+import { GameCanvas } from '@/components/GameCanvas';
+import { HUD } from '@/components/HUD';
+
+const MAX_HP = 100;
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [score, setScore] = useState(0);
+  const [hp, setHP] = useState(MAX_HP);
+  const [isGameOver, setIsGameOver] = useState(false);
+  const [gameKey, setGameKey] = useState(0);
+
+  const handleScoreUpdate = useCallback((newScore: number) => {
+    setScore(newScore);
+  }, []);
+
+  const handleHPUpdate = useCallback((newHP: number) => {
+    setHP(newHP);
+  }, []);
+
+  const handleGameOver = useCallback(() => {
+    setIsGameOver(true);
+  }, []);
+
+  const handleRestart = useCallback(() => {
+    setScore(0);
+    setHP(MAX_HP);
+    setIsGameOver(false);
+    setGameKey(prev => prev + 1);
+  }, []);
 
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <GameCanvas
+        key={gameKey}
+        onScoreUpdate={handleScoreUpdate}
+        onHPUpdate={handleHPUpdate}
+        onGameOver={handleGameOver}
+      />
+      <HUD
+        score={score}
+        hp={hp}
+        maxHP={MAX_HP}
+        isGameOver={isGameOver}
+        onRestart={handleRestart}
+      />
     </>
-  )
+  );
 }
 
-export default App
+export default App;
