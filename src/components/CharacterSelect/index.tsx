@@ -34,10 +34,16 @@ export function CharacterSelect({ onSelect }: CharacterSelectProps) {
               onClick={() => handleSelect(character)}
             >
               <div className="character-sprite">
-                {/* Placeholder sprite box */}
-                <div className="sprite-placeholder" style={{ 
-                  backgroundColor: getCharacterColor(character.id) 
-                }} />
+                <div
+                  className="sprite-animator"
+                  style={{
+                    width: `${getSpriteMeta(character.id).w}px`,
+                    height: `${getSpriteMeta(character.id).h}px`,
+                    backgroundImage: `url(${getCharacterSprite(character.id)})`,
+                    '--frame-count': getSpriteMeta(character.id).frames,
+                    '--frame-width': `${getSpriteMeta(character.id).w}px`,
+                  } as React.CSSProperties}
+                />
               </div>
               <h2 className="character-name">{character.displayName}</h2>
               <p className="character-archetype">{character.archetype}</p>
@@ -65,14 +71,27 @@ export function CharacterSelect({ onSelect }: CharacterSelectProps) {
   );
 }
 
-function getCharacterColor(id: string): string {
-  const colors: Record<string, string> = {
-    pikachu: '#FFD700',
-    charizard: '#FF6B35',
-    blastoise: '#4169E1',
-    gengar: '#8B008B',
-    lucario: '#4682B4',
-    snorlax: '#2F4F4F',
+function getCharacterSprite(id: string): string {
+  // Map character IDs to their sprite assets (using idle-down frame)
+  const spriteMap: Record<string, string> = {
+    pikachu: 'assets/sprites/25-idle.png',
+    charmander: 'assets/sprites/4-idle.png',
+    squirtle: 'assets/sprites/7-idle.png',
+    gastly: 'assets/sprites/92-idle.png',
+    riolu: 'assets/sprites/447-idle.png',
+    snorlax: 'assets/sprites/143-idle.png',
   };
-  return colors[id] || '#666';
+  return spriteMap[id] || 'assets/vite.svg';
+}
+
+function getSpriteMeta(id: string) {
+  const meta: Record<string, { w: number; h: number; frames: number }> = {
+    pikachu: { w: 40, h: 56, frames: 6 },
+    charmander: { w: 32, h: 40, frames: 4 },
+    squirtle: { w: 32, h: 32, frames: 8 },
+    gastly: { w: 48, h: 56, frames: 6 },
+    riolu: { w: 32, h: 40, frames: 4 },
+    snorlax: { w: 32, h: 64, frames: 6 },
+  };
+  return meta[id] || { w: 32, h: 32, frames: 1 };
 }

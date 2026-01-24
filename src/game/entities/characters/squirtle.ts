@@ -7,10 +7,10 @@ import { shellSmash } from '@/game/entities/ultimates';
  * Blastoise - Knockback Tank Archetype
  * Low Speed, High HP
  */
-export const blastoiseConfig: CharacterConfig = {
-  id: 'blastoise',
-  name: 'blastoise',
-  displayName: 'Blastoise',
+export const squirtleConfig: CharacterConfig = {
+  id: 'squirtle',
+  name: 'squirtle',
+  displayName: 'Squirtle',
   archetype: 'Knockback Tank',
   stats: {
     maxHP: 180,
@@ -20,5 +20,5 @@ export const blastoiseConfig: CharacterConfig = {
   passive: rainDishPassive,
   weapon: waterPulse,
   ultimate: shellSmash,
-  spriteKey: 'blastoise',
+  spriteKey: 'squirtle',
 };

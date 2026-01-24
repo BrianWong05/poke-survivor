@@ -5,7 +5,7 @@ import { rest } from '@/game/entities/ultimates';
 
 /**
  * Snorlax - AFK Tank Archetype
- * Very Low Speed, Very High HP
+ * Very Low Speed, Very High HP.
  */
 export const snorlaxConfig: CharacterConfig = {
   id: 'snorlax',

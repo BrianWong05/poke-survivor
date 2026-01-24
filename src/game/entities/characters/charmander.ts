@@ -7,10 +7,10 @@ import { seismicToss } from '@/game/entities/ultimates';
  * Charizard - Area Denial / Tank Archetype
  * Medium Speed, High HP
  */
-export const charizardConfig: CharacterConfig = {
-  id: 'charizard',
-  name: 'charizard',
-  displayName: 'Charizard',
+export const charmanderConfig: CharacterConfig = {
+  id: 'charmander',
+  name: 'charmander',
+  displayName: 'Charmander',
   archetype: 'Area Denial / Tank',
   stats: {
     maxHP: 150,
@@ -20,5 +20,5 @@ export const charizardConfig: CharacterConfig = {
   passive: blazePassive,
   weapon: flamethrower,
   ultimate: seismicToss,
-  spriteKey: 'charizard',
+  spriteKey: 'charmander',
 };

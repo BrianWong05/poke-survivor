@@ -1,23 +1,23 @@
 import type { CharacterConfig } from '@/game/entities/characters/types';
 
 // Character configs will be imported here
+import { charmanderConfig } from '@/game/entities/characters/charmander';
+import { gastlyConfig } from '@/game/entities/characters/gastly';
 import { pikachuConfig } from '@/game/entities/characters/pikachu';
-import { charizardConfig } from '@/game/entities/characters/charizard';
-import { blastoiseConfig } from '@/game/entities/characters/blastoise';
-import { gengarConfig } from '@/game/entities/characters/gengar';
-import { lucarioConfig } from '@/game/entities/characters/lucario';
+import { rioluConfig } from '@/game/entities/characters/riolu';
 import { snorlaxConfig } from '@/game/entities/characters/snorlax';
+import { squirtleConfig } from '@/game/entities/characters/squirtle';
 
 /**
  * Registry of all available characters.
  */
 export const characterRegistry: Map<string, CharacterConfig> = new Map([
+  ['charmander', charmanderConfig],
+  ['gastly', gastlyConfig],
   ['pikachu', pikachuConfig],
-  ['charizard', charizardConfig],
-  ['blastoise', blastoiseConfig],
-  ['gengar', gengarConfig],
-  ['lucario', lucarioConfig],
+  ['riolu', rioluConfig],
   ['snorlax', snorlaxConfig],
+  ['squirtle', squirtleConfig],
 ]);
 
 /**

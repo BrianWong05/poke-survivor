@@ -7,10 +7,10 @@ import { destinyBond } from '@/game/entities/ultimates';
  * Gengar - Wall Hacker / Debuffer Archetype
  * High Speed, Low HP
  */
-export const gengarConfig: CharacterConfig = {
-  id: 'gengar',
-  name: 'gengar',
-  displayName: 'Gengar',
+export const gastlyConfig: CharacterConfig = {
+  id: 'gastly',
+  name: 'gastly',
+  displayName: 'Gastly',
   archetype: 'Wall Hacker / Debuffer',
   stats: {
     maxHP: 70,
@@ -20,5 +20,5 @@ export const gengarConfig: CharacterConfig = {
   passive: shadowTagPassive,
   weapon: lick,
   ultimate: destinyBond,
-  spriteKey: 'gengar',
+  spriteKey: 'gastly',
 };

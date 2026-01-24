@@ -7,10 +7,10 @@ import { boneRush } from '@/game/entities/ultimates';
  * Lucario - Precision Crit Archetype
  * Medium Speed/HP
  */
-export const lucarioConfig: CharacterConfig = {
-  id: 'lucario',
-  name: 'lucario',
-  displayName: 'Lucario',
+export const rioluConfig: CharacterConfig = {
+  id: 'riolu',
+  name: 'riolu',
+  displayName: 'Riolu',
   archetype: 'Precision Crit',
   stats: {
     maxHP: 100,
@@ -20,5 +20,5 @@ export const lucarioConfig: CharacterConfig = {
   passive: innerFocusPassive,
   weapon: auraSphere,
   ultimate: boneRush,
-  spriteKey: 'lucario',
+  spriteKey: 'pokemon_447',
 };

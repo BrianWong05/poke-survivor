@@ -88,45 +88,67 @@
     ]
   },
   {
-    "id": "133",
-    "name": "eevee",
+    "id": "92",
+    "name": "gastly",
     "animations": [
       {
         "key": "walk",
-        "path": "assets/sprites/133-walk.png",
-        "frameWidth": 40,
-        "frameHeight": 48,
-        "frameCount": 7,
+        "path": "assets/sprites/92-walk.png",
+        "frameWidth": 48,
+        "frameHeight": 64,
+        "frameCount": 12,
         "directions": 8
       },
       {
         "key": "idle",
-        "path": "assets/sprites/133-idle.png",
-        "frameWidth": 24,
-        "frameHeight": 32,
-        "frameCount": 2,
+        "path": "assets/sprites/92-idle.png",
+        "frameWidth": 48,
+        "frameHeight": 56,
+        "frameCount": 6,
         "directions": 8
       }
     ]
   },
   {
-    "id": "150",
-    "name": "mewtwo",
+    "id": "143",
+    "name": "snorlax",
     "animations": [
       {
         "key": "walk",
-        "path": "assets/sprites/150-walk.png",
-        "frameWidth": 48,
-        "frameHeight": 56,
-        "frameCount": 6,
+        "path": "assets/sprites/143-walk.png",
+        "frameWidth": 32,
+        "frameHeight": 48,
+        "frameCount": 4,
         "directions": 8
       },
       {
         "key": "idle",
-        "path": "assets/sprites/150-idle.png",
+        "path": "assets/sprites/143-idle.png",
         "frameWidth": 32,
         "frameHeight": 64,
-        "frameCount": 8,
+        "frameCount": 6,
+        "directions": 8
+      }
+    ]
+  },
+  {
+    "id": "447",
+    "name": "pokemon_447",
+    "animations": [
+      {
+        "key": "walk",
+        "path": "assets/sprites/447-walk.png",
+        "frameWidth": 24,
+        "frameHeight": 40,
+        "frameCount": 4,
+        "directions": 8
+      },
+      {
+        "key": "idle",
+        "path": "assets/sprites/447-idle.png",
+        "frameWidth": 32,
+        "frameHeight": 40,
+        "frameCount": 4,
         "directions": 8
       }
     ]
