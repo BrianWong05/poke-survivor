@@ -1,4 +1,5 @@
 import type Phaser from 'phaser';
+import { ExperienceManager } from '@/game/systems/ExperienceManager';
 
 /**
  * Damage types for projectiles and attacks.
@@ -109,10 +110,10 @@ export interface CharacterState {
 
 /**
  * Calculate XP required to reach the next level.
- * Formula: 100 * level^1.5
+ * Formula: 5 + (level * 10) (via ExperienceManager)
  */
 export function xpToLevel(level: number): number {
-  return Math.floor(100 * Math.pow(level, 1.5));
+  return ExperienceManager.getRequiredXP(level);
 }
 
 /**
@@ -137,7 +138,8 @@ export function createCharacterState(config: CharacterConfig): CharacterState {
  * Returns true if the character leveled up.
  */
 export function addXP(state: CharacterState, amount: number): boolean {
-  state.xp += amount;
+  const adjustedAmount = ExperienceManager.calculateGain(amount, state.level);
+  state.xp += adjustedAmount;
   
   if (state.xp >= state.xpToNextLevel) {
     state.level += 1;

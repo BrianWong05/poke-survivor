@@ -1,47 +1,4 @@
-# game-core Specification
-
-## Purpose
-TBD - created by archiving change create-survivor-prototype. Update Purpose after archive.
-## Requirements
-### Requirement: Player Auto-Attack
-The system SHALL automatically fire a projectile at the nearest enemy within range at a fixed interval.
-
-#### Scenario: Auto-fire at nearest enemy
-- **WHEN** at least one enemy is within firing range
-- **AND** the fire cooldown (1 second) has elapsed
-- **THEN** a projectile is created and moves toward the nearest enemy
-
-#### Scenario: No enemies in range
-- **WHEN** no enemies are within firing range
-- **THEN** no projectile is fired
-
----
-
-### Requirement: Enemy Wave Spawning
-The system SHALL continuously spawn enemies at the edges of the visible play area.
-
-#### Scenario: Enemy spawns at screen edge
-- **WHEN** the spawn timer interval elapses
-- **THEN** a new enemy is spawned at a random position along the screen edge
-- **AND** the enemy moves toward the player's current position
-
-#### Scenario: Enemy reaches player
-- **WHEN** an enemy collides with the player
-- **THEN** the player takes damage
-- **AND** the enemy is destroyed
-
----
-
-### Requirement: Projectile-Enemy Collision
-The system SHALL destroy both the projectile and the enemy when they collide.
-
-#### Scenario: Projectile hits enemy
-- **WHEN** a projectile overlaps with an enemy
-- **THEN** the projectile is destroyed
-- **AND** the enemy is destroyed
-- **AND** an XP gem is spawned at the enemy's position
-
----
+## MODIFIED Requirements
 
 ### Requirement: XP Collection Economy
 The system SHALL allow the player to collect tiered XP gems with varying values and spawn probability.
@@ -76,33 +33,6 @@ The system SHALL allow the player to collect tiered XP gems with varying values 
 
 ---
 
-### Requirement: Player Health System
-The system SHALL track player health and end the game when health reaches zero.
-
-#### Scenario: Player takes damage
-- **WHEN** an enemy collides with the player
-- **THEN** the player's HP is reduced
-- **AND** a brief invincibility period is granted
-
-#### Scenario: Player dies
-- **WHEN** player HP reaches 0
-- **THEN** the game transitions to a game-over state
-
----
-
-### Requirement: Placeholder Graphics
-The system SHALL use programmatically generated placeholder graphics for all game entities.
-
-#### Scenario: Graphics generation on scene load
-- **WHEN** the main game scene is created
-- **THEN** placeholder textures are generated:
-  - Player: blue circle (32px diameter)
-  - Enemy: red square (24px)
-  - Projectile: white circle (8px)
-  - XP Gem: yellow diamond (12px)
-
----
-
 ### Requirement: Entity Pooling
 The system SHALL use object pooling for frequently spawned entities to maintain performance, including gem culling.
 
@@ -122,6 +52,8 @@ The system SHALL use object pooling for frequently spawned entities to maintain 
 
 ---
 
+## ADDED Requirements
+
 ### Requirement: Level Up Pause
 The system SHALL pause the game scene when the player levels up.
 
@@ -134,4 +66,3 @@ The system SHALL pause the game scene when the player levels up.
 - **WHEN** the level-up menu is dismissed (future implementation)
 - **THEN** `this.scene.resume()` is called
 - **AND** gameplay continues
-

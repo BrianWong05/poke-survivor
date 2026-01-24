@@ -7,8 +7,12 @@ import {
   type CharacterState,
   type CharacterContext,
   createCharacterState,
-  addXP,
 } from '@/game/entities/characters/types';
+import {
+  ExperienceManager,
+  ExpCandyTier,
+  EXP_CANDY_VALUES,
+} from '@/game/systems/ExperienceManager';
 
 interface SpriteAnimation {
   key: string;
@@ -50,6 +54,7 @@ export class MainScene extends Phaser.Scene {
   private fireTimer!: Phaser.Time.TimerEvent;
   private spawnTimer!: Phaser.Time.TimerEvent;
   private gameOver = false;
+  private isLevelUpPending = false;
 
   // Callbacks
   private callbacks!: GameCallbacks;
@@ -59,6 +64,10 @@ export class MainScene extends Phaser.Scene {
   private enemySpriteNames: string[] = [];
   private currentDirection: DirectionName = 'down';
   private usePlaceholderGraphics = false;
+
+  // Experience Manager
+  private experienceManager!: ExperienceManager;
+  private cullFrameCounter = 0;
 
   constructor() {
     super({ key: 'MainScene' });
@@ -91,6 +100,9 @@ export class MainScene extends Phaser.Scene {
 
     // Generate placeholder textures (used as fallback or for projectiles/gems)
     this.createTextures();
+
+    // Initialize Experience Manager
+    this.experienceManager = new ExperienceManager();
 
     // Create player
     this.createPlayer();
@@ -145,17 +157,8 @@ export class MainScene extends Phaser.Scene {
     projectileGraphics.generateTexture('projectile', 8, 8);
     projectileGraphics.destroy();
 
-    // XP Gem: Yellow diamond (12px)
-    const gemGraphics = this.make.graphics({ x: 0, y: 0 });
-    gemGraphics.fillStyle(0xffd700, 1);
-    gemGraphics.fillPoints([
-      { x: 6, y: 0 },
-      { x: 12, y: 6 },
-      { x: 6, y: 12 },
-      { x: 0, y: 6 },
-    ], true);
-    gemGraphics.generateTexture('xpGem', 12, 12);
-    gemGraphics.destroy();
+    // Exp Candy sprites are loaded in Preloader (assets/candies/)
+    // Texture keys: candy-s, candy-m, candy-l, candy-xl, candy-rare
   }
 
   private createPlayer(): void {
@@ -254,7 +257,7 @@ export class MainScene extends Phaser.Scene {
   private setupEventListeners(): void {
     // Listen for spawn-xp events from ultimates
     this.events.on('spawn-xp', (x: number, y: number) => {
-      this.spawnXPGem(x, y);
+      this.spawnExpCandy(x, y);
     });
 
     // Listen for spawn-aoe-damage events from weapons/ultimates
@@ -380,7 +383,12 @@ export class MainScene extends Phaser.Scene {
         this.callbacks.onHPUpdate(this.characterState.currentHP);
       }
 
-      this.spawnXPGem(enemy.x, enemy.y);
+      // Spawn Exp Candy - Rare Candy for boss enemies, tiered candy for regular enemies
+      if (enemy.getData('isBoss')) {
+        this.spawnRareCandy(enemy.x, enemy.y);
+      } else {
+        this.spawnExpCandy(enemy.x, enemy.y);
+      }
       enemy.setActive(false);
       enemy.setVisible(false);
     } else {
@@ -475,52 +483,263 @@ export class MainScene extends Phaser.Scene {
     }
   }
 
-  private spawnXPGem(x: number, y: number): void {
-    const gem = this.xpGems.get(x, y, 'xpGem') as Phaser.Physics.Arcade.Sprite | null;
+  /**
+   * Spawn an Exp Candy at the given position with weighted tier probability.
+   * For boss enemies, call spawnRareCandy instead.
+   */
+  private spawnExpCandy(x: number, y: number): void {
+    // Roll for candy tier using weighted probability
+    const tier = ExperienceManager.rollCandyTier();
+    const textureKey = `candy-${tier}`;
+    
+    // Display sizes for sprites (scale down large sprites to reasonable game size)
+    const displaySizes: Record<string, number> = {
+      's': 20,
+      'm': 24,
+      'l': 28,
+      'xl': 32,
+    };
+    const displaySize = displaySizes[tier] || 24;
+    
+    const candy = this.xpGems.get(x, y, textureKey) as Phaser.Physics.Arcade.Sprite | null;
 
-    if (gem) {
-      gem.setActive(true);
-      gem.setVisible(true);
-      gem.setPosition(x, y);
+    if (candy) {
+      candy.setActive(true);
+      candy.setVisible(true);
+      candy.setPosition(x, y);
+      candy.setTexture(textureKey);
+      candy.setData('tier', tier);
+      candy.setData('xpValue', EXP_CANDY_VALUES[tier]);
+      candy.setDisplaySize(displaySize, displaySize);
+    }
+  }
+
+  /**
+   * Spawn a Rare Candy at the given position (boss-only drop).
+   */
+  private spawnRareCandy(x: number, y: number): void {
+    const tier = ExpCandyTier.RARE;
+    const textureKey = `candy-${tier}`;
+    const displaySize = 36; // Larger size for rare candy
+    
+    const candy = this.xpGems.get(x, y, textureKey) as Phaser.Physics.Arcade.Sprite | null;
+
+    if (candy) {
+      candy.setActive(true);
+      candy.setVisible(true);
+      candy.setPosition(x, y);
+      candy.setTexture(textureKey);
+      candy.setData('tier', tier);
+      candy.setData('xpValue', EXP_CANDY_VALUES[tier]);
+      candy.setDisplaySize(displaySize, displaySize);
+    }
+  }
+
+  /**
+   * Cull excess Exp Candies when count exceeds threshold.
+   * Destroys the 50 candies furthest from the player to maintain performance.
+   */
+  private cullExcessCandies(): void {
+    const MAX_CANDIES = 300;
+    const CULL_COUNT = 50;
+    
+    const activeCandies = this.xpGems.getChildren().filter(
+      (child) => (child as Phaser.Physics.Arcade.Sprite).active
+    ) as Phaser.Physics.Arcade.Sprite[];
+    
+    if (activeCandies.length <= MAX_CANDIES) return;
+    
+    // Sort by distance from player (furthest first)
+    activeCandies.sort((a, b) => {
+      const distA = Phaser.Math.Distance.Between(this.player.x, this.player.y, a.x, a.y);
+      const distB = Phaser.Math.Distance.Between(this.player.x, this.player.y, b.x, b.y);
+      return distB - distA; // Descending order
+    });
+    
+    // Cull the furthest candies
+    for (let i = 0; i < CULL_COUNT && i < activeCandies.length; i++) {
+      activeCandies[i].setActive(false);
+      activeCandies[i].setVisible(false);
     }
   }
 
   private handleXPCollection(
     _playerObj: Phaser.Types.Physics.Arcade.GameObjectWithBody | Phaser.Tilemaps.Tile,
-    gemObj: Phaser.Types.Physics.Arcade.GameObjectWithBody | Phaser.Tilemaps.Tile
+    candyObj: Phaser.Types.Physics.Arcade.GameObjectWithBody | Phaser.Tilemaps.Tile
   ): void {
-    const gem = gemObj as Phaser.Physics.Arcade.Sprite;
+    const candy = candyObj as Phaser.Physics.Arcade.Sprite;
 
-    gem.setActive(false);
-    gem.setVisible(false);
+    candy.setActive(false);
+    candy.setVisible(false);
 
-    // Add XP and check for level up
-    const xpAmount = 10;
-    this.score += xpAmount;
+    // Get XP value from candy tier
+    const xpValue = (candy.getData('xpValue') as number) || 1;
+    
+    // Add XP using ExperienceManager (Decoupled: only adds, checks requirement)
+    const canLevelUp = this.experienceManager.addXP(xpValue);
+    
+    // Sync experience manager state to character state for compatibility
+    this.characterState.level = this.experienceManager.currentLevel;
+    this.characterState.xp = this.experienceManager.currentXP;
+    this.characterState.xpToNextLevel = this.experienceManager.xpToNextLevel;
+    
+    // Update score with XP gained
+    this.score += xpValue;
     this.callbacks.onScoreUpdate(this.score);
 
-    const leveledUp = addXP(this.characterState, xpAmount);
-    if (leveledUp) {
-      // Visual feedback for level up
-      this.cameras.main.flash(200, 255, 255, 255);
+    // Check if eligible for level up and not already processing one
+    if (canLevelUp && !this.isLevelUpPending) {
+      this.isLevelUpPending = true;
       
-      // Update fire timer if weapon evolved (different cooldown)
-      if (this.characterState.isEvolved) {
-        this.fireTimer.remove();
-        this.fireTimer = this.time.addEvent({
-          delay: this.characterState.activeWeapon.cooldownMs,
-          callback: this.fireWeapon,
-          callbackScope: this,
-          loop: true,
-        });
-      }
+      // Process the FIRST level up step immediately
+      this.experienceManager.processLevelUp();
+      
+      // Visual feedback for level up
+      // Use callback to pause ONLY after flash fades out to prevent white screen freeze
+      this.cameras.main.flash(500, 255, 255, 255, false, (_camera: Phaser.Cameras.Scene2D.Camera, progress: number) => {
+        if (progress === 1) {
+          // Zombie Guard: If scene was destroyed (e.g. reload) during flash, abort.
+          if (!this.sys || !this.sys.isActive()) return;
+
+          // Check for weapon evolution
+          const evolutionLevel = this.characterConfig.weapon.evolutionLevel ?? 5;
+          if (!this.characterState.isEvolved && this.characterState.level >= evolutionLevel && this.characterConfig.weapon.evolution) {
+            this.characterState.activeWeapon = this.characterConfig.weapon.evolution;
+            this.characterState.isEvolved = true;
+            
+            // Update fire timer for new weapon cooldown
+            this.fireTimer.remove();
+            this.fireTimer = this.time.addEvent({
+              delay: this.characterState.activeWeapon.cooldownMs,
+              callback: this.fireWeapon,
+              callbackScope: this,
+              loop: true,
+            });
+          }
+          
+          // Show Level Up Menu
+          this.showLevelUpMenu();
+        }
+      });
     }
 
     // Update level UI
+    this.updateLevelUI();
+  }
+
+  /**
+   * Sync character state with ExperienceManager and update UI events.
+   */
+  private updateLevelUI(): void {
+    // Sync experience manager state to character state for compatibility
+    this.characterState.level = this.experienceManager.currentLevel;
+    this.characterState.xp = this.experienceManager.currentXP;
+    this.characterState.xpToNextLevel = this.experienceManager.xpToNextLevel;
+
     if (this.callbacks.onLevelUpdate) {
       this.callbacks.onLevelUpdate(this.characterState.level, this.characterState.xp, this.characterState.xpToNextLevel);
     }
+    
+    // Emit xp-update event to window for React LevelBar component
+    window.dispatchEvent(new CustomEvent('xp-update', {
+      detail: {
+        current: this.characterState.xp,
+        max: this.characterState.xpToNextLevel,
+        level: this.characterState.level,
+      },
+    }));
   }
+
+  /**
+   * Display the Level Up Menu overlay.
+   * Handles pausing the scene and resuming (or showing next level up) on input.
+   */
+  private showLevelUpMenu(): void {
+    // Pause scene and log placeholder message for level-up menu
+    console.log('Level Up Menu Open');
+    
+    // Only pause if not already paused (avoid "Cannot pause non-running Scene" warning during recursion)
+    if (this.sys.settings.status === Phaser.Scenes.RUNNING) {
+      this.scene.pause();
+    }
+    
+    // Ensure UI reflects current state
+    this.updateLevelUI();
+    
+    // Show Level Up UI Overlay
+    const width = this.scale.width;
+    const height = this.scale.height;
+    
+    const overlay = this.add.rectangle(0, 0, width, height, 0x000000, 0.7);
+    overlay.setOrigin(0, 0);
+    overlay.setDepth(100);
+    
+    const levelUpText = this.add.text(width / 2, height / 2 - 20, 'LEVEL UP!', {
+      fontSize: '48px',
+      color: '#ffd700',
+      fontStyle: 'bold',
+      stroke: '#000000',
+      strokeThickness: 6
+    }).setOrigin(0.5).setDepth(101);
+    
+    const continueText = this.add.text(width / 2, height / 2 + 40, 'Press ENTER to Continue', {
+      fontSize: '24px',
+      color: '#ffffff',
+    }).setOrigin(0.5).setDepth(101);
+    
+    // Resume on ENTER press
+    const resumeHandler = (e: KeyboardEvent) => {
+      // Guard against zombie listeners from destroyed scenes (fixes queueOp error)
+      if (!this.sys || !this.scene) {
+        window.removeEventListener('keydown', resumeHandler);
+        return;
+      }
+
+      if (e.code === 'Enter') {
+         // Clean up UI
+         overlay.destroy();
+         levelUpText.destroy();
+         continueText.destroy();
+         
+         // Remove listener
+         window.removeEventListener('keydown', resumeHandler);
+         // Remove shutdown hook since we handled it
+         this.events.off('shutdown', cleanupHandler);
+         this.events.off('destroy', cleanupHandler);
+         
+         // Check if we can level up again (for multi-level jumps)
+         if (this.experienceManager.processLevelUp()) {
+            // Recursively show menu again for next level
+            this.showLevelUpMenu();
+         } else {
+            // Sequence complete
+            this.isLevelUpPending = false;
+            // Resume game
+            this.scene.resume();
+         }
+      }
+    };
+
+    // Cleanup function to remove listener if scene is destroyed before Enter is pressed
+    const cleanupHandler = () => {
+       window.removeEventListener('keydown', resumeHandler);
+    };
+    
+    // Register cleanup on scene shutdown/destroy
+    this.events.once('shutdown', cleanupHandler);
+    this.events.once('destroy', cleanupHandler);
+    
+    // Initial delay to prevent accidental inputs
+    // Use setTimeout because this.time.delayedCall triggers on scene update, which is paused!
+    window.setTimeout(() => {
+       // Only attach if scene is still active
+       if (this.sys && this.scene) {
+          window.addEventListener('keydown', resumeHandler);
+       }
+    }, 500);
+  }
+
+
 
   private handlePlayerEnemyCollision(
     _playerObj: Phaser.Types.Physics.Arcade.GameObjectWithBody | Phaser.Tilemaps.Tile,
@@ -593,6 +812,13 @@ export class MainScene extends Phaser.Scene {
 
   update(_time: number, delta: number): void {
     if (this.gameOver) return;
+
+    // Cull excess Exp Candies for performance (every 60 frames)
+    this.cullFrameCounter++;
+    if (this.cullFrameCounter >= 60) {
+      this.cullFrameCounter = 0;
+      this.cullExcessCandies();
+    }
 
     // Update ultimate cooldown
     if (this.characterState.ultimateCooldownRemaining > 0) {
