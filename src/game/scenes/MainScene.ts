@@ -338,6 +338,9 @@ export class MainScene extends Phaser.Scene {
       enemy.setPosition(x, y);
 
       if (!this.usePlaceholderGraphics) {
+        // Store sprite name and current direction as custom data
+        enemy.setData('spriteName', textureName);
+        enemy.setData('currentDirection', 'down');
         enemy.play(`${textureName}-walk-down`);
         enemy.setScale(1.5);
       }
@@ -498,10 +501,24 @@ export class MainScene extends Phaser.Scene {
       );
 
       const enemySpeed = 80;
-      enemy.setVelocity(
-        Math.cos(angle) * enemySpeed,
-        Math.sin(angle) * enemySpeed
-      );
+      const vx = Math.cos(angle) * enemySpeed;
+      const vy = Math.sin(angle) * enemySpeed;
+      enemy.setVelocity(vx, vy);
+
+      // Update animation to face player (only when direction changes)
+      if (!this.usePlaceholderGraphics) {
+        const spriteName = enemy.getData('spriteName') as string;
+        if (spriteName) {
+          const newDirection = getDirectionFromVelocity(vx, vy);
+          const currentDirection = enemy.getData('currentDirection') as string;
+          
+          if (newDirection !== currentDirection) {
+            enemy.setData('currentDirection', newDirection);
+            const animKey = `${spriteName}-walk-${newDirection}`;
+            enemy.play(animKey);
+          }
+        }
+      }
     });
   }
 }
