@@ -1,0 +1,56 @@
+[
+  {
+    "id": "1",
+    "name": "bulbasaur",
+    "path": "assets/sprites/1.png",
+    "frameWidth": 40,
+    "frameHeight": 40,
+    "frameCount": 6,
+    "directions": 8
+  },
+  {
+    "id": "4",
+    "name": "charmander",
+    "path": "assets/sprites/4.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frameCount": 4,
+    "directions": 8
+  },
+  {
+    "id": "7",
+    "name": "squirtle",
+    "path": "assets/sprites/7.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frameCount": 4,
+    "directions": 8
+  },
+  {
+    "id": "25",
+    "name": "pikachu",
+    "path": "assets/sprites/25.png",
+    "frameWidth": 32,
+    "frameHeight": 40,
+    "frameCount": 4,
+    "directions": 8
+  },
+  {
+    "id": "133",
+    "name": "eevee",
+    "path": "assets/sprites/133.png",
+    "frameWidth": 40,
+    "frameHeight": 48,
+    "frameCount": 7,
+    "directions": 8
+  },
+  {
+    "id": "150",
+    "name": "mewtwo",
+    "path": "assets/sprites/150.png",
+    "frameWidth": 48,
+    "frameHeight": 56,
+    "frameCount": 6,
+    "directions": 8
+  }
+]

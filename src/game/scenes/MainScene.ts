@@ -1,5 +1,16 @@
 import Phaser from 'phaser';
 import type { GameCallbacks } from '@/game/config';
+import { getDirectionFromVelocity, type DirectionName } from '@/game/scenes/Preloader';
+
+interface SpriteManifestEntry {
+  id: string;
+  name: string;
+  path: string;
+  frameWidth: number;
+  frameHeight: number;
+  frameCount: number;
+  directions: number;
+}
 
 export class MainScene extends Phaser.Scene {
   // Player
@@ -28,6 +39,13 @@ export class MainScene extends Phaser.Scene {
   // Callbacks
   private callbacks!: GameCallbacks;
 
+  // Sprite data
+  private manifest: SpriteManifestEntry[] = [];
+  private playerSpriteName = 'pikachu';
+  private enemySpriteNames: string[] = [];
+  private currentDirection: DirectionName = 'down';
+  private usePlaceholderGraphics = false;
+
   constructor() {
     super({ key: 'MainScene' });
   }
@@ -36,7 +54,22 @@ export class MainScene extends Phaser.Scene {
     // Get callbacks from registry
     this.callbacks = this.registry.get('callbacks') as GameCallbacks;
 
-    // Generate placeholder textures
+    // Get sprite manifest from registry (set by Preloader)
+    this.manifest = this.registry.get('spriteManifest') as SpriteManifestEntry[] || [];
+
+    // Setup sprite names from manifest
+    if (this.manifest.length > 0) {
+      const names = this.manifest.map((s) => s.name);
+      // Use pikachu as player if available, otherwise first sprite
+      this.playerSpriteName = names.includes('pikachu') ? 'pikachu' : names[0];
+      // Other sprites are enemies
+      this.enemySpriteNames = names.filter((n) => n !== this.playerSpriteName);
+      this.usePlaceholderGraphics = false;
+    } else {
+      this.usePlaceholderGraphics = true;
+    }
+
+    // Generate placeholder textures (used as fallback or for projectiles/gems)
     this.createTextures();
 
     // Create player
@@ -98,7 +131,14 @@ export class MainScene extends Phaser.Scene {
     const centerX = this.scale.width / 2;
     const centerY = this.scale.height / 2;
 
-    this.player = this.physics.add.sprite(centerX, centerY, 'player');
+    if (this.usePlaceholderGraphics) {
+      this.player = this.physics.add.sprite(centerX, centerY, 'player');
+    } else {
+      this.player = this.physics.add.sprite(centerX, centerY, this.playerSpriteName);
+      this.player.play(`${this.playerSpriteName}-walk-down`);
+      // Scale sprite to reasonable size (PMD sprites are small)
+      this.player.setScale(2);
+    }
     this.player.setCollideWorldBounds(true);
     this.player.setDepth(10);
   }
@@ -279,12 +319,23 @@ export class MainScene extends Phaser.Scene {
         break;
     }
 
-    const enemy = this.enemies.get(x, y, 'enemy') as Phaser.Physics.Arcade.Sprite | null;
+    // Choose random enemy sprite or use placeholder
+    let textureName = 'enemy';
+    if (!this.usePlaceholderGraphics && this.enemySpriteNames.length > 0) {
+      textureName = Phaser.Math.RND.pick(this.enemySpriteNames);
+    }
+
+    const enemy = this.enemies.get(x, y, textureName) as Phaser.Physics.Arcade.Sprite | null;
 
     if (enemy) {
       enemy.setActive(true);
       enemy.setVisible(true);
       enemy.setPosition(x, y);
+
+      if (!this.usePlaceholderGraphics) {
+        enemy.play(`${textureName}-walk-down`);
+        enemy.setScale(1.5);
+      }
     }
   }
 
@@ -410,6 +461,15 @@ export class MainScene extends Phaser.Scene {
       velocityX * this.playerSpeed,
       velocityY * this.playerSpeed
     );
+
+    // Update player animation based on direction
+    if (!this.usePlaceholderGraphics && (velocityX !== 0 || velocityY !== 0)) {
+      const direction = getDirectionFromVelocity(velocityX, velocityY);
+      if (direction !== this.currentDirection) {
+        this.currentDirection = direction;
+        this.player.play(`${this.playerSpriteName}-walk-${direction}`);
+      }
+    }
 
     // Move enemies toward player
     this.enemies.getChildren().forEach((child) => {
