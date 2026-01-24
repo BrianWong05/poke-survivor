@@ -137,15 +137,21 @@ class AnimationData(NamedTuple):
     frame_count: int
 
 
-class SpriteInfo(NamedTuple):
-    """Processed sprite information for manifest"""
-    id: str
-    name: str
+class SpriteAnimation(NamedTuple):
+    """Processed animation information"""
+    key: str  # e.g., 'walk', 'idle'
     path: str
     frame_width: int
     frame_height: int
     frame_count: int
-    directions: int  # Number of direction rows (8 for full, 1 for single)
+    directions: int
+
+
+class SpriteInfo(NamedTuple):
+    """Processed sprite information for manifest"""
+    id: str
+    name: str
+    animations: list[SpriteAnimation]
 
 
 # =============================================================================
@@ -206,18 +212,7 @@ def parse_anim_data(xml_content: bytes) -> dict[str, AnimationData]:
     return animations
 
 
-def get_walk_animation(animations: dict[str, AnimationData]) -> AnimationData | None:
-    """Get the Walk animation, falling back to Idle if not found."""
-    # Try Walk first, then Idle as fallback
-    for anim_name in ["Walk", "Idle", "Sleep"]:
-        if anim_name in animations:
-            return animations[anim_name]
-    
-    # Return first available animation if neither Walk nor Idle
-    if animations:
-        return next(iter(animations.values()))
-    
-    return None
+
 
 
 # =============================================================================
@@ -308,6 +303,15 @@ def download_and_process_pokemon(pokemon_id: int) -> SpriteInfo | None:
         print(f"  ✓ Cached zip to {cache_path.name}")
     
     # Extract files from zip
+    # Process animations
+    processed_anims: list[SpriteAnimation] = []
+    
+    # Define animations to extract (key -> possible XML names)
+    target_anims = {
+        "walk": ["Walk", "Run", "Move"],
+        "idle": ["Idle", "Wait", "Stop"]
+    }
+    
     try:
         with zipfile.ZipFile(BytesIO(zip_data)) as zf:
             # Read AnimData.xml
@@ -316,77 +320,102 @@ def download_and_process_pokemon(pokemon_id: int) -> SpriteInfo | None:
                 return None
             
             anim_xml = zf.read("AnimData.xml")
-            
-            # Parse animation data
             animations = parse_anim_data(anim_xml)
-            walk_anim = get_walk_animation(animations)
             
-            if walk_anim is None:
-                print(f"  ❌ No suitable animation found for #{pokemon_id}")
-                return None
-            
-            print(f"  ✓ Found '{walk_anim.name}' animation: {walk_anim.frame_width}x{walk_anim.frame_height}, {walk_anim.frame_count} frames")
-            
-            # Read the animation sprite sheet
-            anim_name = walk_anim.name  # e.g., "Walk", "Idle"
-            anim_filename = f"{anim_name}-Anim.png"
-            
-            if anim_filename not in zf.namelist():
-                print(f"  ❌ {anim_filename} not found in zip for #{pokemon_id}")
-                return None
-            
-            sprite_data = zf.read(anim_filename)
-    
+            # Loop through desired animation types
+            for anim_key, xml_names in target_anims.items():
+                found_anim = None
+                
+                # Find first matching animation from XML
+                for xml_name in xml_names:
+                    if xml_name in animations:
+                        found_anim = animations[xml_name]
+                        break
+                
+                # Fallback for Walk: use first available if no specific walk/run found
+                if not found_anim and anim_key == "walk" and animations:
+                    found_anim = next(iter(animations.values()))
+                    print(f"  ⚠️  No canonical Walk animation found, using '{found_anim.name}' as fallback")
+                
+                if not found_anim:
+                    print(f"  ⚠️  Skipping '{anim_key}': Not found in {list(animations.keys())}")
+                    continue
+                
+                print(f"  ✓ Found '{anim_key}' ({found_anim.name}): {found_anim.frame_width}x{found_anim.frame_height}, {found_anim.frame_count} frames")
+                
+                # Read sprite sheet
+                anim_filename = f"{found_anim.name}-Anim.png"
+                if anim_filename not in zf.namelist():
+                    print(f"  ❌ {anim_filename} not found in zip")
+                    continue
+                
+                sprite_data = zf.read(anim_filename)
+                
+                # Process image
+                try:
+                    sprite_sheet = Image.open(BytesIO(sprite_data))
+                    sprite_sheet = sprite_sheet.convert("RGBA")
+                    
+                    # Extract directions
+                    processed_sheet, directions = extract_all_directions(sprite_sheet, found_anim)
+                    
+                    # Save output
+                    filename = f"{pokemon_id}-{anim_key}.png"
+                    output_path = SPRITES_OUTPUT_DIR / filename
+                    SPRITES_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+                    processed_sheet.save(output_path, "PNG")
+                    
+                    processed_anims.append(SpriteAnimation(
+                        key=anim_key,
+                        path=f"assets/sprites/{filename}",
+                        frame_width=found_anim.frame_width,
+                        frame_height=found_anim.frame_height,
+                        frame_count=found_anim.frame_count,
+                        directions=directions
+                    ))
+                    print(f"    -> Saved to {output_path.name}")
+                    
+                except Exception as e:
+                     print(f"  ❌ Failed to process {anim_key}: {e}")
+
     except zipfile.BadZipFile:
         print(f"  ❌ Invalid zip file for #{pokemon_id}")
         return None
     except Exception as e:
-        print(f"  ❌ Error extracting zip: {e}")
+        print(f"  ❌ Error processing zip: {e}")
         return None
     
-    # Process sprite
-    try:
-        sprite_sheet = Image.open(BytesIO(sprite_data))
-        sprite_sheet = sprite_sheet.convert("RGBA")
-    except Exception as e:
-        print(f"  ❌ Failed to open sprite sheet: {e}")
+    if not processed_anims:
+        print(f"  ❌ No animations processed for #{pokemon_id}")
         return None
-    
-    # Extract all directions from the animation sheet (keep full grid)
-    processed_sheet, directions = extract_all_directions(sprite_sheet, walk_anim)
-    
-    # Save output
-    output_path = SPRITES_OUTPUT_DIR / f"{pokemon_id}.png"
-    SPRITES_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    processed_sheet.save(output_path, "PNG")
-    
-    print(f"  ✓ Saved sprite sheet to {output_path}")
-    
+
     return SpriteInfo(
         id=str(pokemon_id),
         name=name,
-        path=f"assets/sprites/{pokemon_id}.png",
-        frame_width=walk_anim.frame_width,
-        frame_height=walk_anim.frame_height,
-        frame_count=walk_anim.frame_count,
-        directions=directions
+        animations=processed_anims
     )
 
 
 def generate_manifest(sprites: list[SpriteInfo]) -> None:
     """Generate manifest.json file."""
-    manifest = [
-        {
+    manifest = []
+    for sprite in sprites:
+        entry = {
             "id": sprite.id,
             "name": sprite.name,
-            "path": sprite.path,
-            "frameWidth": sprite.frame_width,
-            "frameHeight": sprite.frame_height,
-            "frameCount": sprite.frame_count,
-            "directions": sprite.directions
+            "animations": [
+                {
+                    "key": anim.key,
+                    "path": anim.path,
+                    "frameWidth": anim.frame_width,
+                    "frameHeight": anim.frame_height,
+                    "frameCount": anim.frame_count,
+                    "directions": anim.directions
+                }
+                for anim in sprite.animations
+            ]
         }
-        for sprite in sprites
-    ]
+        manifest.append(entry)
     
     MANIFEST_OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     

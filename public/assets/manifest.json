@@ -2,55 +2,133 @@
   {
     "id": "1",
     "name": "bulbasaur",
-    "path": "assets/sprites/1.png",
-    "frameWidth": 40,
-    "frameHeight": 40,
-    "frameCount": 6,
-    "directions": 8
+    "animations": [
+      {
+        "key": "walk",
+        "path": "assets/sprites/1-walk.png",
+        "frameWidth": 40,
+        "frameHeight": 40,
+        "frameCount": 6,
+        "directions": 8
+      },
+      {
+        "key": "idle",
+        "path": "assets/sprites/1-idle.png",
+        "frameWidth": 32,
+        "frameHeight": 40,
+        "frameCount": 3,
+        "directions": 8
+      }
+    ]
   },
   {
     "id": "4",
     "name": "charmander",
-    "path": "assets/sprites/4.png",
-    "frameWidth": 32,
-    "frameHeight": 32,
-    "frameCount": 4,
-    "directions": 8
+    "animations": [
+      {
+        "key": "walk",
+        "path": "assets/sprites/4-walk.png",
+        "frameWidth": 32,
+        "frameHeight": 32,
+        "frameCount": 4,
+        "directions": 8
+      },
+      {
+        "key": "idle",
+        "path": "assets/sprites/4-idle.png",
+        "frameWidth": 32,
+        "frameHeight": 40,
+        "frameCount": 4,
+        "directions": 8
+      }
+    ]
   },
   {
     "id": "7",
     "name": "squirtle",
-    "path": "assets/sprites/7.png",
-    "frameWidth": 32,
-    "frameHeight": 32,
-    "frameCount": 4,
-    "directions": 8
+    "animations": [
+      {
+        "key": "walk",
+        "path": "assets/sprites/7-walk.png",
+        "frameWidth": 32,
+        "frameHeight": 32,
+        "frameCount": 4,
+        "directions": 8
+      },
+      {
+        "key": "idle",
+        "path": "assets/sprites/7-idle.png",
+        "frameWidth": 32,
+        "frameHeight": 32,
+        "frameCount": 8,
+        "directions": 8
+      }
+    ]
   },
   {
     "id": "25",
     "name": "pikachu",
-    "path": "assets/sprites/25.png",
-    "frameWidth": 32,
-    "frameHeight": 40,
-    "frameCount": 4,
-    "directions": 8
+    "animations": [
+      {
+        "key": "walk",
+        "path": "assets/sprites/25-walk.png",
+        "frameWidth": 32,
+        "frameHeight": 40,
+        "frameCount": 4,
+        "directions": 8
+      },
+      {
+        "key": "idle",
+        "path": "assets/sprites/25-idle.png",
+        "frameWidth": 40,
+        "frameHeight": 56,
+        "frameCount": 6,
+        "directions": 8
+      }
+    ]
   },
   {
     "id": "133",
     "name": "eevee",
-    "path": "assets/sprites/133.png",
-    "frameWidth": 40,
-    "frameHeight": 48,
-    "frameCount": 7,
-    "directions": 8
+    "animations": [
+      {
+        "key": "walk",
+        "path": "assets/sprites/133-walk.png",
+        "frameWidth": 40,
+        "frameHeight": 48,
+        "frameCount": 7,
+        "directions": 8
+      },
+      {
+        "key": "idle",
+        "path": "assets/sprites/133-idle.png",
+        "frameWidth": 24,
+        "frameHeight": 32,
+        "frameCount": 2,
+        "directions": 8
+      }
+    ]
   },
   {
     "id": "150",
     "name": "mewtwo",
-    "path": "assets/sprites/150.png",
-    "frameWidth": 48,
-    "frameHeight": 56,
-    "frameCount": 6,
-    "directions": 8
+    "animations": [
+      {
+        "key": "walk",
+        "path": "assets/sprites/150-walk.png",
+        "frameWidth": 48,
+        "frameHeight": 56,
+        "frameCount": 6,
+        "directions": 8
+      },
+      {
+        "key": "idle",
+        "path": "assets/sprites/150-idle.png",
+        "frameWidth": 32,
+        "frameHeight": 64,
+        "frameCount": 8,
+        "directions": 8
+      }
+    ]
   }
 ]

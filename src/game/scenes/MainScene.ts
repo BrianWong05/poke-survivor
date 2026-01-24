@@ -2,14 +2,19 @@ import Phaser from 'phaser';
 import type { GameCallbacks } from '@/game/config';
 import { getDirectionFromVelocity, type DirectionName } from '@/game/scenes/Preloader';
 
-interface SpriteManifestEntry {
-  id: string;
-  name: string;
+interface SpriteAnimation {
+  key: string;
   path: string;
   frameWidth: number;
   frameHeight: number;
   frameCount: number;
   directions: number;
+}
+
+interface SpriteManifestEntry {
+  id: string;
+  name: string;
+  animations: SpriteAnimation[];
 }
 
 export class MainScene extends Phaser.Scene {
@@ -135,7 +140,7 @@ export class MainScene extends Phaser.Scene {
       this.player = this.physics.add.sprite(centerX, centerY, 'player');
     } else {
       this.player = this.physics.add.sprite(centerX, centerY, this.playerSpriteName);
-      this.player.play(`${this.playerSpriteName}-walk-down`);
+      this.player.play(`${this.playerSpriteName}-idle-down`);
       // Scale sprite to reasonable size (PMD sprites are small)
       this.player.setScale(2);
     }
@@ -463,12 +468,21 @@ export class MainScene extends Phaser.Scene {
     );
 
     // Update player animation based on direction
-    if (!this.usePlaceholderGraphics && (velocityX !== 0 || velocityY !== 0)) {
-      const direction = getDirectionFromVelocity(velocityX, velocityY);
-      if (direction !== this.currentDirection) {
-        this.currentDirection = direction;
-        this.player.play(`${this.playerSpriteName}-walk-${direction}`);
+    if (!this.usePlaceholderGraphics) {
+      const isMoving = velocityX !== 0 || velocityY !== 0;
+      const animState = isMoving ? 'walk' : 'idle';
+      
+      // Only update direction if moving
+      if (isMoving) {
+        const direction = getDirectionFromVelocity(velocityX, velocityY);
+        if (direction !== this.currentDirection) {
+          this.currentDirection = direction;
+        }
       }
+      
+      // construct animation key: e.g. pikachu-walk-down or pikachu-idle-down
+      const animKey = `${this.playerSpriteName}-${animState}-${this.currentDirection}`;
+      this.player.play(animKey, true);
     }
 
     // Move enemies toward player

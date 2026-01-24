@@ -1,13 +1,18 @@
 import Phaser from 'phaser';
 
-interface SpriteManifestEntry {
-  id: string;
-  name: string;
+interface SpriteAnimation {
+  key: string;
   path: string;
   frameWidth: number;
   frameHeight: number;
   frameCount: number;
   directions: number;
+}
+
+interface SpriteManifestEntry {
+  id: string;
+  name: string;
+  animations: SpriteAnimation[];
 }
 
 // Direction name mapping (matches sprite sheet row order)
@@ -89,11 +94,14 @@ export class Preloader extends Phaser.Scene {
     });
 
     // Queue all spritesheets
+    // Queue all spritesheets
     for (const sprite of this.manifest) {
-      this.load.spritesheet(sprite.name, sprite.path, {
-        frameWidth: sprite.frameWidth,
-        frameHeight: sprite.frameHeight,
-      });
+      for (const anim of sprite.animations) {
+        this.load.spritesheet(`${sprite.name}-${anim.key}`, anim.path, {
+          frameWidth: anim.frameWidth,
+          frameHeight: anim.frameHeight,
+        });
+      }
     }
 
     // Start loading
@@ -102,33 +110,40 @@ export class Preloader extends Phaser.Scene {
 
   private createAnimations(): void {
     for (const sprite of this.manifest) {
-      // Create animation for each direction
-      for (let dir = 0; dir < sprite.directions; dir++) {
-        const dirName = DIRECTION_NAMES[dir] || `dir${dir}`;
-        const startFrame = dir * sprite.frameCount;
-        const endFrame = startFrame + sprite.frameCount - 1;
+      for (const anim of sprite.animations) {
+        const textureKey = `${sprite.name}-${anim.key}`;
 
-        this.anims.create({
-          key: `${sprite.name}-walk-${dirName}`,
-          frames: this.anims.generateFrameNumbers(sprite.name, {
-            start: startFrame,
-            end: endFrame,
+        // Create animation for each direction
+        for (let dir = 0; dir < anim.directions; dir++) {
+          const dirName = DIRECTION_NAMES[dir] || `dir${dir}`;
+          const startFrame = dir * anim.frameCount;
+          const endFrame = startFrame + anim.frameCount - 1;
+
+          this.anims.create({
+            key: `${sprite.name}-${anim.key}-${dirName}`,
+            frames: this.anims.generateFrameNumbers(textureKey, {
+              start: startFrame,
+              end: endFrame,
+            }),
+            frameRate: 8,
+            repeat: -1,
+          });
+        }
+      }
+
+      // Default walk animation alias (if walk exists)
+      const walkAnim = sprite.animations.find(a => a.key === 'walk');
+      if (walkAnim) {
+         this.anims.create({
+          key: `${sprite.name}-walk`,
+          frames: this.anims.generateFrameNumbers(`${sprite.name}-walk`, {
+            start: 0,
+            end: walkAnim.frameCount - 1,
           }),
           frameRate: 8,
           repeat: -1,
         });
       }
-
-      // Also create a default walk animation (down direction)
-      this.anims.create({
-        key: `${sprite.name}-walk`,
-        frames: this.anims.generateFrameNumbers(sprite.name, {
-          start: 0,
-          end: sprite.frameCount - 1,
-        }),
-        frameRate: 8,
-        repeat: -1,
-      });
     }
   }
 }

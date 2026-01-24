@@ -1,0 +1,22 @@
+# Tasks: Idle Animations
+
+- [x] Update `download_assets.py` to support multiple animations per Pokémon <!-- transform:python -->
+    - [x] Modify `SpriteInfo` named tuple to support list of animations
+    - [x] Update `download_and_process_pokemon` to loop through "Walk" and "Idle"
+    - [x] Update `generate_manifest` to write new schema
+- [x] Verify asset pipeline output <!-- transform:manual -->
+    - [x] Run `python scripts/download_assets.py`
+    - [x] Check `public/assets/sprites/` for new files (e.g. `25-idle.png`)
+    - [x] Check `public/assets/manifest.json` structure
+- [x] Update game loading logic <!-- transform:typescript -->
+    - [x] Update `SpriteManifestEntry` interface in `Preloader.ts` and `MainScene.ts`
+    - [x] Update `Preloader.ts` to load multiple sprite sheets per entity
+    - [x] Update `Preloader.ts` to create animations for all loaded sheets
+- [x] Implement Idle behavior in `MainScene.ts` <!-- transform:typescript -->
+    - [x] Track current animation state (walk/idle)
+    - [x] Switch to idle animation when velocity is 0
+    - [x] Switch to walk animation when velocity > 0
+- [x] Verify animations in-game <!-- transform:manual -->
+    - [x] Start game
+    - [x] Move player (check walk anim)
+    - [x] Stop player (check idle anim)
