@@ -1,0 +1,599 @@
+import Phaser from 'phaser';
+import type { CharacterContext, WeaponConfig } from '@/game/entities/characters/types';
+
+/**
+ * Helper to get the enemies group from scene registry
+ */
+function getEnemies(scene: Phaser.Scene): Phaser.Physics.Arcade.Group | null {
+  return scene.registry.get('enemiesGroup') as Phaser.Physics.Arcade.Group | null;
+}
+
+/**
+ * Helper to get the projectiles group from scene registry
+ */
+function getProjectiles(scene: Phaser.Scene): Phaser.Physics.Arcade.Group | null {
+  return scene.registry.get('projectilesGroup') as Phaser.Physics.Arcade.Group | null;
+}
+
+/**
+ * Find the nearest active enemy to the player
+ */
+function findNearestEnemy(
+  scene: Phaser.Scene,
+  player: Phaser.Physics.Arcade.Sprite
+): Phaser.Physics.Arcade.Sprite | null {
+  const enemies = getEnemies(scene);
+  if (!enemies) return null;
+
+  let nearest: Phaser.Physics.Arcade.Sprite | null = null;
+  let nearestDist = Infinity;
+
+  enemies.getChildren().forEach((child) => {
+    const enemy = child as Phaser.Physics.Arcade.Sprite;
+    if (!enemy.active) return;
+
+    const dist = Phaser.Math.Distance.Between(player.x, player.y, enemy.x, enemy.y);
+    if (dist < nearestDist) {
+      nearestDist = dist;
+      nearest = enemy;
+    }
+  });
+
+  return nearest;
+}
+
+// ============================================================================
+// PIKACHU WEAPONS
+// ============================================================================
+
+/**
+ * Volt Tackle evolution: Player dashes forward invincibly
+ */
+export const voltTackle: WeaponConfig = {
+  id: 'volt-tackle',
+  name: 'Volt Tackle',
+  description: 'Dash forward invincibly, leaving electric trail',
+  cooldownMs: 2000,
+  fire: (ctx: CharacterContext) => {
+    const { scene, player } = ctx;
+    
+    // Get facing direction from velocity or default to right
+    const vx = player.body?.velocity.x ?? 0;
+    const vy = player.body?.velocity.y ?? 0;
+    const len = Math.sqrt(vx * vx + vy * vy);
+    const dirX = len > 0 ? vx / len : 1;
+    const dirY = len > 0 ? vy / len : 0;
+    
+    // Make player invincible during dash
+    player.setData('invincible', true);
+    player.setTint(0xffff00);
+    
+    // Dash forward
+    const dashDistance = 150;
+    const dashDuration = 200;
+    
+    scene.tweens.add({
+      targets: player,
+      x: player.x + dirX * dashDistance,
+      y: player.y + dirY * dashDistance,
+      duration: dashDuration,
+      onComplete: () => {
+        player.setData('invincible', false);
+        player.clearTint();
+      },
+    });
+    
+    // Leave electric trail (damage enemies along path)
+    const trailPoints = 5;
+    for (let i = 0; i < trailPoints; i++) {
+      const delay = (dashDuration / trailPoints) * i;
+      scene.time.delayedCall(delay, () => {
+        scene.events.emit('spawn-aoe-damage', player.x, player.y, 30, ctx.stats.baseDamage);
+      });
+    }
+  },
+};
+
+/**
+ * Thunder Shock: Targets nearest enemy with homing projectile
+ */
+export const thunderShock: WeaponConfig = {
+  id: 'thunder-shock',
+  name: 'Thunder Shock',
+  description: 'Targets nearest enemy with electric projectile',
+  cooldownMs: 1000,
+  evolution: voltTackle,
+  evolutionLevel: 5,
+  fire: (ctx: CharacterContext) => {
+    const { scene, player } = ctx;
+    const nearestEnemy = findNearestEnemy(scene, player);
+    if (!nearestEnemy) return;
+
+    const projectiles = getProjectiles(scene);
+    if (!projectiles) return;
+
+    const projectile = projectiles.get(player.x, player.y, 'projectile') as Phaser.Physics.Arcade.Sprite | null;
+    if (!projectile) return;
+
+    projectile.setActive(true);
+    projectile.setVisible(true);
+    projectile.setPosition(player.x, player.y);
+    projectile.setTint(0xffff00); // Yellow for electric
+    projectile.setData('damage', ctx.stats.baseDamage);
+
+    // Calculate direction to enemy
+    const angle = Phaser.Math.Angle.Between(player.x, player.y, nearestEnemy.x, nearestEnemy.y);
+    const speed = 400;
+    projectile.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
+
+    // Destroy after 3 seconds
+    scene.time.delayedCall(3000, () => {
+      if (projectile.active) {
+        projectile.setActive(false);
+        projectile.setVisible(false);
+      }
+    });
+  },
+};
+
+// ============================================================================
+// CHARIZARD WEAPONS
+// ============================================================================
+
+/**
+ * Blast Burn evolution: Blue piercing fire with DOT
+ */
+export const blastBurn: WeaponConfig = {
+  id: 'blast-burn',
+  name: 'Blast Burn',
+  description: 'Blue fire pierces enemies, leaves burning ground',
+  cooldownMs: 1500,
+  fire: (ctx: CharacterContext) => {
+    const { scene, player, stats, currentHP } = ctx;
+    
+    // Calculate Blaze bonus
+    const hpPercent = currentHP / stats.maxHP;
+    const missingPercent = 1 - hpPercent;
+    const damageMultiplier = 1 + missingPercent;
+    
+    // Get facing direction
+    const vx = player.body?.velocity.x ?? 0;
+    const vy = player.body?.velocity.y ?? 0;
+    const len = Math.sqrt(vx * vx + vy * vy);
+    const dirX = len > 0 ? vx / len : 0;
+    const dirY = len > 0 ? vy / len : 1;
+    
+    // Create cone of blue fire particles
+    const coneAngle = Math.PI / 3; // 60 degree cone
+    const baseAngle = Math.atan2(dirY, dirX);
+    const range = 150;
+    
+    for (let i = 0; i < 5; i++) {
+      const angle = baseAngle - coneAngle / 2 + (coneAngle / 4) * i;
+      const endX = player.x + Math.cos(angle) * range;
+      const endY = player.y + Math.sin(angle) * range;
+      
+      // Spawn damage at end point
+      scene.events.emit('spawn-aoe-damage', endX, endY, 40, stats.baseDamage * damageMultiplier);
+      
+      // Leave burning ground (DOT)
+      scene.time.addEvent({
+        delay: 500,
+        repeat: 3,
+        callback: () => {
+          scene.events.emit('spawn-aoe-damage', endX, endY, 25, stats.baseDamage * 0.3);
+        },
+      });
+    }
+    
+    // Visual: blue flash
+    scene.cameras.main.flash(100, 0, 100, 255);
+  },
+};
+
+/**
+ * Flamethrower: Cone of fire in facing direction
+ */
+export const flamethrower: WeaponConfig = {
+  id: 'flamethrower',
+  name: 'Flamethrower',
+  description: 'Cone of fire in facing direction',
+  cooldownMs: 1200,
+  evolution: blastBurn,
+  evolutionLevel: 5,
+  fire: (ctx: CharacterContext) => {
+    const { scene, player, stats, currentHP } = ctx;
+    
+    // Calculate Blaze bonus
+    const hpPercent = currentHP / stats.maxHP;
+    const missingPercent = 1 - hpPercent;
+    const damageMultiplier = 1 + missingPercent;
+    
+    // Get facing direction
+    const vx = player.body?.velocity.x ?? 0;
+    const vy = player.body?.velocity.y ?? 0;
+    const len = Math.sqrt(vx * vx + vy * vy);
+    const dirX = len > 0 ? vx / len : 0;
+    const dirY = len > 0 ? vy / len : 1;
+    
+    // Create cone of fire
+    const coneAngle = Math.PI / 4; // 45 degree cone
+    const baseAngle = Math.atan2(dirY, dirX);
+    const range = 100;
+    
+    for (let i = 0; i < 3; i++) {
+      const angle = baseAngle - coneAngle / 2 + (coneAngle / 2) * i;
+      const endX = player.x + Math.cos(angle) * range;
+      const endY = player.y + Math.sin(angle) * range;
+      
+      scene.events.emit('spawn-aoe-damage', endX, endY, 35, stats.baseDamage * damageMultiplier);
+    }
+  },
+};
+
+// ============================================================================
+// BLASTOISE WEAPONS
+// ============================================================================
+
+/**
+ * Hydro Cannon evolution: Spiral streams creating no-go zone
+ */
+export const hydroCannon: WeaponConfig = {
+  id: 'hydro-cannon',
+  name: 'Hydro Cannon',
+  description: 'Two massive spiral streams, creates no-go zone',
+  cooldownMs: 2000,
+  fire: (ctx: CharacterContext) => {
+    const { scene, player, stats } = ctx;
+    
+    // Create two spiral projectiles
+    const projectiles = getProjectiles(scene);
+    if (!projectiles) return;
+    
+    for (let i = 0; i < 2; i++) {
+      const projectile = projectiles.get(player.x, player.y, 'projectile') as Phaser.Physics.Arcade.Sprite | null;
+      if (!projectile) continue;
+      
+      projectile.setActive(true);
+      projectile.setVisible(true);
+      projectile.setTint(0x0088ff);
+      projectile.setScale(3);
+      projectile.setData('damage', stats.baseDamage * 2);
+      projectile.setData('knockback', 200);
+      
+      // Spiral outward
+      const startAngle = i * Math.PI;
+      let angle = startAngle;
+      let radius = 20;
+      
+      scene.time.addEvent({
+        delay: 50,
+        repeat: 40,
+        callback: () => {
+          angle += 0.3;
+          radius += 5;
+          projectile.setPosition(
+            player.x + Math.cos(angle) * radius,
+            player.y + Math.sin(angle) * radius
+          );
+        },
+      });
+      
+      scene.time.delayedCall(2000, () => {
+        projectile.setActive(false);
+        projectile.setVisible(false);
+        projectile.setScale(1);
+      });
+    }
+  },
+};
+
+/**
+ * Water Pulse: Expanding ring with knockback
+ */
+export const waterPulse: WeaponConfig = {
+  id: 'water-pulse',
+  name: 'Water Pulse',
+  description: 'Expanding ring pushes enemies back',
+  cooldownMs: 1500,
+  evolution: hydroCannon,
+  evolutionLevel: 5,
+  fire: (ctx: CharacterContext) => {
+    const { scene, player, stats } = ctx;
+    
+    // Create expanding ring effect
+    const ring = scene.add.circle(player.x, player.y, 20, 0x0088ff, 0.5);
+    
+    scene.tweens.add({
+      targets: ring,
+      radius: 150,
+      alpha: 0,
+      duration: 500,
+      onUpdate: () => {
+        // Damage and knockback enemies within ring
+        const enemies = getEnemies(scene);
+        if (!enemies) return;
+        
+        enemies.getChildren().forEach((child) => {
+          const enemy = child as Phaser.Physics.Arcade.Sprite;
+          if (!enemy.active) return;
+          
+          const dist = Phaser.Math.Distance.Between(player.x, player.y, enemy.x, enemy.y);
+          if (dist <= ring.radius && dist >= ring.radius - 30) {
+            // Apply knockback
+            const angle = Phaser.Math.Angle.Between(player.x, player.y, enemy.x, enemy.y);
+            const knockbackForce = 300;
+            enemy.setVelocity(
+              Math.cos(angle) * knockbackForce,
+              Math.sin(angle) * knockbackForce
+            );
+            
+            // Apply damage once
+            if (!enemy.getData('waterPulseHit')) {
+              enemy.setData('waterPulseHit', true);
+              scene.events.emit('damage-enemy', enemy, stats.baseDamage);
+              scene.time.delayedCall(100, () => enemy.setData('waterPulseHit', false));
+            }
+          }
+        });
+      },
+      onComplete: () => ring.destroy(),
+    });
+  },
+};
+
+// ============================================================================
+// GENGAR WEAPONS
+// ============================================================================
+
+/**
+ * Dream Eater evolution: Healing on cursed kills
+ */
+export const dreamEater: WeaponConfig = {
+  id: 'dream-eater',
+  name: 'Dream Eater',
+  description: 'Killing Cursed enemy heals 1 HP',
+  cooldownMs: 800,
+  fire: (ctx: CharacterContext) => {
+    const { scene, player, stats } = ctx;
+    
+    // Short range attack ignoring walls
+    const range = 80;
+    const enemies = getEnemies(scene);
+    if (!enemies) return;
+    
+    enemies.getChildren().forEach((child) => {
+      const enemy = child as Phaser.Physics.Arcade.Sprite;
+      if (!enemy.active) return;
+      
+      const dist = Phaser.Math.Distance.Between(player.x, player.y, enemy.x, enemy.y);
+      if (dist <= range) {
+        // Apply curse and damage
+        enemy.setData('cursed', true);
+        enemy.setTint(0x800080);
+        scene.events.emit('damage-enemy', enemy, stats.baseDamage * 1.5);
+        
+        // Register heal-on-kill handler
+        enemy.setData('healOnKill', true);
+      }
+    });
+  },
+};
+
+/**
+ * Lick: Short range, ignores walls, applies Curse
+ */
+export const lick: WeaponConfig = {
+  id: 'lick',
+  name: 'Lick',
+  description: 'Short range, ignores walls. Applies Curse debuff',
+  cooldownMs: 600,
+  evolution: dreamEater,
+  evolutionLevel: 5,
+  fire: (ctx: CharacterContext) => {
+    const { scene, player, stats } = ctx;
+    
+    // Short range attack ignoring walls
+    const range = 60;
+    const enemies = getEnemies(scene);
+    if (!enemies) return;
+    
+    enemies.getChildren().forEach((child) => {
+      const enemy = child as Phaser.Physics.Arcade.Sprite;
+      if (!enemy.active) return;
+      
+      const dist = Phaser.Math.Distance.Between(player.x, player.y, enemy.x, enemy.y);
+      if (dist <= range) {
+        // Apply curse and damage
+        enemy.setData('cursed', true);
+        enemy.setTint(0x800080); // Purple for curse
+        scene.events.emit('damage-enemy', enemy, stats.baseDamage);
+      }
+    });
+  },
+};
+
+// ============================================================================
+// LUCARIO WEAPONS
+// ============================================================================
+
+/**
+ * Focus Blast evolution: Huge exploding orb, crit kills
+ */
+export const focusBlast: WeaponConfig = {
+  id: 'focus-blast',
+  name: 'Focus Blast',
+  description: 'Slower huge orb. Explodes. Crit kills non-bosses',
+  cooldownMs: 2000,
+  fire: (ctx: CharacterContext) => {
+    const { scene, player, stats } = ctx;
+    const nearestEnemy = findNearestEnemy(scene, player);
+    if (!nearestEnemy) return;
+    
+    const projectiles = getProjectiles(scene);
+    if (!projectiles) return;
+    
+    // Apply Inner Focus size bonus
+    const sizeMultiplier = player.getData('innerFocus') ? 1.2 : 1;
+    
+    const projectile = projectiles.get(player.x, player.y, 'projectile') as Phaser.Physics.Arcade.Sprite | null;
+    if (!projectile) return;
+    
+    projectile.setActive(true);
+    projectile.setVisible(true);
+    projectile.setScale(3 * sizeMultiplier);
+    projectile.setTint(0x00ffff);
+    projectile.setData('damage', stats.baseDamage * 3);
+    projectile.setData('explodes', true);
+    projectile.setData('critKill', true); // Instant kill on crit
+    
+    const angle = Phaser.Math.Angle.Between(player.x, player.y, nearestEnemy.x, nearestEnemy.y);
+    const speed = 200; // Slower
+    projectile.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
+    
+    scene.time.delayedCall(4000, () => {
+      if (projectile.active) {
+        projectile.setActive(false);
+        projectile.setVisible(false);
+        projectile.setScale(1);
+      }
+    });
+  },
+};
+
+/**
+ * Aura Sphere: Homing orb piercing 2 enemies
+ */
+export const auraSphere: WeaponConfig = {
+  id: 'aura-sphere',
+  name: 'Aura Sphere',
+  description: 'Homing orb, pierces 2 enemies',
+  cooldownMs: 1000,
+  evolution: focusBlast,
+  evolutionLevel: 5,
+  fire: (ctx: CharacterContext) => {
+    const { scene, player, stats } = ctx;
+    const nearestEnemy = findNearestEnemy(scene, player);
+    if (!nearestEnemy) return;
+    
+    const projectiles = getProjectiles(scene);
+    if (!projectiles) return;
+    
+    // Apply Inner Focus size bonus
+    const sizeMultiplier = player.getData('innerFocus') ? 1.2 : 1;
+    
+    const projectile = projectiles.get(player.x, player.y, 'projectile') as Phaser.Physics.Arcade.Sprite | null;
+    if (!projectile) return;
+    
+    projectile.setActive(true);
+    projectile.setVisible(true);
+    projectile.setScale(1.5 * sizeMultiplier);
+    projectile.setTint(0x00ffff);
+    projectile.setData('damage', stats.baseDamage);
+    projectile.setData('pierceCount', 2);
+    
+    const angle = Phaser.Math.Angle.Between(player.x, player.y, nearestEnemy.x, nearestEnemy.y);
+    const speed = 350;
+    projectile.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
+    
+    scene.time.delayedCall(3000, () => {
+      if (projectile.active) {
+        projectile.setActive(false);
+        projectile.setVisible(false);
+        projectile.setScale(1);
+      }
+    });
+  },
+};
+
+// ============================================================================
+// SNORLAX WEAPONS
+// ============================================================================
+
+/**
+ * Giga Impact evolution: 80% screen shockwave + stun
+ */
+export const gigaImpact: WeaponConfig = {
+  id: 'giga-impact',
+  name: 'Giga Impact',
+  description: 'Shockwave covers 80% screen + Stun',
+  cooldownMs: 3000,
+  fire: (ctx: CharacterContext) => {
+    const { scene, player, stats } = ctx;
+    
+    // 80% of screen radius
+    const radius = Math.max(scene.scale.width, scene.scale.height) * 0.4;
+    
+    // Visual shockwave
+    const wave = scene.add.circle(player.x, player.y, 30, 0xffaa00, 0.6);
+    
+    scene.tweens.add({
+      targets: wave,
+      radius: radius,
+      alpha: 0,
+      duration: 800,
+      onComplete: () => wave.destroy(),
+    });
+    
+    // Damage based on max HP
+    const damage = stats.maxHP * 0.2;
+    
+    // Apply damage and stun to all enemies in range
+    scene.time.delayedCall(400, () => {
+      const enemies = getEnemies(scene);
+      if (!enemies) return;
+      
+      enemies.getChildren().forEach((child) => {
+        const enemy = child as Phaser.Physics.Arcade.Sprite;
+        if (!enemy.active) return;
+        
+        const dist = Phaser.Math.Distance.Between(player.x, player.y, enemy.x, enemy.y);
+        if (dist <= radius) {
+          scene.events.emit('damage-enemy', enemy, damage);
+          
+          // Stun
+          enemy.setVelocity(0, 0);
+          enemy.setData('stunned', true);
+          enemy.setTint(0xffff00);
+          scene.time.delayedCall(1000, () => {
+            if (enemy.active) {
+              enemy.setData('stunned', false);
+              enemy.clearTint();
+            }
+          });
+        }
+      });
+    });
+  },
+};
+
+/**
+ * Body Slam: Shockwave every 2s based on Max HP
+ */
+export const bodySlam: WeaponConfig = {
+  id: 'body-slam',
+  name: 'Body Slam',
+  description: 'Shockwave every 2s based on Max HP',
+  cooldownMs: 2000,
+  evolution: gigaImpact,
+  evolutionLevel: 5,
+  fire: (ctx: CharacterContext) => {
+    const { scene, player, stats } = ctx;
+    
+    // Visual shockwave
+    const wave = scene.add.circle(player.x, player.y, 20, 0xffaa00, 0.5);
+    
+    scene.tweens.add({
+      targets: wave,
+      radius: 100,
+      alpha: 0,
+      duration: 400,
+      onComplete: () => wave.destroy(),
+    });
+    
+    // Damage based on max HP
+    const damage = stats.maxHP * 0.1;
+    
+    scene.events.emit('spawn-aoe-damage', player.x, player.y, 100, damage);
+  },
+};

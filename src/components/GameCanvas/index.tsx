@@ -4,15 +4,26 @@ import nipplejs from 'nipplejs';
 import type { JoystickManager } from 'nipplejs';
 import { createGameConfig, type GameCallbacks } from '@/game/config';
 import { MainScene } from '@/game/scenes/MainScene';
+import { getCharacter } from '@/game/entities/characters/registry';
 import './styles.css';
 
 interface GameCanvasProps {
+  selectedCharacter: string;
   onScoreUpdate: (score: number) => void;
   onHPUpdate: (hp: number) => void;
+  onLevelUpdate: (level: number, xp: number, xpToNext: number) => void;
   onGameOver: () => void;
+  onMaxHPChange: (maxHP: number) => void;
 }
 
-export const GameCanvas = ({ onScoreUpdate, onHPUpdate, onGameOver }: GameCanvasProps) => {
+export const GameCanvas = ({
+  selectedCharacter,
+  onScoreUpdate,
+  onHPUpdate,
+  onLevelUpdate,
+  onGameOver,
+  onMaxHPChange,
+}: GameCanvasProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const joystickRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
@@ -21,16 +32,24 @@ export const GameCanvas = ({ onScoreUpdate, onHPUpdate, onGameOver }: GameCanvas
   useEffect(() => {
     if (!containerRef.current) return;
 
+    // Get character config for max HP
+    const characterConfig = getCharacter(selectedCharacter);
+    onMaxHPChange(characterConfig.stats.maxHP);
+
     const callbacks: GameCallbacks = {
       onScoreUpdate,
       onHPUpdate,
       onGameOver,
+      onLevelUpdate,
     };
 
     // Create Phaser game
     const config = createGameConfig(containerRef.current, callbacks);
     const game = new Phaser.Game(config);
     gameRef.current = game;
+
+    // Store selected character in registry for MainScene to access
+    game.registry.set('selectedCharacter', selectedCharacter);
 
     // Setup nipplejs for touch devices
     const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
@@ -72,7 +91,7 @@ export const GameCanvas = ({ onScoreUpdate, onHPUpdate, onGameOver }: GameCanvas
         gameRef.current = null;
       }
     };
-  }, [onScoreUpdate, onHPUpdate, onGameOver]);
+  }, [selectedCharacter, onScoreUpdate, onHPUpdate, onGameOver, onLevelUpdate, onMaxHPChange]);
 
   return (
     <div className="game-container">

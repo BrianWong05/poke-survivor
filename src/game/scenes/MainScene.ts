@@ -1,6 +1,14 @@
 import Phaser from 'phaser';
 import type { GameCallbacks } from '@/game/config';
 import { getDirectionFromVelocity, type DirectionName } from '@/game/scenes/Preloader';
+import { getCharacter } from '@/game/entities/characters/registry';
+import {
+  type CharacterConfig,
+  type CharacterState,
+  type CharacterContext,
+  createCharacterState,
+  addXP,
+} from '@/game/entities/characters/types';
 
 interface SpriteAnimation {
   key: string;
@@ -20,14 +28,16 @@ interface SpriteManifestEntry {
 export class MainScene extends Phaser.Scene {
   // Player
   private player!: Phaser.Physics.Arcade.Sprite;
-  private playerSpeed = 200;
-  private playerHP = 100;
-  private maxHP = 100;
   private isInvincible = false;
+
+  // Character System
+  private characterConfig!: CharacterConfig;
+  private characterState!: CharacterState;
 
   // Input
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd!: { W: Phaser.Input.Keyboard.Key; A: Phaser.Input.Keyboard.Key; S: Phaser.Input.Keyboard.Key; D: Phaser.Input.Keyboard.Key };
+  private spaceKey!: Phaser.Input.Keyboard.Key;
   private joystickVector = { x: 0, y: 0 };
 
   // Groups
@@ -46,7 +56,6 @@ export class MainScene extends Phaser.Scene {
 
   // Sprite data
   private manifest: SpriteManifestEntry[] = [];
-  private playerSpriteName = 'pikachu';
   private enemySpriteNames: string[] = [];
   private currentDirection: DirectionName = 'down';
   private usePlaceholderGraphics = false;
@@ -59,16 +68,22 @@ export class MainScene extends Phaser.Scene {
     // Get callbacks from registry
     this.callbacks = this.registry.get('callbacks') as GameCallbacks;
 
+    // Get selected character from registry (default to pikachu)
+    const selectedCharacterId = this.registry.get('selectedCharacter') as string || 'pikachu';
+    this.characterConfig = getCharacter(selectedCharacterId);
+    this.characterState = createCharacterState(this.characterConfig);
+
+    // Store character state in registry for passives/ultimates to access
+    this.registry.set('characterState', this.characterState);
+
     // Get sprite manifest from registry (set by Preloader)
     this.manifest = this.registry.get('spriteManifest') as SpriteManifestEntry[] || [];
 
     // Setup sprite names from manifest
     if (this.manifest.length > 0) {
       const names = this.manifest.map((s) => s.name);
-      // Use pikachu as player if available, otherwise first sprite
-      this.playerSpriteName = names.includes('pikachu') ? 'pikachu' : names[0];
-      // Other sprites are enemies
-      this.enemySpriteNames = names.filter((n) => n !== this.playerSpriteName);
+      // Other sprites are enemies (excluding player character)
+      this.enemySpriteNames = names.filter((n) => n !== this.characterConfig.spriteKey);
       this.usePlaceholderGraphics = false;
     } else {
       this.usePlaceholderGraphics = true;
@@ -89,16 +104,27 @@ export class MainScene extends Phaser.Scene {
     // Setup collisions
     this.setupCollisions();
 
+    // Setup event listeners for weapons/ultimates
+    this.setupEventListeners();
+
+    // Initialize passive
+    this.initializePassive();
+
     // Start timers
     this.startTimers();
 
     // Initial callback updates
     this.callbacks.onScoreUpdate(this.score);
-    this.callbacks.onHPUpdate(this.playerHP);
+    this.callbacks.onHPUpdate(this.characterState.currentHP);
+    
+    // Send level info
+    if (this.callbacks.onLevelUpdate) {
+      this.callbacks.onLevelUpdate(this.characterState.level, this.characterState.xp, this.characterState.xpToNextLevel);
+    }
   }
 
   private createTextures(): void {
-    // Player: Blue circle (32px)
+    // Player: Blue circle (32px) - fallback
     const playerGraphics = this.make.graphics({ x: 0, y: 0 });
     playerGraphics.fillStyle(0x4a9eff, 1);
     playerGraphics.fillCircle(16, 16, 16);
@@ -139,13 +165,18 @@ export class MainScene extends Phaser.Scene {
     if (this.usePlaceholderGraphics) {
       this.player = this.physics.add.sprite(centerX, centerY, 'player');
     } else {
-      this.player = this.physics.add.sprite(centerX, centerY, this.playerSpriteName);
-      this.player.play(`${this.playerSpriteName}-idle-down`);
+      this.player = this.physics.add.sprite(centerX, centerY, this.characterConfig.spriteKey);
+      this.player.play(`${this.characterConfig.spriteKey}-idle-down`);
       // Scale sprite to reasonable size (PMD sprites are small)
       this.player.setScale(2);
     }
     this.player.setCollideWorldBounds(true);
     this.player.setDepth(10);
+
+    // Set Inner Focus flag for Lucario
+    if (this.characterConfig.passive.id === 'inner-focus') {
+      this.player.setData('innerFocus', true);
+    }
   }
 
   private createGroups(): void {
@@ -169,6 +200,11 @@ export class MainScene extends Phaser.Scene {
       maxSize: 100,
       runChildUpdate: false,
     });
+
+    // Store groups in registry for weapons/ultimates to access
+    this.registry.set('enemiesGroup', this.enemies);
+    this.registry.set('projectilesGroup', this.projectiles);
+    this.registry.set('xpGemsGroup', this.xpGems);
   }
 
   private setupInput(): void {
@@ -181,6 +217,8 @@ export class MainScene extends Phaser.Scene {
         S: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S),
         D: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D),
       };
+      // Ultimate trigger (Space)
+      this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     }
   }
 
@@ -189,7 +227,7 @@ export class MainScene extends Phaser.Scene {
     this.physics.add.overlap(
       this.projectiles,
       this.enemies,
-      this.handleProjectileEnemyCollision,
+      this.handleProjectileEnemyCollision as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback,
       undefined,
       this
     );
@@ -198,7 +236,7 @@ export class MainScene extends Phaser.Scene {
     this.physics.add.overlap(
       this.player,
       this.xpGems,
-      this.handleXPCollection,
+      this.handleXPCollection as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback,
       undefined,
       this
     );
@@ -207,17 +245,58 @@ export class MainScene extends Phaser.Scene {
     this.physics.add.overlap(
       this.player,
       this.enemies,
-      this.handlePlayerEnemyCollision,
+      this.handlePlayerEnemyCollision as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback,
       undefined,
       this
     );
   }
 
+  private setupEventListeners(): void {
+    // Listen for spawn-xp events from ultimates
+    this.events.on('spawn-xp', (x: number, y: number) => {
+      this.spawnXPGem(x, y);
+    });
+
+    // Listen for spawn-aoe-damage events from weapons/ultimates
+    this.events.on('spawn-aoe-damage', (x: number, y: number, radius: number, damage: number) => {
+      this.applyAOEDamage(x, y, radius, damage);
+    });
+
+    // Listen for damage-enemy events
+    this.events.on('damage-enemy', (enemy: Phaser.Physics.Arcade.Sprite, damage: number) => {
+      this.damageEnemy(enemy, damage);
+    });
+
+    // Listen for HP updates from passives
+    this.events.on('hp-update', (hp: number) => {
+      this.characterState.currentHP = hp;
+      this.callbacks.onHPUpdate(hp);
+    });
+  }
+
+  private initializePassive(): void {
+    const ctx = this.getCharacterContext();
+    if (this.characterConfig.passive.onInit) {
+      this.characterConfig.passive.onInit(ctx);
+    }
+  }
+
+  private getCharacterContext(): CharacterContext {
+    return {
+      scene: this,
+      player: this.player,
+      stats: this.characterConfig.stats,
+      currentHP: this.characterState.currentHP,
+      level: this.characterState.level,
+      xp: this.characterState.xp,
+    };
+  }
+
   private startTimers(): void {
-    // Auto-fire every 1 second
+    // Auto-fire using character's weapon cooldown
     this.fireTimer = this.time.addEvent({
-      delay: 1000,
-      callback: this.fireProjectile,
+      delay: this.characterState.activeWeapon.cooldownMs,
+      callback: this.fireWeapon,
       callbackScope: this,
       loop: true,
     });
@@ -231,71 +310,82 @@ export class MainScene extends Phaser.Scene {
     });
   }
 
-  private fireProjectile(): void {
+  private fireWeapon(): void {
     if (this.gameOver) return;
 
-    // Find nearest enemy
-    const nearestEnemy = this.findNearestEnemy();
-    if (!nearestEnemy) return;
+    // Check if player can control (disabled during some ultimates)
+    if (this.player.getData('canControl') === false) return;
 
-    // Get or create projectile
-    const projectile = this.projectiles.get(
-      this.player.x,
-      this.player.y,
-      'projectile'
-    ) as Phaser.Physics.Arcade.Sprite | null;
-
-    if (projectile) {
-      projectile.setActive(true);
-      projectile.setVisible(true);
-      projectile.setPosition(this.player.x, this.player.y);
-
-      // Calculate direction to enemy
-      const angle = Phaser.Math.Angle.Between(
-        this.player.x,
-        this.player.y,
-        nearestEnemy.x,
-        nearestEnemy.y
-      );
-
-      const speed = 400;
-      projectile.setVelocity(
-        Math.cos(angle) * speed,
-        Math.sin(angle) * speed
-      );
-
-      // Destroy projectile after 3 seconds if it doesn't hit
-      this.time.delayedCall(3000, () => {
-        if (projectile.active) {
-          projectile.setActive(false);
-          projectile.setVisible(false);
-        }
-      });
-    }
+    const ctx = this.getCharacterContext();
+    this.characterState.activeWeapon.fire(ctx);
   }
 
-  private findNearestEnemy(): Phaser.Physics.Arcade.Sprite | null {
-    let nearest: Phaser.Physics.Arcade.Sprite | null = null;
-    let nearestDist = Infinity;
+  private triggerUltimate(): void {
+    if (this.gameOver) return;
+    if (this.characterState.ultimateCooldownRemaining > 0) return;
+    if (this.characterState.isUltimateActive) return;
 
+    const ctx = this.getCharacterContext();
+    const ultimate = this.characterConfig.ultimate;
+
+    // Execute ultimate
+    ultimate.execute(ctx);
+    this.characterState.isUltimateActive = true;
+
+    // Handle duration-based ultimates
+    if (ultimate.durationMs && ultimate.durationMs > 0) {
+      this.time.delayedCall(ultimate.durationMs, () => {
+        if (ultimate.onEnd) {
+          ultimate.onEnd(this.getCharacterContext());
+        }
+        this.characterState.isUltimateActive = false;
+      });
+    } else {
+      this.characterState.isUltimateActive = false;
+    }
+
+    // Start cooldown
+    this.characterState.ultimateCooldownRemaining = ultimate.cooldownMs;
+  }
+
+  private applyAOEDamage(x: number, y: number, radius: number, damage: number): void {
     this.enemies.getChildren().forEach((child) => {
       const enemy = child as Phaser.Physics.Arcade.Sprite;
       if (!enemy.active) return;
 
-      const dist = Phaser.Math.Distance.Between(
-        this.player.x,
-        this.player.y,
-        enemy.x,
-        enemy.y
-      );
-
-      if (dist < nearestDist) {
-        nearestDist = dist;
-        nearest = enemy;
+      const dist = Phaser.Math.Distance.Between(x, y, enemy.x, enemy.y);
+      if (dist <= radius) {
+        this.damageEnemy(enemy, damage);
       }
     });
+  }
 
-    return nearest;
+  private damageEnemy(enemy: Phaser.Physics.Arcade.Sprite, damage: number): void {
+    // Apply Shadow Tag +25% damage bonus
+    let finalDamage = damage;
+    if (enemy.getData('shadowTagged')) {
+      finalDamage = Math.floor(damage * 1.25);
+    }
+
+    const currentHP = (enemy.getData('hp') as number) || 20;
+    const newHP = currentHP - finalDamage;
+
+    if (newHP <= 0) {
+      // Check for Dream Eater heal
+      if (enemy.getData('healOnKill') && enemy.getData('cursed')) {
+        this.characterState.currentHP = Math.min(
+          this.characterState.currentHP + 1,
+          this.characterConfig.stats.maxHP
+        );
+        this.callbacks.onHPUpdate(this.characterState.currentHP);
+      }
+
+      this.spawnXPGem(enemy.x, enemy.y);
+      enemy.setActive(false);
+      enemy.setVisible(false);
+    } else {
+      enemy.setData('hp', newHP);
+    }
   }
 
   private spawnEnemy(): void {
@@ -336,6 +426,9 @@ export class MainScene extends Phaser.Scene {
       enemy.setActive(true);
       enemy.setVisible(true);
       enemy.setPosition(x, y);
+      enemy.setData('hp', 20); // Default enemy HP
+      enemy.setData('stunned', false);
+      enemy.setData('cursed', false);
 
       if (!this.usePlaceholderGraphics) {
         // Store sprite name and current direction as custom data
@@ -354,15 +447,32 @@ export class MainScene extends Phaser.Scene {
     const projectile = projectileObj as Phaser.Physics.Arcade.Sprite;
     const enemy = enemyObj as Phaser.Physics.Arcade.Sprite;
 
-    // Deactivate both
-    projectile.setActive(false);
-    projectile.setVisible(false);
+    // Get damage from projectile data or default
+    const damage = (projectile.getData('damage') as number) || this.characterConfig.stats.baseDamage;
 
-    // Spawn XP gem at enemy position
-    this.spawnXPGem(enemy.x, enemy.y);
+    // Handle piercing projectiles
+    const pierceCount = projectile.getData('pierceCount') as number;
+    if (pierceCount && pierceCount > 0) {
+      projectile.setData('pierceCount', pierceCount - 1);
+    } else {
+      projectile.setActive(false);
+      projectile.setVisible(false);
+      projectile.clearTint();
+      projectile.setScale(1);
+    }
 
-    enemy.setActive(false);
-    enemy.setVisible(false);
+    // Handle exploding projectiles
+    if (projectile.getData('explodes')) {
+      this.applyAOEDamage(enemy.x, enemy.y, 80, damage);
+    }
+
+    // Handle crit kill
+    if (projectile.getData('critKill') && Math.random() < 0.2) {
+      // 20% crit chance for instant kill
+      this.damageEnemy(enemy, 9999);
+    } else {
+      this.damageEnemy(enemy, damage);
+    }
   }
 
   private spawnXPGem(x: number, y: number): void {
@@ -384,8 +494,32 @@ export class MainScene extends Phaser.Scene {
     gem.setActive(false);
     gem.setVisible(false);
 
-    this.score += 10;
+    // Add XP and check for level up
+    const xpAmount = 10;
+    this.score += xpAmount;
     this.callbacks.onScoreUpdate(this.score);
+
+    const leveledUp = addXP(this.characterState, xpAmount);
+    if (leveledUp) {
+      // Visual feedback for level up
+      this.cameras.main.flash(200, 255, 255, 255);
+      
+      // Update fire timer if weapon evolved (different cooldown)
+      if (this.characterState.isEvolved) {
+        this.fireTimer.remove();
+        this.fireTimer = this.time.addEvent({
+          delay: this.characterState.activeWeapon.cooldownMs,
+          callback: this.fireWeapon,
+          callbackScope: this,
+          loop: true,
+        });
+      }
+    }
+
+    // Update level UI
+    if (this.callbacks.onLevelUpdate) {
+      this.callbacks.onLevelUpdate(this.characterState.level, this.characterState.xp, this.characterState.xpToNextLevel);
+    }
   }
 
   private handlePlayerEnemyCollision(
@@ -393,18 +527,42 @@ export class MainScene extends Phaser.Scene {
     enemyObj: Phaser.Types.Physics.Arcade.GameObjectWithBody | Phaser.Tilemaps.Tile
   ): void {
     if (this.isInvincible || this.gameOver) return;
+    if (this.player.getData('invincible')) return;
 
     const enemy = enemyObj as Phaser.Physics.Arcade.Sprite;
+
+    // Call passive onEnemyTouch if exists (e.g., Static)
+    if (this.characterConfig.passive.onEnemyTouch) {
+      const ctx = this.getCharacterContext();
+      this.characterConfig.passive.onEnemyTouch(ctx, enemy);
+    }
 
     // Destroy enemy
     enemy.setActive(false);
     enemy.setVisible(false);
 
-    // Damage player
-    this.playerHP -= 20;
-    this.callbacks.onHPUpdate(this.playerHP);
+    // Calculate damage (can be modified by passive)
+    let damage = 20;
+    if (this.characterConfig.passive.onDamageTaken) {
+      const ctx = this.getCharacterContext();
+      damage = this.characterConfig.passive.onDamageTaken(ctx, damage, 'normal');
+    }
 
-    if (this.playerHP <= 0) {
+    // Handle Destiny Bond reflection
+    if (this.player.getData('destinyBondActive')) {
+      const linkedEnemies = this.player.getData('destinyBondedEnemies') as Phaser.Physics.Arcade.Sprite[] || [];
+      linkedEnemies.forEach((linked) => {
+        if (linked.active) {
+          this.damageEnemy(linked, damage * 5); // 500% reflection
+        }
+      });
+    }
+
+    // Damage player
+    this.characterState.currentHP -= damage;
+    this.callbacks.onHPUpdate(this.characterState.currentHP);
+
+    if (this.characterState.currentHP <= 0) {
       this.handleGameOver();
       return;
     }
@@ -433,45 +591,111 @@ export class MainScene extends Phaser.Scene {
     this.joystickVector.y = y;
   }
 
-  update(): void {
+  update(_time: number, delta: number): void {
     if (this.gameOver) return;
 
-    // Handle player movement
+    // Update ultimate cooldown
+    if (this.characterState.ultimateCooldownRemaining > 0) {
+      this.characterState.ultimateCooldownRemaining -= delta;
+    }
+
+    // Check for ultimate trigger
+    if (this.spaceKey?.isDown) {
+      this.triggerUltimate();
+    }
+
+    // Check if player can control movement
+    const canControl = this.player.getData('canControl') !== false;
+
+    // Handle Blastoise pinball mode
+    if (this.player.getData('pinballMode')) {
+      // Bounce off screen edges
+      const body = this.player.body as Phaser.Physics.Arcade.Body;
+      if (this.player.x <= 0 || this.player.x >= this.scale.width) {
+        body.velocity.x *= -1;
+      }
+      if (this.player.y <= 0 || this.player.y >= this.scale.height) {
+        body.velocity.y *= -1;
+      }
+
+      // Damage enemies on contact during shell smash
+      this.enemies.getChildren().forEach((child) => {
+        const enemy = child as Phaser.Physics.Arcade.Sprite;
+        if (!enemy.active) return;
+
+        const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, enemy.x, enemy.y);
+        if (dist <= 40) {
+          this.damageEnemy(enemy, this.characterConfig.stats.baseDamage * 2);
+        }
+      });
+    }
+
+    // Handle player movement (if can control)
     let velocityX = 0;
     let velocityY = 0;
 
-    // Keyboard input
-    if (this.cursors?.left?.isDown || this.wasd?.A?.isDown) {
-      velocityX -= 1;
-    }
-    if (this.cursors?.right?.isDown || this.wasd?.D?.isDown) {
-      velocityX += 1;
-    }
-    if (this.cursors?.up?.isDown || this.wasd?.W?.isDown) {
-      velocityY -= 1;
-    }
-    if (this.cursors?.down?.isDown || this.wasd?.S?.isDown) {
-      velocityY += 1;
+    if (canControl) {
+      // Keyboard input
+      if (this.cursors?.left?.isDown || this.wasd?.A?.isDown) {
+        velocityX -= 1;
+      }
+      if (this.cursors?.right?.isDown || this.wasd?.D?.isDown) {
+        velocityX += 1;
+      }
+      if (this.cursors?.up?.isDown || this.wasd?.W?.isDown) {
+        velocityY -= 1;
+      }
+      if (this.cursors?.down?.isDown || this.wasd?.S?.isDown) {
+        velocityY += 1;
+      }
+
+      // Add joystick input
+      velocityX += this.joystickVector.x;
+      velocityY += this.joystickVector.y;
+
+      // Normalize if diagonal
+      const length = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
+      if (length > 1) {
+        velocityX /= length;
+        velocityY /= length;
+      }
+
+      // Apply speed (with possible multiplier from ultimates like Bone Rush)
+      const speedMultiplier = (this.player.getData('speedMultiplier') as number) || 1;
+      const speed = this.characterConfig.stats.speed * speedMultiplier;
+
+      this.player.setVelocity(velocityX * speed, velocityY * speed);
     }
 
-    // Add joystick input
-    velocityX += this.joystickVector.x;
-    velocityY += this.joystickVector.y;
+    // Update Lucario's orbiting bones
+    const orbitingBones = this.player.getData('orbitingBones') as Phaser.GameObjects.Rectangle[];
+    if (orbitingBones && orbitingBones.length > 0) {
+      orbitingBones.forEach((bone) => {
+        let angle = bone.getData('orbitAngle') as number;
+        const radius = bone.getData('orbitRadius') as number;
+        angle += 0.15; // Rotation speed
+        bone.setData('orbitAngle', angle);
+        bone.setPosition(
+          this.player.x + Math.cos(angle) * radius,
+          this.player.y + Math.sin(angle) * radius
+        );
+        bone.setRotation(angle);
 
-    // Normalize if diagonal
-    const length = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
-    if (length > 1) {
-      velocityX /= length;
-      velocityY /= length;
+        // Damage enemies touching bones
+        this.enemies.getChildren().forEach((child) => {
+          const enemy = child as Phaser.Physics.Arcade.Sprite;
+          if (!enemy.active) return;
+
+          const dist = Phaser.Math.Distance.Between(bone.x, bone.y, enemy.x, enemy.y);
+          if (dist <= 20) {
+            this.damageEnemy(enemy, this.characterConfig.stats.baseDamage);
+          }
+        });
+      });
     }
-
-    this.player.setVelocity(
-      velocityX * this.playerSpeed,
-      velocityY * this.playerSpeed
-    );
 
     // Update player animation based on direction
-    if (!this.usePlaceholderGraphics) {
+    if (!this.usePlaceholderGraphics && canControl) {
       const isMoving = velocityX !== 0 || velocityY !== 0;
       const animState = isMoving ? 'walk' : 'idle';
       
@@ -484,7 +708,7 @@ export class MainScene extends Phaser.Scene {
       }
       
       // construct animation key: e.g. pikachu-walk-down or pikachu-idle-down
-      const animKey = `${this.playerSpriteName}-${animState}-${this.currentDirection}`;
+      const animKey = `${this.characterConfig.spriteKey}-${animState}-${this.currentDirection}`;
       this.player.play(animKey, true);
     }
 
@@ -492,6 +716,12 @@ export class MainScene extends Phaser.Scene {
     this.enemies.getChildren().forEach((child) => {
       const enemy = child as Phaser.Physics.Arcade.Sprite;
       if (!enemy.active) return;
+
+      // Skip stunned enemies
+      if (enemy.getData('stunned')) {
+        enemy.setVelocity(0, 0);
+        return;
+      }
 
       const angle = Phaser.Math.Angle.Between(
         enemy.x,
@@ -520,5 +750,11 @@ export class MainScene extends Phaser.Scene {
         }
       }
     });
+
+    // Call passive onUpdate if exists
+    if (this.characterConfig.passive.onUpdate) {
+      const ctx = this.getCharacterContext();
+      this.characterConfig.passive.onUpdate(ctx, delta);
+    }
   }
 }
