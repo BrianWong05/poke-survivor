@@ -382,6 +382,11 @@ export class MainScene extends Phaser.Scene {
       this.callbacks.onHPUpdate(hp);
     });
 
+    // Listen for player:heal events
+    this.events.on('player:heal', (amount: number) => {
+      this.healPlayer(amount);
+    });
+
     // Listen for enemy:death events from the new Enemy class
     this.events.on('enemy:death', (x: number, y: number, enemyType: EnemyType) => {
       const stats = ENEMY_STATS[enemyType];
@@ -391,7 +396,20 @@ export class MainScene extends Phaser.Scene {
     });
   }
 
+  private healPlayer(amount: number): void {
+    if (this.gameOver) return;
+    
+    this.characterState.currentHP = Math.min(
+      this.characterState.currentHP + amount,
+      this.characterConfig.stats.maxHP
+    );
+    this.callbacks.onHPUpdate(this.characterState.currentHP);
+    
+    // Optional: Visual feedback (Green text or particles) (Out of scope for now)
+  }
+
   private initializePassive(): void {
+
     const ctx = this.getCharacterContext();
     if (this.characterConfig.passive.onInit) {
       this.characterConfig.passive.onInit(ctx);
@@ -493,11 +511,7 @@ export class MainScene extends Phaser.Scene {
     if (newHP <= 0) {
       // Check for Dream Eater heal
       if (enemy.getData('healOnKill') && enemy.getData('cursed')) {
-        this.characterState.currentHP = Math.min(
-          this.characterState.currentHP + 1,
-          this.characterConfig.stats.maxHP
-        );
-        this.callbacks.onHPUpdate(this.characterState.currentHP);
+        this.healPlayer(1);
       }
 
       // Spawn Exp Candy via LootManager

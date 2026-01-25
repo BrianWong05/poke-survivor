@@ -260,69 +260,12 @@ export const waterPulse: WeaponConfig = {
 /**
  * Dream Eater evolution: Healing on cursed kills
  */
-export const dreamEater: WeaponConfig = {
-  id: 'dream-eater',
-  name: 'Dream Eater',
-  description: 'Killing Cursed enemy heals 1 HP',
-  cooldownMs: 800,
-  fire: (ctx: CharacterContext) => {
-    const { scene, player, stats } = ctx;
-    
-    // Short range attack ignoring walls
-    const range = 80;
-    const enemies = getEnemies(scene);
-    if (!enemies) return;
-    
-    enemies.getChildren().forEach((child) => {
-      const enemy = child as Phaser.Physics.Arcade.Sprite;
-      if (!enemy.active) return;
-      
-      const dist = Phaser.Math.Distance.Between(player.x, player.y, enemy.x, enemy.y);
-      if (dist <= range) {
-        // Apply curse and damage
-        enemy.setData('cursed', true);
-        enemy.setTint(0x800080);
-        scene.events.emit('damage-enemy', enemy, stats.baseDamage * 1.5);
-        
-        // Register heal-on-kill handler
-        enemy.setData('healOnKill', true);
-      }
-    });
-  },
-};
+import { Lick } from './specific/Lick';
 
-/**
- * Lick: Short range, ignores walls, applies Curse
- */
-export const lick: WeaponConfig = {
-  id: 'lick',
-  name: 'Lick',
-  description: 'Short range, ignores walls. Applies Curse debuff',
-  cooldownMs: 600,
-  evolution: dreamEater,
-  evolutionLevel: 5,
-  fire: (ctx: CharacterContext) => {
-    const { scene, player, stats } = ctx;
-    
-    // Short range attack ignoring walls
-    const range = 60;
-    const enemies = getEnemies(scene);
-    if (!enemies) return;
-    
-    enemies.getChildren().forEach((child) => {
-      const enemy = child as Phaser.Physics.Arcade.Sprite;
-      if (!enemy.active) return;
-      
-      const dist = Phaser.Math.Distance.Between(player.x, player.y, enemy.x, enemy.y);
-      if (dist <= range) {
-        // Apply curse and damage
-        enemy.setData('cursed', true);
-        enemy.setTint(0x800080); // Purple for curse
-        scene.events.emit('damage-enemy', enemy, stats.baseDamage);
-      }
-    });
-  },
-};
+export const lick = new Lick();
+// Export dreamEater if needed for direct access, or rely on lick.evolution.
+// Existing convention seems to export evolutions too.
+export const dreamEater = lick.evolution;
 
 // ============================================================================
 // LUCARIO WEAPONS

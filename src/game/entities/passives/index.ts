@@ -70,14 +70,14 @@ export const shadowTagPassive: PassiveConfig = {
   descKey: 'passive_shadowtag_desc',
   onInit: (ctx: CharacterContext) => {
     // Create dark aura visual
-    const aura = ctx.scene.add.circle(ctx.player.x, ctx.player.y, 100, 0x4a0080, 0.3);
+    const aura = ctx.scene.add.circle(ctx.player.x, ctx.player.y, 150, 0x4a0080, 0.3);
     aura.setDepth(5);
     ctx.player.setData('shadowTagAura', aura);
-    ctx.player.setData('shadowTagRadius', 100);
+    ctx.player.setData('shadowTagRadius', 150);
   },
   onUpdate: (ctx: CharacterContext, _delta: number) => {
     const aura = ctx.player.getData('shadowTagAura') as Phaser.GameObjects.Arc;
-    const radius = ctx.player.getData('shadowTagRadius') as number || 100;
+    const radius = ctx.player.getData('shadowTagRadius') as number || 150;
     
     if (aura) {
       // Follow player

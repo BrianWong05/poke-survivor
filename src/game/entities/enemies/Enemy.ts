@@ -157,6 +157,75 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
+  /** Whether the enemy is paralyzed */
+  public isParalyzed: boolean = false;
+
+  /** Stored speed before paralysis */
+  private originalSpeed: number = 0;
+
+  /**
+   * Apply paralysis status effect.
+   * Stops movement and tints yellow.
+   */
+  public paralyze(duration: number): void {
+    if (!this.active || this.isDying) return;
+
+    // If not already paralyzed, store speed
+    if (!this.isParalyzed) {
+      this.originalSpeed = this.speed;
+      this.isParalyzed = true;
+      this.speed = 0;
+      this.setTint(0xFFFF00);
+      
+      // Stop physics velocity immediately
+      if (this.body) {
+        (this.body as Phaser.Physics.Arcade.Body).setVelocity(0, 0);
+      }
+    }
+
+    // Refresh duration if already paralyzed (optional, or just stack? simpler to just set timer)
+    // For simplicity, we'll just set a timer to clear it. 
+    // If multiple paralyze hits happen, the latest one wins the timer roughly 
+    // (requires tracking the timer event to reset it properly, but for MVP simple delayedCall is okay-ish 
+    // effectively extending it but multiple delayedCalls might race to clear it early).
+    // Better: use a property to track "paralyzedUntil".
+    
+    // However, to keep it simple as requested:
+    // We will just simply add a delayed call. If multiple overlap, the first one to finish will clear it.
+    // Extend duration if already paralyzed
+    const now = this.scene.time.now;
+    const currentExpiry = this.getData('paralyzedUntil') || 0;
+    const newEndTime = Math.max(currentExpiry, now + duration);
+    
+    this.setData('paralyzedUntil', newEndTime);
+
+    // If we were not already effectively paralyzed (or timer expired), start the "update check" or just rely on a delayed call that checks the time.
+    this.scene.time.delayedCall(duration, () => {
+      if (!this.active || this.isDying) return;
+      
+      // Check if we should still be paralyzed
+      if (this.scene.time.now >= this.getData('paralyzedUntil')) {
+        this.cureParalysis();
+      }
+    });
+  }
+
+  protected cureParalysis(): void {
+    if (!this.isParalyzed) return;
+    
+    this.isParalyzed = false;
+    this.speed = this.originalSpeed;
+    this.clearTint();
+    // Re-check direction or movement will happen in next preUpdate
+  }
+
+  /**
+   * Override updateVisuals to stop animation when paralyzed if desired, 
+   * or current logic (moveTowardTarget checks velocity) works.
+   * But moveTowardTarget uses `this.scene.physics.moveToObject(this, this.target, this.speed);`
+   * Since speed is 0, velocity will be 0.
+   */
+
   /**
    * Flash white tint for 100ms to indicate damage.
    */
@@ -165,7 +234,12 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
     this.scene.time.delayedCall(100, () => {
       if (this.active && !this.isDying) {
-        this.clearTint();
+        if (this.isParalyzed) {
+          this.clearTint(); // Clear the Fill
+          this.setTint(0xFFFF00); // Restore paralysis yellow
+        } else {
+          this.clearTint();
+        }
       }
     });
   }
