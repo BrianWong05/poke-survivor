@@ -29,6 +29,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   /** Whether this enemy is currently dying (prevents multiple death triggers) */
   public isDying: boolean = false;
 
+  /** Timestamp of the last time this enemy took hazard damage */
+  public lastHazardHitTime: number = 0;
+
   constructor(scene: Phaser.Scene, x: number, y: number, texture: string) {
     super(scene, x, y, texture);
 

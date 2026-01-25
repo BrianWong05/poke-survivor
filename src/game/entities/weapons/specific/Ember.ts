@@ -88,7 +88,7 @@ export class Ember implements WeaponConfig {
     projectilesGroup.add(fireball);
 
     // Ember stats (Level 1)
-    fireball.setDamage(10);
+    fireball.setDamage(8);
     fireball.setPierce(0);
     fireball.setProjectileTint(0xFF4500); // Red
     fireball.setScale(1.0);

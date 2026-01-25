@@ -1,4 +1,4 @@
-import Phaser from 'phaser';
+import { BurningGround } from '@/game/entities/hazards/BurningGround';
 
 export class Fireball extends Phaser.Physics.Arcade.Sprite {
   private damageAmount = 10;
@@ -63,6 +63,9 @@ export class Fireball extends Phaser.Physics.Arcade.Sprite {
     // Track hit
     this.hitEnemies.push(enemy);
 
+    // Spawn Burning Ground Hazard
+    this.spawnHazard();
+
     // Pierce Logic
     if (this.pierceCount > 0) {
       this.pierceCount--;
@@ -72,5 +75,13 @@ export class Fireball extends Phaser.Physics.Arcade.Sprite {
         this.destroy();
         // Optional: Spawn ash particle
     }
+  }
+
+  private spawnHazard(): void {
+      const hazardGroup = this.scene.registry.get('hazardGroup') as Phaser.Physics.Arcade.Group;
+      if (hazardGroup) {
+          const hazard = new BurningGround(this.scene, this.x, this.y);
+          hazardGroup.add(hazard);
+      }
   }
 }

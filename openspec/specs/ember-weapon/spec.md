@@ -19,13 +19,18 @@ The system SHALL support a `Fireball` projectile with pierce capabilities.
 - **THEN** destroy the projectile
 
 ### Requirement: Ember (Level 1-7)
-The weapon SHALL behave as a slow, single-target launcher.
+The weapon SHALL behave as a slow launcher that creates a hazard.
 
 #### Scenario: Ember Firing
-- **WHEN** Ember fires (Cooldown 1200ms)
-- **THEN** spawn 1 `Fireball` at the nearest enemy
-- **AND** Damage = 10
-- **AND** Pierce = 0
+- **MODIFIED**:
+- **WHEN** Ember fires
+- **THEN** spawn 1 `Fireball`
+- **AND** Damage = 8 (reduced from 10)
+
+#### Scenario: Fireball Collision
+- **ADDED**:
+- **WHEN** Fireball hits an enemy or is destroyed
+- **THEN** it SHALL spawn a `BurningGround` hazard at its location
 
 ### Requirement: Flamethrower (Level 8+)
 The weapon SHALL behave as a rapid-fire stream.
@@ -37,4 +42,13 @@ The weapon SHALL behave as a rapid-fire stream.
 - **AND** Damage becomes 6
 - **AND** Pierce becomes 3
 - **AND** Projectile tint becomes Orange (`0xFFA500`)
+
+### Requirement: Burning Ground Hazard
+The system SHALL implement a Burning Ground effect.
+
+#### Scenario: Burning Ground properties
+- **WHEN** spawned
+- **THEN** it lasts for 3000ms
+- **AND** it deals 3 damage every 500ms to enemies inside its area
+- **AND** it renders as a flattened ellipse
 

@@ -51,6 +51,7 @@ export class MainScene extends Phaser.Scene {
   private enemies!: Phaser.Physics.Arcade.Group;
   private projectiles!: Phaser.Physics.Arcade.Group;
   private xpGems!: Phaser.Physics.Arcade.Group;
+  private hazardGroup!: Phaser.Physics.Arcade.Group;
 
   // Enemy Spawner System
   private enemySpawner!: EnemySpawner;
@@ -256,12 +257,20 @@ export class MainScene extends Phaser.Scene {
       runChildUpdate: false,
     });
 
+    // Hazard group (burning ground, etc)
+    this.hazardGroup = this.physics.add.group({
+      classType: Phaser.Physics.Arcade.Sprite,
+      maxSize: 50,
+      runChildUpdate: false, // We handle logic via overlap or custom update if needed, but here overlap is enough
+    });
+
     // Store groups in registry for weapons/ultimates to access
     // Use the enemy spawner's combined group as the main enemies group
     this.registry.set('enemiesGroup', this.enemySpawner.getEnemyGroup());
     this.registry.set('legacyEnemiesGroup', this.enemies); // Legacy for ultimates that may still use it
     this.registry.set('projectilesGroup', this.projectiles);
     this.registry.set('xpGemsGroup', this.xpGems);
+    this.registry.set('hazardGroup', this.hazardGroup);
     
     // Store individual enemy pools for collision setup
     this.registry.set('rattataPool', this.enemySpawner.getRattataPool());
@@ -308,6 +317,15 @@ export class MainScene extends Phaser.Scene {
         this.player,
         pool,
         this.handlePlayerEnemyCollision as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback,
+        undefined,
+        this
+      );
+
+      // Enemy overlaps hazard
+      this.physics.add.overlap(
+        pool,
+        this.hazardGroup,
+        this.handleHazardDamage as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback,
         undefined,
         this
       );
@@ -543,6 +561,38 @@ export class MainScene extends Phaser.Scene {
       this.damageEnemy(enemy, 9999);
     } else {
       this.damageEnemy(enemy, damage);
+    }
+  }
+
+  private handleHazardDamage(
+    enemyObj: Phaser.Types.Physics.Arcade.GameObjectWithBody | Phaser.Tilemaps.Tile,
+    hazardObj: Phaser.Types.Physics.Arcade.GameObjectWithBody | Phaser.Tilemaps.Tile
+  ): void {
+    const enemy = enemyObj as Phaser.Physics.Arcade.Sprite;
+    const hazard = hazardObj as Phaser.Physics.Arcade.Sprite;
+
+    if (!enemy.active || !hazard.active) return;
+
+    // Get hazard stats (using any type cast for custom properties on Sprite subclass)
+    const damage = (hazard as any).damagePerTick || 0;
+    const tickRate = (hazard as any).tickRate || 500;
+    
+    // Check if enemy is ready to take damage again
+    const lastHit = (enemy as any).lastHazardHitTime || 0;
+    const now = this.time.now;
+
+    if (now > lastHit + tickRate) {
+        // Apply damage
+        this.damageEnemy(enemy, damage);
+        
+        // Update timestamp
+        (enemy as any).lastHazardHitTime = now;
+
+        // Show small burn damage number (orange)
+        // We can emit an event or handle it here. 
+        // Let's assume damageEnemy handles standard damage numbers via callbacks usually? 
+        // But we want a specific visual for burn maybe.
+        // For now, rely on standard damage effect.
     }
   }
 
