@@ -27,7 +27,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   private currentDirection: DirectionName = 'down';
 
   /** Whether this enemy is currently dying (prevents multiple death triggers) */
-  private isDying: boolean = false;
+  public isDying: boolean = false;
 
   constructor(scene: Phaser.Scene, x: number, y: number, texture: string) {
     super(scene, x, y, texture);
@@ -35,6 +35,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     // Add to scene and enable physics
     scene.add.existing(this);
     scene.physics.add.existing(this);
+    this.setDepth(5); // Ensure enemies render above background but below player (10)
   }
 
   /**
@@ -50,11 +51,21 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.currentDirection = 'down';
     this.isDying = false;
 
-    // Reset visual state
+    // Check if main texture exists, otherwise use fallback
+    if (this.scene.textures.exists(stats.textureKey)) {
+      this.setTexture(stats.textureKey);
+    } else {
+      this.setTexture('fallback-' + stats.textureKey);
+    }
+
+    // Reset visual state and physics
     this.setActive(true);
     this.setVisible(true);
     this.setAlpha(1);
     this.clearTint();
+    if (this.body) {
+      (this.body as Phaser.Physics.Arcade.Body).checkCollision.none = false;
+    }
 
     // Set physics body mass if specified
     if (stats.mass && this.body) {
@@ -139,9 +150,10 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     if (this.isDying) return;
     this.isDying = true;
 
-    // Stop movement
+    // Stop movement and disable physics body
     if (this.body) {
       (this.body as Phaser.Physics.Arcade.Body).setVelocity(0, 0);
+      (this.body as Phaser.Physics.Arcade.Body).checkCollision.none = true;
     }
 
     // Emit death event with position and type for loot spawning

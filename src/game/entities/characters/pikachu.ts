@@ -1,6 +1,6 @@
 import type { CharacterConfig } from '@/game/entities/characters/types';
 import { staticPassive } from '@/game/entities/passives';
-import { thunderShock } from '@/game/entities/weapons';
+import { ThunderShock } from '@/game/entities/weapons/specific/ThunderShock';
 import { gigantamaxThunder } from '@/game/entities/ultimates';
 
 /**
@@ -18,7 +18,7 @@ export const pikachuConfig: CharacterConfig = {
     baseDamage: 15,
   },
   passive: staticPassive,
-  weapon: thunderShock,
+  weapon: new ThunderShock(),
   ultimate: gigantamaxThunder,
   spriteKey: 'pikachu',
 };

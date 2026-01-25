@@ -152,53 +152,55 @@ export class MainScene extends Phaser.Scene {
     playerGraphics.generateTexture('player', 32, 32);
     playerGraphics.destroy();
 
-    // Enemy: Red square (24px) - legacy fallback
+    // Enemy: Red square (24px) - generic fallback
     const enemyGraphics = this.make.graphics({ x: 0, y: 0 });
     enemyGraphics.fillStyle(0xff4a4a, 1);
     enemyGraphics.fillRect(0, 0, 24, 24);
     enemyGraphics.generateTexture('enemy', 24, 24);
     enemyGraphics.destroy();
 
-    // Enemy variant placeholders (colored circles)
+    // Enemy variant placeholders (Active fallbacks)
+    // We generate these with 'fallback-' prefix to always be available
+
     // Rattata: Purple circle (24px)
     const rattataStats = ENEMY_STATS[EnemyType.RATTATA];
-    if (!this.textures.exists(rattataStats.textureKey)) {
-      const rattataGraphics = this.make.graphics({ x: 0, y: 0 });
-      rattataGraphics.fillStyle(rattataStats.placeholderColor, 1);
-      rattataGraphics.fillCircle(rattataStats.placeholderSize / 2, rattataStats.placeholderSize / 2, rattataStats.placeholderSize / 2);
-      rattataGraphics.generateTexture(rattataStats.textureKey, rattataStats.placeholderSize, rattataStats.placeholderSize);
-      rattataGraphics.destroy();
-    }
+    const rattataGraphics = this.make.graphics({ x: 0, y: 0 });
+    rattataGraphics.fillStyle(rattataStats.placeholderColor, 1);
+    rattataGraphics.fillCircle(12, 12, 12); // Radius = size/2
+    rattataGraphics.generateTexture('fallback-' + rattataStats.textureKey, 24, 24);
+    rattataGraphics.destroy();
 
     // Geodude: Grey circle (28px)
     const geodudeStats = ENEMY_STATS[EnemyType.GEODUDE];
-    if (!this.textures.exists(geodudeStats.textureKey)) {
-      const geodudeGraphics = this.make.graphics({ x: 0, y: 0 });
-      geodudeGraphics.fillStyle(geodudeStats.placeholderColor, 1);
-      geodudeGraphics.fillCircle(geodudeStats.placeholderSize / 2, geodudeStats.placeholderSize / 2, geodudeStats.placeholderSize / 2);
-      geodudeGraphics.generateTexture(geodudeStats.textureKey, geodudeStats.placeholderSize, geodudeStats.placeholderSize);
-      geodudeGraphics.destroy();
-    }
+    const geodudeGraphics = this.make.graphics({ x: 0, y: 0 });
+    geodudeGraphics.fillStyle(geodudeStats.placeholderColor, 1);
+    geodudeGraphics.fillCircle(14, 14, 14);
+    geodudeGraphics.generateTexture('fallback-' + geodudeStats.textureKey, 28, 28);
+    geodudeGraphics.destroy();
 
     // Zubat: Blue circle (20px)
     const zubatStats = ENEMY_STATS[EnemyType.ZUBAT];
-    if (!this.textures.exists(zubatStats.textureKey)) {
-      const zubatGraphics = this.make.graphics({ x: 0, y: 0 });
-      zubatGraphics.fillStyle(zubatStats.placeholderColor, 1);
-      zubatGraphics.fillCircle(zubatStats.placeholderSize / 2, zubatStats.placeholderSize / 2, zubatStats.placeholderSize / 2);
-      zubatGraphics.generateTexture(zubatStats.textureKey, zubatStats.placeholderSize, zubatStats.placeholderSize);
-      zubatGraphics.destroy();
-    }
+    const zubatGraphics = this.make.graphics({ x: 0, y: 0 });
+    zubatGraphics.fillStyle(zubatStats.placeholderColor, 1);
+    zubatGraphics.fillCircle(10, 10, 10);
+    zubatGraphics.generateTexture('fallback-' + zubatStats.textureKey, 20, 20);
+    zubatGraphics.destroy();
 
-    // Projectile: White circle (8px)
+    // Projectile: Lightning Bolt (Jagged Yellow Line)
     const projectileGraphics = this.make.graphics({ x: 0, y: 0 });
-    projectileGraphics.fillStyle(0xffffff, 1);
-    projectileGraphics.fillCircle(4, 4, 4);
-    projectileGraphics.generateTexture('projectile', 8, 8);
-    projectileGraphics.destroy();
+    projectileGraphics.lineStyle(2, 0xffff00, 1);
+    
+    // Draw zig-zag pattern
+    projectileGraphics.beginPath();
+    projectileGraphics.moveTo(0, 4);
+    projectileGraphics.lineTo(8, 0);
+    projectileGraphics.lineTo(16, 8);
+    projectileGraphics.lineTo(24, 0);
+    projectileGraphics.lineTo(32, 4);
+    projectileGraphics.strokePath();
 
-    // Exp Candy sprites are loaded in Preloader (assets/candies/)
-    // Texture keys: candy-s, candy-m, candy-l, candy-xl, candy-rare
+    projectileGraphics.generateTexture('projectile-lightning', 32, 8);
+    projectileGraphics.destroy();
   }
 
   private createPlayer(): void {
@@ -502,6 +504,12 @@ export class MainScene extends Phaser.Scene {
   ): void {
     const projectile = projectileObj as Phaser.Physics.Arcade.Sprite;
     const enemy = enemyObj as Phaser.Physics.Arcade.Sprite;
+
+    // Check for custom onHit handler on the projectile instance
+    if ('onHit' in projectile && typeof (projectile as any).onHit === 'function') {
+      (projectile as any).onHit(enemy);
+      return;
+    }
 
     // Get damage from projectile data or default
     const damage = (projectile.getData('damage') as number) || this.characterConfig.stats.baseDamage;
