@@ -1,0 +1,210 @@
+.dex-screen-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.9);
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  box-sizing: border-box;
+  z-index: 1000;
+  color: white;
+  font-family: 'Press Start 2P', monospace, sans-serif; /* Assuming pixel font usage */
+}
+
+.dex-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.dex-title {
+  font-size: 24px;
+  color: #ffcc00; /* Pokedex Yellow */
+}
+
+.dex-close-btn {
+  background: none;
+  border: 2px solid white;
+  color: white;
+  font-family: inherit;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.dex-close-btn:hover {
+  background: white;
+  color: black;
+}
+
+.dex-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.dex-tab {
+  background: #333;
+  border: 2px solid #555;
+  padding: 10px 20px;
+  color: #888;
+  cursor: pointer;
+  font-family: inherit;
+  flex: 1;
+}
+
+.dex-tab.active {
+  background: #2a75bb; /* Pokemon Blue */
+  border-color: #ffcc00;
+  color: white;
+}
+
+.dex-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  overflow-y: auto;
+  align-content: flex-start;
+  flex: 1;
+  padding: 20px; /* Prevent clipping of scaled cards */
+}
+
+.dex-card {
+  width: 100px;
+  height: 120px;
+  background: #222;
+  border: 2px solid #444;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 5px;
+  text-align: center;
+  transition: transform 0.1s;
+}
+
+.dex-card:hover {
+  transform: scale(1.05);
+  border-color: #ffcc00;
+}
+
+.dex-card-image {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  margin-bottom: 5px;
+  image-rendering: pixelated;
+}
+
+.dex-card-name {
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+/* States */
+.dex-card.seen .dex-card-image {
+  filter: grayscale(100%) brightness(50%);
+}
+.dex-card.seen .dex-card-name {
+  color: #aaa;
+}
+
+.dex-card.locked {
+  cursor: default;
+}
+.dex-card.locked .dex-card-image {
+  display: none; /* Hide placeholder image if locked, use icon instead */
+}
+.dex-card.locked::after {
+  content: "🔒";
+  font-size: 32px;
+}
+
+/* Modal */
+.dex-modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1100;
+}
+
+.dex-modal {
+  background: #333;
+  border: 4px solid #ffcc00;
+  padding: 20px;
+  width: 80%;
+  max-width: 400px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.dex-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  border-bottom: 2px solid #555;
+  padding-bottom: 10px;
+}
+
+.dex-modal-image {
+  width: 96px;
+  height: 96px;
+  background: #222;
+  border: 2px solid #555;
+  image-rendering: pixelated;
+}
+
+.dex-modal-info h2 {
+  margin: 0;
+  color: #ffcc00;
+  font-size: 20px;
+  margin-bottom: 5px;
+}
+
+.dex-modal-description {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #ddd;
+}
+
+.dex-modal-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  font-size: 12px;
+  background: #222;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+.dex-stat-label {
+  color: #888;
+}
+
+.dex-close-modal {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 20px;
+  cursor: pointer;
+}
+.dex-close-modal:hover {
+  color: white;
+}

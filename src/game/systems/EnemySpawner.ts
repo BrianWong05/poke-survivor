@@ -6,6 +6,7 @@ import {
   Geodude,
   Zubat,
 } from '@/game/entities/enemies';
+import { DexManager } from '@/systems/DexManager';
 
 /**
  * Wave configuration for enemy spawning.
@@ -194,6 +195,11 @@ export class EnemySpawner {
     if (enemy) {
       // Add to combined group for collision detection
       this.allEnemies.add(enemy);
+
+      // Mark as seen in Dex
+      if (enemy.enemyType) {
+        DexManager.getInstance().markSeen(enemy.enemyType);
+      }
     }
   }
 

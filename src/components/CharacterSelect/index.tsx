@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { getAllCharacters } from '@/game/entities/characters/registry';
 import type { CharacterConfig } from '@/game/entities/characters/types';
 import './styles.css';
+import { DexScreen } from '@/components/Menus/DexScreen';
 
 interface CharacterSelectProps {
   onSelect: (characterId: string) => void;
@@ -9,6 +10,7 @@ interface CharacterSelectProps {
 
 export function CharacterSelect({ onSelect }: CharacterSelectProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [showDex, setShowDex] = useState(false);
   const characters = getAllCharacters();
 
   const handleSelect = (character: CharacterConfig) => {
@@ -25,6 +27,12 @@ export function CharacterSelect({ onSelect }: CharacterSelectProps) {
     <div className="character-select-overlay">
       <div className="character-select-container">
         <h1 className="character-select-title">Choose Your Pokémon</h1>
+        
+        <button className="dex-button" onClick={() => setShowDex(true)}>
+          📖 PokéDex
+        </button>
+
+        {showDex && <DexScreen onClose={() => setShowDex(false)} />}
         
         <div className="character-grid">
           {characters.map((character) => (

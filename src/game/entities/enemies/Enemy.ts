@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { type EnemyStats, type EnemyType } from '@/game/entities/enemies/EnemyConfig';
 import { getDirectionFromVelocity, type DirectionName } from '@/game/scenes/Preloader';
+import { DexManager } from '@/systems/DexManager';
 
 /**
  * Base Enemy class extending Phaser.Physics.Arcade.Sprite.
@@ -145,6 +146,11 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
     // Emit death event with position and type for loot spawning
     this.scene.events.emit('enemy:death', this.x, this.y, this.enemyType);
+
+    // Mark as unlocked in Dex
+    if (this.enemyType) {
+      DexManager.getInstance().markUnlocked(this.enemyType);
+    }
 
     // Play fade-out tween
     this.scene.tweens.add({
