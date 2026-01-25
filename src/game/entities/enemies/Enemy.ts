@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { type EnemyStats, type EnemyType } from '@/game/entities/enemies/EnemyConfig';
+import { type EnemyStats, type EnemyType, EnemyTier } from '@/game/entities/enemies/EnemyConfig';
 import { getDirectionFromVelocity, type DirectionName } from '@/game/scenes/Preloader';
 import { DexManager } from '@/systems/DexManager';
 
@@ -22,6 +22,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
   /** Enemy type identifier */
   public enemyType: EnemyType | null = null;
+
+  /** Whether this enemy is a boss (immune to instakill) */
+  public isBoss: boolean = false;
 
   /** Current movement direction */
   private currentDirection: DirectionName = 'down';
@@ -61,6 +64,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.speed = stats.speed;
     this.target = target;
     this.enemyType = enemyType;
+    this.isBoss = stats.tier === EnemyTier.BOSS;
     this.currentDirection = 'down';
     this.isDying = false;
 
@@ -133,8 +137,19 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
    * Apply damage to this enemy.
    * Triggers hit flash and death if HP <= 0.
    */
-  public takeDamage(amount: number): void {
+  public takeDamage(amount: number, isCrit: boolean = false): void {
     if (this.isDying || !this.active) return;
+
+    // Handle Critical Hits
+    if (isCrit) {
+      this.showCritText();
+      
+      if (this.isBoss) {
+        amount *= 2; // Bosses take double damage
+      } else {
+        amount = this.hp; // Instakill non-bosses
+      }
+    }
 
     this.hp -= amount;
 
@@ -328,5 +343,29 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
     // Fallback: legacy flip
     this.updateFlip();
+  }
+  /**
+   * Show "CRIT!" floating text.
+   */
+  private showCritText(): void {
+    const text = this.scene.add.text(this.x, this.y - 30, 'CRIT!', {
+      fontSize: '24px',
+      color: '#ff0000',
+      stroke: '#000000',
+      strokeThickness: 4,
+      fontStyle: 'bold'
+    });
+    text.setOrigin(0.5, 0.5);
+    text.setDepth(20); // Above everything
+
+    // Float up and fade out
+    this.scene.tweens.add({
+      targets: text,
+      y: text.y - 50,
+      alpha: 0,
+      duration: 800,
+      ease: 'Power2',
+      onComplete: () => text.destroy()
+    });
   }
 }

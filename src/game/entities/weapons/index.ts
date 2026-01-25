@@ -1,9 +1,21 @@
 import type { CharacterContext, WeaponConfig } from '@/game/entities/characters/types';
+import Phaser from 'phaser'; // Needed for helpers below
 import { Ember } from './specific/Ember';
 import { WaterGun } from './specific/WaterGun';
+import { Lick } from './specific/Lick';
+import { BodySlam } from './specific/BodySlam';
+import { AuraSphere } from './specific/AuraSphere';
+import { FocusBlast } from './specific/FocusBlast';
 
 export const ember = new Ember();
 export const waterGun = new WaterGun();
+export const lick = new Lick();
+export const bodySlam = new BodySlam();
+export const auraSphere = new AuraSphere();
+export const focusBlast = new FocusBlast();
+
+// Exports for evolutions if needed directly (though usually accessed via weapon.evolution)
+export const dreamEater = lick.evolution;
 
 /**
  * Helper to get the enemies group from scene registry
@@ -140,8 +152,6 @@ export const thunderShock: WeaponConfig = {
   },
 };
 
-
-
 // ============================================================================
 // BLASTOISE WEAPONS
 // ============================================================================
@@ -252,118 +262,3 @@ export const waterPulse: WeaponConfig = {
     });
   },
 };
-
-// ============================================================================
-// GENGAR WEAPONS
-// ============================================================================
-
-/**
- * Dream Eater evolution: Healing on cursed kills
- */
-import { Lick } from './specific/Lick';
-
-export const lick = new Lick();
-// Export dreamEater if needed for direct access, or rely on lick.evolution.
-// Existing convention seems to export evolutions too.
-export const dreamEater = lick.evolution;
-
-// ============================================================================
-// LUCARIO WEAPONS
-// ============================================================================
-
-/**
- * Focus Blast evolution: Huge exploding orb, crit kills
- */
-export const focusBlast: WeaponConfig = {
-  id: 'focus-blast',
-  name: 'Focus Blast',
-  description: 'Slower huge orb. Explodes. Crit kills non-bosses',
-  cooldownMs: 2000,
-  fire: (ctx: CharacterContext) => {
-    const { scene, player, stats } = ctx;
-    const nearestEnemy = findNearestEnemy(scene, player);
-    if (!nearestEnemy) return;
-    
-    const projectiles = getProjectiles(scene);
-    if (!projectiles) return;
-    
-    // Apply Inner Focus size bonus
-    const sizeMultiplier = player.getData('innerFocus') ? 1.2 : 1;
-    
-    const projectile = projectiles.get(player.x, player.y, 'projectile') as Phaser.Physics.Arcade.Sprite | null;
-    if (!projectile) return;
-    
-    projectile.setActive(true);
-    projectile.setVisible(true);
-    projectile.setScale(3 * sizeMultiplier);
-    projectile.setTint(0x00ffff);
-    projectile.setData('damage', stats.baseDamage * 3);
-    projectile.setData('explodes', true);
-    projectile.setData('critKill', true); // Instant kill on crit
-    
-    const angle = Phaser.Math.Angle.Between(player.x, player.y, nearestEnemy.x, nearestEnemy.y);
-    const speed = 200; // Slower
-    projectile.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
-    
-    scene.time.delayedCall(4000, () => {
-      if (projectile.active) {
-        projectile.setActive(false);
-        projectile.setVisible(false);
-        projectile.setScale(1);
-      }
-    });
-  },
-};
-
-/**
- * Aura Sphere: Homing orb piercing 2 enemies
- */
-export const auraSphere: WeaponConfig = {
-  id: 'aura-sphere',
-  name: 'Aura Sphere',
-  description: 'Homing orb, pierces 2 enemies',
-  cooldownMs: 1000,
-  evolution: focusBlast,
-  evolutionLevel: 5,
-  fire: (ctx: CharacterContext) => {
-    const { scene, player, stats } = ctx;
-    const nearestEnemy = findNearestEnemy(scene, player);
-    if (!nearestEnemy) return;
-    
-    const projectiles = getProjectiles(scene);
-    if (!projectiles) return;
-    
-    // Apply Inner Focus size bonus
-    const sizeMultiplier = player.getData('innerFocus') ? 1.2 : 1;
-    
-    const projectile = projectiles.get(player.x, player.y, 'projectile') as Phaser.Physics.Arcade.Sprite | null;
-    if (!projectile) return;
-    
-    projectile.setActive(true);
-    projectile.setVisible(true);
-    projectile.setScale(1.5 * sizeMultiplier);
-    projectile.setTint(0x00ffff);
-    projectile.setData('damage', stats.baseDamage);
-    projectile.setData('pierceCount', 2);
-    
-    const angle = Phaser.Math.Angle.Between(player.x, player.y, nearestEnemy.x, nearestEnemy.y);
-    const speed = 350;
-    projectile.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
-    
-    scene.time.delayedCall(3000, () => {
-      if (projectile.active) {
-        projectile.setActive(false);
-        projectile.setVisible(false);
-        projectile.setScale(1);
-      }
-    });
-  },
-};
-
-// ============================================================================
-// SNORLAX WEAPONS
-// ============================================================================
-
-import { BodySlam } from './specific/BodySlam';
-
-export const bodySlam = new BodySlam();

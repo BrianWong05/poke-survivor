@@ -138,7 +138,12 @@ export const innerFocusPassive: PassiveConfig = {
   id: 'inner-focus',
   nameKey: 'passive_innerfocus_name',
   descKey: 'passive_innerfocus_desc',
-  // Projectile size bonus is applied at weapon fire time
+  onInit: (ctx: CharacterContext) => {
+    // Projectile size bonus
+    if (ctx.player) {
+        ctx.player.projectileSizeModifier = 1.2;
+    }
+  },
   // Stun immunity is checked in damage handler
   onDamageTaken: (ctx: CharacterContext, damage: number, _damageType: DamageType) => {
     // Clear any stun effects

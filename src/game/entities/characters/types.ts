@@ -1,5 +1,6 @@
 import type Phaser from 'phaser';
 import { ExperienceManager } from '@/game/systems/ExperienceManager';
+import { Player } from '@/game/entities/Player';
 
 /**
  * Damage types for projectiles and attacks.
@@ -21,7 +22,7 @@ export interface CharacterStats {
  */
 export interface CharacterContext {
   scene: Phaser.Scene;
-  player: Phaser.Physics.Arcade.Sprite;
+  player: Player;
   stats: CharacterStats;
   currentHP: number;
   level: number;

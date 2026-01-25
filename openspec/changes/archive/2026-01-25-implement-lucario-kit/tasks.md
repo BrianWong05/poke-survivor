@@ -1,0 +1,5 @@
+- [x] Implement Crit and Instakill Mechanics in Enemy.ts <!-- id: 0 -->
+- [x] Implement Innate Weapon: Aura Sphere (Level 1-7) <!-- id: 1 -->
+- [x] Implement Innate Weapon Evolution: Focus Blast (Level 8+) <!-- id: 2 -->
+- [x] Implement Ultimate Ability: Bone Rush <!-- id: 3 -->
+- [x] Implement Passive: Inner Focus (Projectile Scale Modifier) <!-- id: 4 -->

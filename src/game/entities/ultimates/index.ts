@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import type { CharacterContext, UltimateConfig } from '@/game/entities/characters/types';
+import { BoneRush } from '@/game/entities/weapons/specific/BoneRush';
 
 /**
  * Pikachu's Gigantamax Thunder: Clears screen area, stuns all enemies
@@ -211,45 +212,7 @@ export const destinyBond: UltimateConfig = {
 /**
  * Lucario's Bone Rush: Orbiting bones for 8s, +50% speed
  */
-export const boneRush: UltimateConfig = {
-  id: 'bone-rush',
-  name: 'Bone Rush',
-  description: 'Energy bones orbit player for 8s. Movement speed +50%',
-  cooldownMs: 25000,
-  durationMs: 8000,
-  execute: (ctx: CharacterContext) => {
-    const scene = ctx.scene;
-    const player = ctx.player;
-    
-    // Speed boost
-    player.setData('speedMultiplier', 1.5);
-    player.setData('boneRushActive', true);
-    
-    // Create orbiting bones (stored in registry for update loop)
-    const bones: Phaser.GameObjects.Rectangle[] = [];
-    const numBones = 6;
-    
-    for (let i = 0; i < numBones; i++) {
-      const bone = scene.add.rectangle(0, 0, 20, 6, 0x00ffff);
-      bone.setData('orbitAngle', (i / numBones) * Math.PI * 2);
-      bone.setData('orbitRadius', 60);
-      bones.push(bone);
-    }
-    
-    player.setData('orbitingBones', bones);
-  },
-  onEnd: (ctx: CharacterContext) => {
-    const player = ctx.player;
-    const bones = player.getData('orbitingBones') as Phaser.GameObjects.Rectangle[] || [];
-    
-    // Destroy bones
-    bones.forEach((bone) => bone.destroy());
-    
-    player.setData('speedMultiplier', 1);
-    player.setData('boneRushActive', false);
-    player.setData('orbitingBones', []);
-  },
-};
+export const boneRush = new BoneRush();
 
 /**
  * Snorlax's Rest: Sleep 3s invulnerable, heal 100%, wake AOE

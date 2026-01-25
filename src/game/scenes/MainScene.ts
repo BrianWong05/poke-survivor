@@ -227,10 +227,7 @@ export class MainScene extends Phaser.Scene {
       this.player.setScale(2);
     }
     
-    // Set Inner Focus flag for Lucario
-    if (this.characterConfig.passive.id === 'inner-focus') {
-      this.player.setData('innerFocus', true);
-    }
+
   }
 
   private createGroups(): void {
@@ -1065,38 +1062,14 @@ export class MainScene extends Phaser.Scene {
       }
 
       // Apply speed (with possible multiplier from ultimates like Bone Rush)
-      const speedMultiplier = (this.player.getData('speedMultiplier') as number) || 1;
+      // Use the property we added to Player class
+      const speedMultiplier = this.player.moveSpeedMultiplier;
       const speed = this.characterConfig.stats.speed * speedMultiplier;
 
       this.player.setVelocity(velocityX * speed, velocityY * speed);
     }
 
-    // Update Lucario's orbiting bones
-    const orbitingBones = this.player.getData('orbitingBones') as Phaser.GameObjects.Rectangle[];
-    if (orbitingBones && orbitingBones.length > 0) {
-      orbitingBones.forEach((bone) => {
-        let angle = bone.getData('orbitAngle') as number;
-        const radius = bone.getData('orbitRadius') as number;
-        angle += 0.15; // Rotation speed
-        bone.setData('orbitAngle', angle);
-        bone.setPosition(
-          this.player.x + Math.cos(angle) * radius,
-          this.player.y + Math.sin(angle) * radius
-        );
-        bone.setRotation(angle);
 
-        // Damage enemies touching bones
-        this.enemies.getChildren().forEach((child) => {
-          const enemy = child as Phaser.Physics.Arcade.Sprite;
-          if (!enemy.active) return;
-
-          const dist = Phaser.Math.Distance.Between(bone.x, bone.y, enemy.x, enemy.y);
-          if (dist <= 20) {
-            this.damageEnemy(enemy, this.characterConfig.stats.baseDamage);
-          }
-        });
-      });
-    }
 
     // Update player animation based on direction
     if (!this.usePlaceholderGraphics && canControl) {

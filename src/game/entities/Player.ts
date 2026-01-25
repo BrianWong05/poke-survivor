@@ -2,6 +2,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   // Collection zone for XP gems (Magnet)
   public collectionZone: Phaser.GameObjects.Zone;
 
+  // Modifiers
+  public moveSpeedMultiplier = 1.0;
+  public projectileSizeModifier = 1.0;
+
   constructor(scene: Phaser.Scene, x: number, y: number, texture: string, frame?: string | number) {
     super(scene, x, y, texture, frame);
 
