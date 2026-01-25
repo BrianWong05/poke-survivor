@@ -28,7 +28,7 @@ export const PLAYABLE_DEX: PlayableDexEntry[] = [
     id: 'pikachu',
     name: 'Pikachu',
     description: 'High Speed, Low HP. Glass Cannon.',
-    spritePath: 'pikachu',
+    spritePath: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png',
     baseHp: 80,
     evolution: 'Raichu', // Lore evolution
   },
@@ -36,7 +36,7 @@ export const PLAYABLE_DEX: PlayableDexEntry[] = [
     id: 'charmander',
     name: 'Charmander',
     description: 'A Fire-type Pokémon.',
-    spritePath: 'charmander',
+    spritePath: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/4.png',
     baseHp: 100, // Placeholder
     evolution: 'Charmeleon',
   },
@@ -44,9 +44,33 @@ export const PLAYABLE_DEX: PlayableDexEntry[] = [
     id: 'squirtle',
     name: 'Squirtle',
     description: 'A Water-type Pokémon.',
-    spritePath: 'squirtle',
+    spritePath: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/7.png',
     baseHp: 100, // Placeholder
     evolution: 'Wartortle',
+  },
+  {
+    id: 'gastly',
+    name: 'Gastly',
+    description: 'Ghost/Poison type. Levitate.',
+    spritePath: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/92.png',
+    baseHp: 70,
+    evolution: 'Haunter',
+  },
+  {
+    id: 'riolu',
+    name: 'Riolu',
+    description: 'Fighting type. Emanation.',
+    spritePath: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/447.png',
+    baseHp: 100,
+    evolution: 'Lucario',
+  },
+  {
+    id: 'snorlax',
+    name: 'Snorlax',
+    description: 'Normal type. Sleeping.',
+    spritePath: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/143.png',
+    baseHp: 250,
+    evolution: '',
   },
 ];
 
@@ -55,7 +79,7 @@ export const ENEMY_DEX: EnemyDexEntry[] = [
     id: EnemyType.RATTATA,
     name: 'Rattata',
     description: 'A common Normal-type Pokémon. Very fast but weak.',
-    spritePath: ENEMY_STATS[EnemyType.RATTATA].textureKey,
+    spritePath: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/19.png',
     hp: ENEMY_STATS[EnemyType.RATTATA].maxHP,
     speed: ENEMY_STATS[EnemyType.RATTATA].speed,
     dropTier: ENEMY_STATS[EnemyType.RATTATA].tier, // 1
@@ -64,7 +88,7 @@ export const ENEMY_DEX: EnemyDexEntry[] = [
     id: EnemyType.GEODUDE,
     name: 'Geodude',
     description: 'A Rock/Ground-type Pokémon. Slow and sturdy.',
-    spritePath: ENEMY_STATS[EnemyType.GEODUDE].textureKey,
+    spritePath: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/74.png',
     hp: ENEMY_STATS[EnemyType.GEODUDE].maxHP,
     speed: ENEMY_STATS[EnemyType.GEODUDE].speed,
     dropTier: ENEMY_STATS[EnemyType.GEODUDE].tier, // 2
@@ -73,7 +97,7 @@ export const ENEMY_DEX: EnemyDexEntry[] = [
     id: EnemyType.ZUBAT,
     name: 'Zubat',
     description: 'A Poison/Flying-type Pokémon. Fast and annoying.',
-    spritePath: ENEMY_STATS[EnemyType.ZUBAT].textureKey,
+    spritePath: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/41.png',
     hp: ENEMY_STATS[EnemyType.ZUBAT].maxHP,
     speed: ENEMY_STATS[EnemyType.ZUBAT].speed,
     dropTier: ENEMY_STATS[EnemyType.ZUBAT].tier, // 2

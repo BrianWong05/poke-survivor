@@ -74,8 +74,8 @@
 }
 
 .dex-card {
-  width: 100px;
-  height: 120px;
+  width: 120px;
+  height: 150px;
   background: #222;
   border: 2px solid #444;
   border-radius: 8px;
@@ -95,8 +95,8 @@
 }
 
 .dex-card-image {
-  width: 64px;
-  height: 64px;
+  width: 96px;
+  height: 96px;
   object-fit: contain;
   margin-bottom: 5px;
   image-rendering: pixelated;

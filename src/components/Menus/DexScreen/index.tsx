@@ -84,16 +84,27 @@ export const DexScreen: React.FC<DexScreenProps> = ({ onClose }) => {
               {isSeen && (
                 <div 
                   className="dex-card-image"
-                  style={{ backgroundColor: isUnlocked ? 'transparent' : '#000' }}
+                  style={{ backgroundColor: isUnlocked ? 'transparent' : '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 >
-                  {/* Placeholder for actual image: Using '?' or name initials */}
-                  <div style={{ 
-                    width: '100%', height: '100%', 
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '24px', color: '#555' 
-                  }}>
-                   {isUnlocked ? 'IMG' : '?'}
-                  </div>
+                  {isUnlocked && entry.spritePath.includes('/') ? (
+                       <img 
+                         src={entry.spritePath} 
+                         alt={entry.name}
+                         style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                         onError={(e) => {
+                           (e.target as HTMLImageElement).style.display = 'none';
+                           // e.currentTarget.parentElement!.innerText = 'IMG'; 
+                         }}
+                       />
+                  ) : (
+                    <div style={{ 
+                      width: '100%', height: '100%', 
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '24px', color: '#555' 
+                    }}>
+                     {isUnlocked ? 'IMG' : '?'}
+                    </div>
+                  )}
                 </div>
               )}
               <div className="dex-card-name">
@@ -111,11 +122,19 @@ export const DexScreen: React.FC<DexScreenProps> = ({ onClose }) => {
             <div className="dex-modal-header">
               <div className="dex-modal-image">
                  {/* Placeholder */}
-                 <div style={{ 
-                    width: '100%', height: '100%', 
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: '#ffcc00'
-                  }}>IMG</div>
+                 {selectedItem.spritePath.includes('/') ? (
+                   <img 
+                     src={selectedItem.spritePath} 
+                     alt={selectedItem.name}
+                     style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                   />
+                 ) : (
+                   <div style={{ 
+                      width: '100%', height: '100%', 
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: '#ffcc00'
+                    }}>IMG</div>
+                 )}
               </div>
               <div className="dex-modal-info">
                 <h2>{selectedItem.name}</h2>
