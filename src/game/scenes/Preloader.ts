@@ -116,7 +116,13 @@ export class Preloader extends Phaser.Scene {
   }
 
   private createAnimations(): void {
+    // Define enemy names for faster animation
+    const enemyNames = ['rattata', 'geodude', 'zubat'];
+
     for (const sprite of this.manifest) {
+      const isEnemy = enemyNames.includes(sprite.name);
+      const frameRate = isEnemy ? 12 : 8;
+
       for (const anim of sprite.animations) {
         const textureKey = `${sprite.name}-${anim.key}`;
 
@@ -132,7 +138,7 @@ export class Preloader extends Phaser.Scene {
               start: startFrame,
               end: endFrame,
             }),
-            frameRate: 12,
+            frameRate: frameRate,
             repeat: -1,
           });
         }
@@ -147,7 +153,7 @@ export class Preloader extends Phaser.Scene {
             start: 0,
             end: walkAnim.frameCount - 1,
           }),
-          frameRate: 12,
+          frameRate: frameRate,
           repeat: -1,
         });
       }
