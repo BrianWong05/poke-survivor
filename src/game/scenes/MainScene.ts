@@ -561,9 +561,13 @@ export class MainScene extends Phaser.Scene {
     candyObj: Phaser.Types.Physics.Arcade.GameObjectWithBody | Phaser.Tilemaps.Tile
   ): void {
     const candy = candyObj as Phaser.Physics.Arcade.Sprite;
+    
+    // Prevent multiple triggers
+    if (!candy.active) return;
 
+    // key fix: disable body immediately to prevent overlap from firing again in the same frame
+    candy.disableBody(true, true);
     candy.setActive(false);
-    candy.setVisible(false);
 
     // Get XP value from candy tier
     const xpValue = (candy.getData('xpValue') as number) || 1;

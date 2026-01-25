@@ -34,8 +34,8 @@ export class LootManager {
         return LootItemType.EXP_CANDY_S;
 
       case EnemyTier.TIER_2:
-        // 80% Small, 20% Medium
-        return roll < 0.8 ? LootItemType.EXP_CANDY_S : LootItemType.EXP_CANDY_M;
+        // 90% Small, 10% Medium
+        return roll < 0.9 ? LootItemType.EXP_CANDY_S : LootItemType.EXP_CANDY_M;
 
       case EnemyTier.TIER_3:
         // 100% Medium
@@ -70,9 +70,8 @@ export class LootManager {
     const candy = this.xpGems.get(x, y, textureKey) as Phaser.Physics.Arcade.Sprite | null;
 
     if (candy) {
-      candy.setActive(true);
-      candy.setVisible(true);
-      candy.setPosition(x, y);
+      // Ensure physics body is enabled and reset (important for pooled items)
+      candy.enableBody(true, x, y, true, true);
       candy.setTexture(textureKey);
       
       // Scale visual size

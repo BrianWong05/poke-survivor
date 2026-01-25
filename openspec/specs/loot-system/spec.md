@@ -4,49 +4,31 @@
 TBD - created by archiving change refactor-loot-system. Update Purpose after archive.
 ## Requirements
 ### Requirement: Loot Item Definitions
-The system SHALL define loot items with fixed XP values based on Pokémon game conventions.
+The XP values for candies used for leveling up MUST be tuned for a "Linear + Step" curve.
 
-#### Scenario: Loot item type definitions
-- **WHEN** `LootConfig` is imported
-- **THEN** the following loot items are available:
-  - `EXP_CANDY_S`: 1 XP (Visual: Blue/Small)
-  - `EXP_CANDY_M`: 10 XP (Visual: Green/Medium)
-  - `EXP_CANDY_L`: 100 XP (Visual: Red/Large)
-  - `RARE_CANDY`: 1000 XP or instant level-up (Visual: Glowing/Rainbow)
+#### Scenario: Small XP Candy Value
+Given a player picks up an `EXP_CANDY_S`,
+Then the player receives **1 XP**.
 
----
+#### Scenario: Medium XP Candy Value
+Given a player picks up an `EXP_CANDY_M`,
+Then the player receives **3 XP**.
+
+#### Scenario: Large XP Candy Value
+Given a player picks up an `EXP_CANDY_L`,
+Then the player receives **15 XP**.
+
+#### Scenario: Rare Candy Value
+Given a player picks up a `RARE_CANDY`,
+Then the player receives **50 XP**.
 
 ### Requirement: Tier-Based Drop Logic
-The `LootManager.drop()` method SHALL spawn items based on the enemy's tier classification.
+Enemies SHALL drop specific loot based on their tier.
 
-#### Scenario: Tier 1 enemy drop (Rattata, Caterpie)
-- **WHEN** `drop(x, y, TIER_1)` is called
-- **THEN** `EXP_CANDY_S` is spawned with 100% probability
-
-#### Scenario: Tier 2 enemy drop (Geodude, Zubat)
-- **WHEN** `drop(x, y, TIER_2)` is called
-- **THEN** `EXP_CANDY_S` is spawned with 80% probability
-- **OR** `EXP_CANDY_M` is spawned with 20% probability
-
-#### Scenario: Tier 3 enemy drop (Elites)
-- **WHEN** `drop(x, y, TIER_3)` is called
-- **THEN** `EXP_CANDY_M` is spawned with 100% probability
-
-#### Scenario: Tier 4 enemy drop (High Elites)
-- **WHEN** `drop(x, y, TIER_4)` is called
-- **THEN** `EXP_CANDY_M` is spawned with 80% probability
-- **OR** `EXP_CANDY_L` is spawned with 20% probability
-
-#### Scenario: Tier 5 enemy drop (Mini-Bosses)
-- **WHEN** `drop(x, y, TIER_5)` is called
-- **THEN** `EXP_CANDY_L` is spawned with 100% probability
-
-#### Scenario: Boss enemy drop
-- **WHEN** `drop(x, y, BOSS)` is called
-- **THEN** `EXP_CANDY_L` is spawned with 95% probability
-- **OR** `RARE_CANDY` is spawned with 5% probability
-
----
+#### Scenario: Tier 2 Loot Drop Rates
+Given a Tier 2 enemy is defeated,
+When loot is rolled,
+Then it has a **90% chance** to drop `EXP_CANDY_S` and a **10% chance** to drop `EXP_CANDY_M`.
 
 ### Requirement: LootManager API
 The `LootManager` class SHALL provide a single entry point for spawning loot.
