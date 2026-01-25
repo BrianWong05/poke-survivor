@@ -1,7 +1,9 @@
 import type { CharacterContext, WeaponConfig } from '@/game/entities/characters/types';
 import { Ember } from './specific/Ember';
+import { WaterGun } from './specific/WaterGun';
 
 export const ember = new Ember();
+export const waterGun = new WaterGun();
 
 /**
  * Helper to get the enemies group from scene registry

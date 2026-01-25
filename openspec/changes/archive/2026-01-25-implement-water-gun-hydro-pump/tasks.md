@@ -1,0 +1,7 @@
+- [ ] Create `WaterShot` projectile class in `src/game/entities/projectiles/WaterShot.ts`. <!-- id: 1 -->
+- [ ] Create `WaterGun` weapon class in `src/game/entities/weapons/specific/WaterGun.ts`. <!-- id: 2 -->
+- [ ] Implement `WaterShot` collision logic with knockback and pierce. <!-- id: 3 -->
+- [ ] Implement `WaterGun` firing logic for Level 1-7. <!-- id: 4 -->
+- [ ] Implement `WaterGun` evolution logic for Level 8+ (Hydro Pump). <!-- id: 5 -->
+- [ ] Register `WaterGun` in the weapon registry (if applicable) or verify Squirtle can equip it. <!-- id: 6 -->
+- [ ] Verify Knockback effects on enemies. <!-- id: 7 -->

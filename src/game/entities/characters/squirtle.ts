@@ -1,6 +1,6 @@
 import type { CharacterConfig } from '@/game/entities/characters/types';
 import { rainDishPassive } from '@/game/entities/passives';
-import { waterPulse } from '@/game/entities/weapons';
+import { waterGun } from '@/game/entities/weapons';
 import { shellSmash } from '@/game/entities/ultimates';
 
 /**
@@ -18,7 +18,7 @@ export const squirtleConfig: CharacterConfig = {
     baseDamage: 18,
   },
   passive: rainDishPassive,
-  weapon: waterPulse,
+  weapon: waterGun,
   ultimate: shellSmash,
   spriteKey: 'squirtle',
 };

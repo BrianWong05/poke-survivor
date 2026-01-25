@@ -38,6 +38,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     // Add to scene and enable physics
     scene.add.existing(this);
     scene.physics.add.existing(this);
+    this.setDrag(500); // Add drag so knockback decays
     this.setDepth(5); // Ensure enemies render above background but below player (10)
     
     // Scale up enemies for better presence
@@ -107,6 +108,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
    */
   protected moveTowardTarget(): void {
     if (!this.target || !this.scene) return;
+
+    // Check for knockback/stun
+    if (this.getData('knockbackUntil') > this.scene.time.now) return;
 
     this.scene.physics.moveToObject(this, this.target, this.speed);
   }
