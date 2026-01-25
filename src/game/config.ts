@@ -6,6 +6,7 @@ export interface GameCallbacks {
   onScoreUpdate: (score: number) => void;
   onHPUpdate: (hp: number) => void;
   onGameOver: () => void;
+  onQuit: () => void;
   onLevelUpdate?: (level: number, xp: number, xpToNext: number) => void;
 }
 

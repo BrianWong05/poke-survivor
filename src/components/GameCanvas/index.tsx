@@ -13,6 +13,7 @@ interface GameCanvasProps {
   onHPUpdate: (hp: number) => void;
   onLevelUpdate: (level: number, xp: number, xpToNext: number) => void;
   onGameOver: () => void;
+  onQuit: () => void;
   onMaxHPChange: (maxHP: number) => void;
 }
 
@@ -22,6 +23,7 @@ export const GameCanvas = ({
   onHPUpdate,
   onLevelUpdate,
   onGameOver,
+  onQuit,
   onMaxHPChange,
 }: GameCanvasProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -40,6 +42,7 @@ export const GameCanvas = ({
       onScoreUpdate,
       onHPUpdate,
       onGameOver,
+      onQuit,
       onLevelUpdate,
     };
 
@@ -91,7 +94,7 @@ export const GameCanvas = ({
         gameRef.current = null;
       }
     };
-  }, [selectedCharacter, onScoreUpdate, onHPUpdate, onGameOver, onLevelUpdate, onMaxHPChange]);
+  }, [selectedCharacter, onScoreUpdate, onHPUpdate, onGameOver, onQuit, onLevelUpdate, onMaxHPChange]);
 
   return (
     <div className="game-container">

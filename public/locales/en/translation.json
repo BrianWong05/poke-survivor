@@ -63,5 +63,9 @@
   "passive_innerfocus_name": "Inner Focus",
   "passive_innerfocus_desc": "Projectile Size +20%. Immunity to flinch/stun.",
   "passive_thickfat_name": "Thick Fat",
-  "passive_thickfat_desc": "-50% damage from Fire/Ice projectiles (stubbed)" 
+  "passive_thickfat_desc": "-50% damage from Fire/Ice projectiles (stubbed)",
+  "pause_title": "PAUSED",
+  "pause_resume": "RESUME",
+  "pause_quit": "QUIT",
+  "pause_desc": "Press ESC to Resume" 
 }

@@ -63,5 +63,9 @@
   "passive_innerfocus_name": "精神力",
   "passive_innerfocus_desc": "投射物大小 +20%。免疫畏縮/擊暈。",
   "passive_thickfat_name": "厚脂肪",
-  "passive_thickfat_desc": "受到火/冰屬性投射物的傷害減少 50% (暫位)"
+  "passive_thickfat_desc": "受到火/冰屬性投射物的傷害減少 50% (暫位)",
+  "pause_title": "已暫停",
+  "pause_resume": "繼續",
+  "pause_quit": "退出",
+  "pause_desc": "按 ESC 繼續"
 }

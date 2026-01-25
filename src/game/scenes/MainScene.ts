@@ -15,6 +15,7 @@ import { EnemySpawner } from '@/game/systems/EnemySpawner';
 import { ENEMY_STATS, EnemyType, EnemyTier } from '@/game/entities/enemies';
 import { LootManager } from '@/game/systems/LootManager';
 import { LootItemType } from '@/game/systems/LootConfig';
+import i18n from '@/i18n';
 
 interface SpriteAnimation {
   key: string;
@@ -62,6 +63,8 @@ export class MainScene extends Phaser.Scene {
   private fireTimer!: Phaser.Time.TimerEvent;
   private gameOver = false;
   private isLevelUpPending = false;
+  private isPaused = false;
+  private pauseContainer?: Phaser.GameObjects.Container;
 
   // Callbacks
   private callbacks!: GameCallbacks;
@@ -269,6 +272,8 @@ export class MainScene extends Phaser.Scene {
       };
       // Ultimate trigger (Space)
       this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+      // Pause toggle (ESC)
+      this.input.keyboard.on('keydown-ESC', () => this.togglePause());
     }
   }
 
@@ -739,7 +744,94 @@ export class MainScene extends Phaser.Scene {
        if (this.sys && this.scene) {
           window.addEventListener('keydown', resumeHandler);
        }
-    }, 500);
+    });
+  }
+
+  private togglePause(): void {
+    // block pause if level up or game over
+    if (this.isLevelUpPending || this.gameOver) return;
+
+    this.isPaused = !this.isPaused;
+
+    if (this.isPaused) {
+      this.physics.pause();
+      this.anims.pauseAll();
+      this.time.paused = true; // Pause all timer events (spawners, fire rate)
+      
+      const width = this.scale.width;
+      const height = this.scale.height;
+      
+      this.pauseContainer = this.add.container(0, 0);
+      this.pauseContainer.setDepth(200);
+
+      // Darken background
+      const dimmer = this.add.rectangle(0, 0, width, height, 0x000000, 0.5);
+      dimmer.setOrigin(0);
+      this.pauseContainer.add(dimmer);
+
+      // Window Background
+      const windowWidth = 400;
+      const windowHeight = 280;
+      const windowBg = this.add.rectangle(width / 2, height / 2, windowWidth, windowHeight, 0x2c3e50, 1);
+      windowBg.setStrokeStyle(4, 0xecf0f1);
+      this.pauseContainer.add(windowBg);
+
+      // Title
+      const title = this.add.text(width / 2, height / 2 - 80, i18n.t('pause_title'), {
+        fontSize: '48px',
+        color: '#f1c40f',
+        fontStyle: 'bold',
+        stroke: '#000000',
+        strokeThickness: 6
+      }).setOrigin(0.5);
+      this.pauseContainer.add(title);
+
+      // Subtitle (Cancel/Resume)
+      const resumeBtn = this.createButton(0, 40, i18n.t('pause_resume'), '#2ecc71', () => this.togglePause());
+      this.pauseContainer.add(resumeBtn);
+
+      // Quit Button
+      const quitBtn = this.createButton(0, 100, i18n.t('pause_quit'), '#e74c3c', () => {
+        if (this.callbacks.onQuit) {
+          this.callbacks.onQuit();
+        }
+      });
+      this.pauseContainer.add(quitBtn);
+      
+      // Re-implementing with correct coordinates:
+      resumeBtn.setPosition(width / 2, height / 2 + 20);
+      quitBtn.setPosition(width / 2, height / 2 + 90);
+
+    } else {
+      this.physics.resume();
+      this.anims.resumeAll();
+      this.time.paused = false;
+      
+      if (this.pauseContainer) {
+        this.pauseContainer.destroy();
+        this.pauseContainer = undefined;
+      }
+    }
+  }
+
+  private createButton(x: number, y: number, text: string, color: string, onClick: () => void): Phaser.GameObjects.Container {
+    const btn = this.add.container(x, y);
+    
+    const bg = this.add.rectangle(0, 0, 200, 50, Number(color.replace('#', '0x')), 1);
+    bg.setStrokeStyle(2, 0xffffff);
+    bg.setInteractive({ useHandCursor: true });
+    bg.on('pointerdown', onClick);
+    bg.on('pointerover', () => bg.setAlpha(0.8));
+    bg.on('pointerout', () => bg.setAlpha(1));
+    
+    const label = this.add.text(0, 0, text, {
+      fontSize: '24px',
+      color: '#ffffff',
+      fontStyle: 'bold'
+    }).setOrigin(0.5);
+    
+    btn.add([bg, label]);
+    return btn;
   }
 
 
@@ -814,7 +906,7 @@ export class MainScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
-    if (this.gameOver) return;
+    if (this.gameOver || this.isPaused) return;
 
     // Cull excess Exp Candies for performance (every 60 frames)
     this.cullFrameCounter++;

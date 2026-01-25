@@ -69,6 +69,7 @@ function App() {
         onHPUpdate={handleHPUpdate}
         onLevelUpdate={handleLevelUpdate}
         onGameOver={handleGameOver}
+        onQuit={handleRestart}
         onMaxHPChange={setMaxHP}
       />
       <HUD
