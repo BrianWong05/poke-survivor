@@ -4,33 +4,19 @@
 TBD - created by archiving change add-enemy-system. Update Purpose after archive.
 ## Requirements
 ### Requirement: Enemy Base Class
-The system SHALL provide a base `Enemy` class extending `Phaser.Physics.Arcade.Sprite` that encapsulates health, damage, movement, and death behavior.
+The system SHALL provide a base `Enemy` class with enhanced visual feedback.
 
 #### Scenario: Enemy initialization
-- **WHEN** an Enemy is created or recycled from the pool
-- **THEN** the Enemy has an `hp` property set to its configured max HP
-- **AND** the Enemy has a `target` property referencing the player sprite
-- **AND** the Enemy is active and visible
+- **MODIFIED**:
+- **WHEN** an Enemy is created
+- **THEN** the Enemy scale SHALL be set to **1.5**
 
 #### Scenario: Enemy takes damage
-- **WHEN** `takeDamage(amount)` is called on an Enemy
+- **MODIFIED**:
+- **WHEN** `takeDamage(amount)` is called
 - **THEN** the Enemy's `hp` is reduced by `amount`
-- **AND** the Enemy flashes white (`setTint(0xffffff)`) for 100ms
-- **AND** if `hp <= 0`, the Enemy dies
-
-#### Scenario: Enemy death
-- **WHEN** an Enemy's HP reaches zero or below
-- **THEN** a fade-out tween plays (alpha 0 over 200ms)
-- **AND** an `enemy:death` event is emitted with `(x, y, enemyType)`
-- **AND** the Enemy is deactivated and returned to the pool
-
-#### Scenario: Enemy movement toward target
-- **WHEN** `preUpdate()` is called each frame
-- **AND** the Enemy is active
-- **THEN** the Enemy moves toward its `target` at its configured `speed`
-- **AND** the Enemy's `flipX` is set based on horizontal velocity (faces the direction of movement)
-
----
+- **AND** the Enemy SHALL flash solid white (`setTintFill(0xffffff)`) for 100ms
+- **AND** the Enemy SHALL play an "Impact Pop" tween (squash and stretch)
 
 ### Requirement: Rattata Enemy Variant
 The system SHALL provide a `Rattata` enemy class as fast, low-HP "chaff" that swarms the player.

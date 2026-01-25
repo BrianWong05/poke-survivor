@@ -132,7 +132,7 @@ export class Preloader extends Phaser.Scene {
               start: startFrame,
               end: endFrame,
             }),
-            frameRate: 8,
+            frameRate: 12,
             repeat: -1,
           });
         }
@@ -147,7 +147,7 @@ export class Preloader extends Phaser.Scene {
             start: 0,
             end: walkAnim.frameCount - 1,
           }),
-          frameRate: 8,
+          frameRate: 12,
           repeat: -1,
         });
       }

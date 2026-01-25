@@ -39,6 +39,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
     this.setDepth(5); // Ensure enemies render above background but below player (10)
+    
+    // Scale up enemies for better presence
+    this.setScale(1.5);
   }
 
   /**
@@ -127,6 +130,17 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
     // Flash white on hit
     this.flashHit();
+    
+    // Impact "Pop" (Squash and Stretch)
+    const currentScale = 1.5;
+    this.scene.tweens.add({
+      targets: this,
+      scaleX: currentScale * 0.8, // Squish width
+      scaleY: currentScale * 1.2, // Stretch height
+      duration: 50,
+      yoyo: true,
+      ease: 'Power2'
+    });
 
     if (this.hp <= 0) {
       this.die();
@@ -137,7 +151,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
    * Flash white tint for 100ms to indicate damage.
    */
   protected flashHit(): void {
-    this.setTint(0xffffff);
+    this.setTintFill(0xffffff); // Solid white flash
 
     this.scene.time.delayedCall(100, () => {
       if (this.active && !this.isDying) {

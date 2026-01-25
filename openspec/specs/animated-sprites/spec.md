@@ -47,3 +47,11 @@ Given an enemy is pursuing the player
 When the player changes position  
 Then the enemy's facing direction SHALL update to continue facing toward the new player position
 
+### Requirement: Animation Playback Speed
+The system SHALL create animations with a standard playback rate to ensure consistent movement visuals.
+
+#### Scenario: Standard playback rate
+- **WHEN** animations are created in the Preloader
+- **THEN** the `frameRate` SHALL be set to **12**
+- **AND** this applies to both walk and idle animations
+
