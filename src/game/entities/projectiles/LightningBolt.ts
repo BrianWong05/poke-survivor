@@ -91,6 +91,9 @@ export class LightningBolt extends Phaser.Physics.Arcade.Sprite {
                         // Bounce!
                         this.setPosition(enemy.x, enemy.y);
                         
+                        // Reduce damage by 30% for the next hit
+                        this.damageAmount = Math.max(1, Math.floor(this.damageAmount * 0.7));
+
                         const angle = Phaser.Math.Angle.Between(this.x, this.y, nextTarget.x, nextTarget.y);
                         const speed = 600; // Keep same speed
                         
