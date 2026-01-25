@@ -88,6 +88,72 @@
     ]
   },
   {
+    "id": "19",
+    "name": "rattata",
+    "animations": [
+      {
+        "key": "walk",
+        "path": "assets/sprites/19-walk.png",
+        "frameWidth": 48,
+        "frameHeight": 40,
+        "frameCount": 7,
+        "directions": 8
+      },
+      {
+        "key": "idle",
+        "path": "assets/sprites/19-idle.png",
+        "frameWidth": 32,
+        "frameHeight": 32,
+        "frameCount": 8,
+        "directions": 8
+      }
+    ]
+  },
+  {
+    "id": "41",
+    "name": "zubat",
+    "animations": [
+      {
+        "key": "walk",
+        "path": "assets/sprites/41-walk.png",
+        "frameWidth": 32,
+        "frameHeight": 56,
+        "frameCount": 8,
+        "directions": 8
+      },
+      {
+        "key": "idle",
+        "path": "assets/sprites/41-idle.png",
+        "frameWidth": 32,
+        "frameHeight": 56,
+        "frameCount": 8,
+        "directions": 8
+      }
+    ]
+  },
+  {
+    "id": "74",
+    "name": "geodude",
+    "animations": [
+      {
+        "key": "walk",
+        "path": "assets/sprites/74-walk.png",
+        "frameWidth": 32,
+        "frameHeight": 32,
+        "frameCount": 4,
+        "directions": 8
+      },
+      {
+        "key": "idle",
+        "path": "assets/sprites/74-idle.png",
+        "frameWidth": 32,
+        "frameHeight": 24,
+        "frameCount": 4,
+        "directions": 8
+      }
+    ]
+  },
+  {
     "id": "92",
     "name": "gastly",
     "animations": [

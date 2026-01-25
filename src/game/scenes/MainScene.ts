@@ -13,6 +13,8 @@ import {
   ExpCandyTier,
   EXP_CANDY_VALUES,
 } from '@/game/systems/ExperienceManager';
+import { EnemySpawner } from '@/game/systems/EnemySpawner';
+import { ENEMY_STATS, EnemyType } from '@/game/entities/enemies';
 
 interface SpriteAnimation {
   key: string;
@@ -49,10 +51,12 @@ export class MainScene extends Phaser.Scene {
   private projectiles!: Phaser.Physics.Arcade.Group;
   private xpGems!: Phaser.Physics.Arcade.Group;
 
+  // Enemy Spawner System
+  private enemySpawner!: EnemySpawner;
+
   // Game state
   private score = 0;
   private fireTimer!: Phaser.Time.TimerEvent;
-  private spawnTimer!: Phaser.Time.TimerEvent;
   private gameOver = false;
   private isLevelUpPending = false;
 
@@ -61,7 +65,6 @@ export class MainScene extends Phaser.Scene {
 
   // Sprite data
   private manifest: SpriteManifestEntry[] = [];
-  private enemySpriteNames: string[] = [];
   private currentDirection: DirectionName = 'down';
   private usePlaceholderGraphics = false;
 
@@ -88,11 +91,8 @@ export class MainScene extends Phaser.Scene {
     // Get sprite manifest from registry (set by Preloader)
     this.manifest = this.registry.get('spriteManifest') as SpriteManifestEntry[] || [];
 
-    // Setup sprite names from manifest
+    // Determine if we're using placeholder graphics (no manifest loaded)
     if (this.manifest.length > 0) {
-      const names = this.manifest.map((s) => s.name);
-      // Other sprites are enemies (excluding player character)
-      this.enemySpriteNames = names.filter((n) => n !== this.characterConfig.spriteKey);
       this.usePlaceholderGraphics = false;
     } else {
       this.usePlaceholderGraphics = true;
@@ -143,12 +143,43 @@ export class MainScene extends Phaser.Scene {
     playerGraphics.generateTexture('player', 32, 32);
     playerGraphics.destroy();
 
-    // Enemy: Red square (24px)
+    // Enemy: Red square (24px) - legacy fallback
     const enemyGraphics = this.make.graphics({ x: 0, y: 0 });
     enemyGraphics.fillStyle(0xff4a4a, 1);
     enemyGraphics.fillRect(0, 0, 24, 24);
     enemyGraphics.generateTexture('enemy', 24, 24);
     enemyGraphics.destroy();
+
+    // Enemy variant placeholders (colored circles)
+    // Rattata: Purple circle (24px)
+    const rattataStats = ENEMY_STATS[EnemyType.RATTATA];
+    if (!this.textures.exists(rattataStats.textureKey)) {
+      const rattataGraphics = this.make.graphics({ x: 0, y: 0 });
+      rattataGraphics.fillStyle(rattataStats.placeholderColor, 1);
+      rattataGraphics.fillCircle(rattataStats.placeholderSize / 2, rattataStats.placeholderSize / 2, rattataStats.placeholderSize / 2);
+      rattataGraphics.generateTexture(rattataStats.textureKey, rattataStats.placeholderSize, rattataStats.placeholderSize);
+      rattataGraphics.destroy();
+    }
+
+    // Geodude: Grey circle (28px)
+    const geodudeStats = ENEMY_STATS[EnemyType.GEODUDE];
+    if (!this.textures.exists(geodudeStats.textureKey)) {
+      const geodudeGraphics = this.make.graphics({ x: 0, y: 0 });
+      geodudeGraphics.fillStyle(geodudeStats.placeholderColor, 1);
+      geodudeGraphics.fillCircle(geodudeStats.placeholderSize / 2, geodudeStats.placeholderSize / 2, geodudeStats.placeholderSize / 2);
+      geodudeGraphics.generateTexture(geodudeStats.textureKey, geodudeStats.placeholderSize, geodudeStats.placeholderSize);
+      geodudeGraphics.destroy();
+    }
+
+    // Zubat: Blue circle (20px)
+    const zubatStats = ENEMY_STATS[EnemyType.ZUBAT];
+    if (!this.textures.exists(zubatStats.textureKey)) {
+      const zubatGraphics = this.make.graphics({ x: 0, y: 0 });
+      zubatGraphics.fillStyle(zubatStats.placeholderColor, 1);
+      zubatGraphics.fillCircle(zubatStats.placeholderSize / 2, zubatStats.placeholderSize / 2, zubatStats.placeholderSize / 2);
+      zubatGraphics.generateTexture(zubatStats.textureKey, zubatStats.placeholderSize, zubatStats.placeholderSize);
+      zubatGraphics.destroy();
+    }
 
     // Projectile: White circle (8px)
     const projectileGraphics = this.make.graphics({ x: 0, y: 0 });
@@ -183,12 +214,15 @@ export class MainScene extends Phaser.Scene {
   }
 
   private createGroups(): void {
-    // Enemies group with pooling
+    // Legacy enemies group (kept for backward compatibility with some ultimates)
     this.enemies = this.physics.add.group({
       classType: Phaser.Physics.Arcade.Sprite,
       maxSize: 200,
       runChildUpdate: false,
     });
+
+    // Initialize EnemySpawner system
+    this.enemySpawner = new EnemySpawner(this, this.player);
 
     // Projectiles group with pooling
     this.projectiles = this.physics.add.group({
@@ -205,9 +239,16 @@ export class MainScene extends Phaser.Scene {
     });
 
     // Store groups in registry for weapons/ultimates to access
-    this.registry.set('enemiesGroup', this.enemies);
+    // Use the enemy spawner's combined group as the main enemies group
+    this.registry.set('enemiesGroup', this.enemySpawner.getEnemyGroup());
+    this.registry.set('legacyEnemiesGroup', this.enemies); // Legacy for ultimates that may still use it
     this.registry.set('projectilesGroup', this.projectiles);
     this.registry.set('xpGemsGroup', this.xpGems);
+    
+    // Store individual enemy pools for collision setup
+    this.registry.set('rattataPool', this.enemySpawner.getRattataPool());
+    this.registry.set('geodudePool', this.enemySpawner.getGeodudePool());
+    this.registry.set('zubatPool', this.enemySpawner.getZubatPool());
   }
 
   private setupInput(): void {
@@ -226,11 +267,45 @@ export class MainScene extends Phaser.Scene {
   }
 
   private setupCollisions(): void {
-    // Projectile hits enemy
+    // Projectile hits enemy (all enemy pools via spawner)
+    const enemyPools = [
+      this.enemySpawner.getRattataPool(),
+      this.enemySpawner.getGeodudePool(),
+      this.enemySpawner.getZubatPool(),
+    ];
+
+    enemyPools.forEach((pool) => {
+      this.physics.add.overlap(
+        this.projectiles,
+        pool,
+        this.handleProjectileEnemyCollision as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback,
+        undefined,
+        this
+      );
+
+      // Enemy touches player
+      this.physics.add.overlap(
+        this.player,
+        pool,
+        this.handlePlayerEnemyCollision as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback,
+        undefined,
+        this
+      );
+    });
+
+    // Legacy: keep old enemies group for backward compatibility with ultimates
     this.physics.add.overlap(
       this.projectiles,
       this.enemies,
       this.handleProjectileEnemyCollision as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback,
+      undefined,
+      this
+    );
+
+    this.physics.add.overlap(
+      this.player,
+      this.enemies,
+      this.handlePlayerEnemyCollision as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback,
       undefined,
       this
     );
@@ -240,15 +315,6 @@ export class MainScene extends Phaser.Scene {
       this.player,
       this.xpGems,
       this.handleXPCollection as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback,
-      undefined,
-      this
-    );
-
-    // Enemy touches player
-    this.physics.add.overlap(
-      this.player,
-      this.enemies,
-      this.handlePlayerEnemyCollision as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback,
       undefined,
       this
     );
@@ -274,6 +340,11 @@ export class MainScene extends Phaser.Scene {
     this.events.on('hp-update', (hp: number) => {
       this.characterState.currentHP = hp;
       this.callbacks.onHPUpdate(hp);
+    });
+
+    // Listen for enemy:death events from the new Enemy class
+    this.events.on('enemy:death', (x: number, y: number, _enemyType: EnemyType) => {
+      this.spawnExpCandy(x, y);
     });
   }
 
@@ -304,13 +375,8 @@ export class MainScene extends Phaser.Scene {
       loop: true,
     });
 
-    // Spawn enemies every 500ms
-    this.spawnTimer = this.time.addEvent({
-      delay: 500,
-      callback: this.spawnEnemy,
-      callbackScope: this,
-      loop: true,
-    });
+    // Start enemy spawner system
+    this.enemySpawner.start();
   }
 
   private fireWeapon(): void {
@@ -370,6 +436,14 @@ export class MainScene extends Phaser.Scene {
       finalDamage = Math.floor(damage * 1.25);
     }
 
+    // Check if this is a new Enemy class instance (has takeDamage method)
+    if ('takeDamage' in enemy && typeof (enemy as any).takeDamage === 'function') {
+      // Use the new Enemy class damage system
+      (enemy as any).takeDamage(finalDamage);
+      return;
+    }
+
+    // Legacy enemy handling (using getData)
     const currentHP = (enemy.getData('hp') as number) || 20;
     const newHP = currentHP - finalDamage;
 
@@ -393,58 +467,6 @@ export class MainScene extends Phaser.Scene {
       enemy.setVisible(false);
     } else {
       enemy.setData('hp', newHP);
-    }
-  }
-
-  private spawnEnemy(): void {
-    if (this.gameOver) return;
-
-    // Spawn at random edge of screen
-    const edge = Phaser.Math.Between(0, 3);
-    let x: number, y: number;
-
-    switch (edge) {
-      case 0: // Top
-        x = Phaser.Math.Between(0, this.scale.width);
-        y = -24;
-        break;
-      case 1: // Right
-        x = this.scale.width + 24;
-        y = Phaser.Math.Between(0, this.scale.height);
-        break;
-      case 2: // Bottom
-        x = Phaser.Math.Between(0, this.scale.width);
-        y = this.scale.height + 24;
-        break;
-      default: // Left
-        x = -24;
-        y = Phaser.Math.Between(0, this.scale.height);
-        break;
-    }
-
-    // Choose random enemy sprite or use placeholder
-    let textureName = 'enemy';
-    if (!this.usePlaceholderGraphics && this.enemySpriteNames.length > 0) {
-      textureName = Phaser.Math.RND.pick(this.enemySpriteNames);
-    }
-
-    const enemy = this.enemies.get(x, y, textureName) as Phaser.Physics.Arcade.Sprite | null;
-
-    if (enemy) {
-      enemy.setActive(true);
-      enemy.setVisible(true);
-      enemy.setPosition(x, y);
-      enemy.setData('hp', 20); // Default enemy HP
-      enemy.setData('stunned', false);
-      enemy.setData('cursed', false);
-
-      if (!this.usePlaceholderGraphics) {
-        // Store sprite name and current direction as custom data
-        enemy.setData('spriteName', textureName);
-        enemy.setData('currentDirection', 'down');
-        enemy.play(`${textureName}-walk-down`);
-        enemy.setScale(1.5);
-      }
     }
   }
 
@@ -799,7 +821,7 @@ export class MainScene extends Phaser.Scene {
   private handleGameOver(): void {
     this.gameOver = true;
     this.fireTimer.remove();
-    this.spawnTimer.remove();
+    this.enemySpawner.stop();
     this.player.setVelocity(0, 0);
     this.callbacks.onGameOver();
   }
@@ -819,6 +841,9 @@ export class MainScene extends Phaser.Scene {
       this.cullFrameCounter = 0;
       this.cullExcessCandies();
     }
+
+    // Update enemy spawner (handles wave progression)
+    this.enemySpawner.update(delta);
 
     // Update ultimate cooldown
     if (this.characterState.ultimateCooldownRemaining > 0) {

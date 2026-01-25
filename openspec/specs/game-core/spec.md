@@ -18,19 +18,24 @@ The system SHALL automatically fire a projectile at the nearest enemy within ran
 ---
 
 ### Requirement: Enemy Wave Spawning
-The system SHALL continuously spawn enemies at the edges of the visible play area.
+The system SHALL delegate enemy spawning to the `EnemySpawner` system, which manages wave progression and object pooling.
 
 #### Scenario: Enemy spawns at screen edge
-- **WHEN** the spawn timer interval elapses
-- **THEN** a new enemy is spawned at a random position along the screen edge
-- **AND** the enemy moves toward the player's current position
+- **WHEN** the `EnemySpawner` timer interval elapses
+- **THEN** a new enemy is spawned at a random position on a circle of radius ~600 around the player (outside camera view)
+- **AND** the enemy type is selected based on the current wave configuration
+- **AND** the enemy moves toward the player's current position using its configured AI
 
 #### Scenario: Enemy reaches player
 - **WHEN** an enemy collides with the player
 - **THEN** the player takes damage
-- **AND** the enemy is destroyed
+- **AND** the enemy is destroyed (deactivated and returned to pool)
 
----
+#### Scenario: Enemy spawner initialization
+- **WHEN** the MainScene `create()` method is called
+- **THEN** an `EnemySpawner` instance is created
+- **AND** the spawner's enemy group is registered for collision with the player
+- **AND** the spawner's enemy group is registered for collision with projectiles
 
 ### Requirement: Projectile-Enemy Collision
 The system SHALL destroy both the projectile and the enemy when they collide.
