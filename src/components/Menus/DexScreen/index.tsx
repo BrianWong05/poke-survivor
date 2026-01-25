@@ -35,8 +35,8 @@ export const DexScreen: React.FC<DexScreenProps> = ({ onClose }) => {
   return (
     <div className="dex-screen-overlay">
       <div className="dex-header">
-        <h1 className="dex-title">PokéDex</h1>
-        <button className="dex-close-btn" onClick={onClose}>Close</button>
+        <h1 className="dex-title">{t('dex_title')}</h1>
+        <button className="dex-close-btn" onClick={onClose}>{t('close')}</button>
       </div>
 
       <div className="dex-tabs">
@@ -44,19 +44,19 @@ export const DexScreen: React.FC<DexScreenProps> = ({ onClose }) => {
           className={`dex-tab ${activeTab === 'pokemon' ? 'active' : ''}`}
           onClick={() => setActiveTab('pokemon')}
         >
-          Pokemon
+          {t('tab_pokemon')}
         </button>
         <button 
           className={`dex-tab ${activeTab === 'enemies' ? 'active' : ''}`}
           onClick={() => setActiveTab('enemies')}
         >
-          Enemy
+          {t('tab_enemy')}
         </button>
         <button 
           className={`dex-tab ${activeTab === 'weapons' ? 'active' : ''}`}
           onClick={() => setActiveTab('weapons')}
         >
-          Moves
+          {t('tab_moves')}
         </button>
       </div>
 
