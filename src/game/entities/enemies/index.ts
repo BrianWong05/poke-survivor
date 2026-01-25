@@ -3,7 +3,7 @@
  */
 
 // Types and configuration
-export { EnemyType, ENEMY_STATS, type EnemyStats } from '@/game/entities/enemies/EnemyConfig';
+export { EnemyType, ENEMY_STATS, EnemyTier, type EnemyStats } from '@/game/entities/enemies/EnemyConfig';
 
 // Base class
 export { Enemy } from '@/game/entities/enemies/Enemy';

@@ -6,7 +6,6 @@ export const ExpCandyTier = {
   S: 's',      // Small - common drop
   M: 'm',      // Medium
   L: 'l',      // Large - rare
-  XL: 'xl',    // Extra large - very rare
   RARE: 'rare', // Rare Candy - boss-only
 } as const;
 
@@ -15,12 +14,15 @@ export type ExpCandyTier = typeof ExpCandyTier[keyof typeof ExpCandyTier];
 /**
  * XP values for each Exp Candy tier.
  */
+/**
+ * XP values for each Exp Candy tier.
+ * aligned with LootConfig.
+ */
 export const EXP_CANDY_VALUES: Record<ExpCandyTier, number> = {
   [ExpCandyTier.S]: 1,
   [ExpCandyTier.M]: 10,
-  [ExpCandyTier.L]: 50,
-  [ExpCandyTier.XL]: 100,
-  [ExpCandyTier.RARE]: 200,
+  [ExpCandyTier.L]: 100,
+  [ExpCandyTier.RARE]: 1000,
 };
 
 /**
@@ -28,23 +30,11 @@ export const EXP_CANDY_VALUES: Record<ExpCandyTier, number> = {
  * Colors and sizes for programmatic graphics.
  */
 export const EXP_CANDY_VISUALS: Record<ExpCandyTier, { color: number; size: number; isSquare?: boolean }> = {
-  [ExpCandyTier.S]: { color: 0xffd700, size: 8 },     // Yellow, small
-  [ExpCandyTier.M]: { color: 0xffa500, size: 10 },    // Orange, medium
-  [ExpCandyTier.L]: { color: 0xff4a4a, size: 12 },    // Red, large
-  [ExpCandyTier.XL]: { color: 0x9370db, size: 14 },   // Purple, extra large
-  [ExpCandyTier.RARE]: { color: 0x00ffff, size: 16, isSquare: true }, // Cyan square, boss-only
+  [ExpCandyTier.S]: { color: 0x4a9eff, size: 8 },     // Blue, small
+  [ExpCandyTier.M]: { color: 0x2ecc71, size: 10 },    // Green, medium
+  [ExpCandyTier.L]: { color: 0xe74c3c, size: 12 },    // Red, large
+  [ExpCandyTier.RARE]: { color: 0xf1c40f, size: 16, isSquare: true }, // Gold square, boss-only
 };
-
-/**
- * Drop probabilities for regular enemy kills.
- * Rare Candy is NOT included here (boss-only).
- */
-export const EXP_CANDY_DROP_WEIGHTS: { tier: ExpCandyTier; weight: number }[] = [
-  { tier: ExpCandyTier.S, weight: 70 },
-  { tier: ExpCandyTier.M, weight: 20 },
-  { tier: ExpCandyTier.L, weight: 8 },
-  { tier: ExpCandyTier.XL, weight: 2 },
-];
 
 /**
  * Pure TypeScript class to manage experience points and leveling.
@@ -68,7 +58,7 @@ export class ExperienceManager {
 
   /**
    * Calculate XP required to reach a specific level.
-   * Formula: Base(5) + (Level * 10)
+   * Formula: 5 + (Level * 10)
    * 
    * @example
    * Level 2: 5 + (2 * 10) = 25 XP
@@ -124,6 +114,21 @@ export class ExperienceManager {
   }
 
   /**
+   * Grant an instant level up (e.g., from Rare Candy).
+   * Resets current XP to 0 and jumps to next level.
+   * 
+   * @returns `true` (always triggers level up)
+   */
+  public addInstantLevel(): boolean {
+    // Fill the bar completely
+    // Effectively we just advance the level
+    this.currentLevel += 1;
+    this.currentXP = 0; // Reset bar for new level
+    this.xpToNextLevel = this.getRequiredXP(this.currentLevel + 1);
+    return true;
+  }
+
+  /**
    * Check if currentXP is sufficient for next level and process ONE level up.
    * Can be called repeatedly to handle multi-level jumps sequentially.
    * 
@@ -148,24 +153,5 @@ export class ExperienceManager {
     this.currentLevel = 1;
     this.currentXP = 0;
     this.xpToNextLevel = this.getRequiredXP(2);
-  }
-
-  /**
-   * Roll for a random Exp Candy tier based on drop weights.
-   * Does NOT include Rare Candy (use `ExpCandyTier.RARE` directly for bosses).
-   */
-  public static rollCandyTier(): ExpCandyTier {
-    const totalWeight = EXP_CANDY_DROP_WEIGHTS.reduce((sum, w) => sum + w.weight, 0);
-    let roll = Math.random() * totalWeight;
-    
-    for (const { tier, weight } of EXP_CANDY_DROP_WEIGHTS) {
-      roll -= weight;
-      if (roll <= 0) {
-        return tier;
-      }
-    }
-    
-    // Fallback to smallest tier
-    return ExpCandyTier.S;
   }
 }

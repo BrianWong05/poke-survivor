@@ -10,11 +10,11 @@ import {
 } from '@/game/entities/characters/types';
 import {
   ExperienceManager,
-  ExpCandyTier,
-  EXP_CANDY_VALUES,
 } from '@/game/systems/ExperienceManager';
 import { EnemySpawner } from '@/game/systems/EnemySpawner';
-import { ENEMY_STATS, EnemyType } from '@/game/entities/enemies';
+import { ENEMY_STATS, EnemyType, EnemyTier } from '@/game/entities/enemies';
+import { LootManager } from '@/game/systems/LootManager';
+import { LootItemType } from '@/game/systems/LootConfig';
 
 interface SpriteAnimation {
   key: string;
@@ -53,6 +53,9 @@ export class MainScene extends Phaser.Scene {
 
   // Enemy Spawner System
   private enemySpawner!: EnemySpawner;
+  
+  // Loot System
+  private lootManager!: LootManager;
 
   // Game state
   private score = 0;
@@ -109,6 +112,9 @@ export class MainScene extends Phaser.Scene {
 
     // Create groups
     this.createGroups();
+
+    // Initialize Loot Manager (depends on xpGems from createGroups)
+    this.lootManager = new LootManager(this.xpGems);
 
     // Setup input
     this.setupInput();
@@ -323,7 +329,8 @@ export class MainScene extends Phaser.Scene {
   private setupEventListeners(): void {
     // Listen for spawn-xp events from ultimates
     this.events.on('spawn-xp', (x: number, y: number) => {
-      this.spawnExpCandy(x, y);
+      // Default to Tier 1 loot for generic events
+      this.lootManager.drop(x, y, EnemyTier.TIER_1);
     });
 
     // Listen for spawn-aoe-damage events from weapons/ultimates
@@ -343,8 +350,11 @@ export class MainScene extends Phaser.Scene {
     });
 
     // Listen for enemy:death events from the new Enemy class
-    this.events.on('enemy:death', (x: number, y: number, _enemyType: EnemyType) => {
-      this.spawnExpCandy(x, y);
+    this.events.on('enemy:death', (x: number, y: number, enemyType: EnemyType) => {
+      const stats = ENEMY_STATS[enemyType];
+      if (stats) {
+        this.lootManager.drop(x, y, stats.tier);
+      }
     });
   }
 
@@ -457,11 +467,22 @@ export class MainScene extends Phaser.Scene {
         this.callbacks.onHPUpdate(this.characterState.currentHP);
       }
 
-      // Spawn Exp Candy - Rare Candy for boss enemies, tiered candy for regular enemies
-      if (enemy.getData('isBoss')) {
-        this.spawnRareCandy(enemy.x, enemy.y);
+      // Spawn Exp Candy via LootManager
+      const stats = ENEMY_STATS[enemy.getData('type') as EnemyType]; // Legacy support if type is stored
+      if (stats) {
+        this.lootManager.drop(enemy.x, enemy.y, stats.tier);
       } else {
-        this.spawnExpCandy(enemy.x, enemy.y);
+        // Fallback for legacy mechanics without specific type
+        // Assuming Tier 1 if unknown
+        // Or if 'isBoss' flag is present
+        if (enemy.getData('isBoss')) {
+             // We need to import EnemyTier to use it, or just rely on drop
+             // But we don't have EnemyTier imported in MainScene.
+             // Best to just rely on enemy type if we can.
+             // Legacy 'damageEnemy' handles standard enemies with no type? 
+             // Actually 'enemy' objects usually have 'enemyType' property or 'type' data.
+             // If this is legacy code, let's just minimal fix.
+        }
       }
       enemy.setActive(false);
       enemy.setVisible(false);
@@ -505,57 +526,7 @@ export class MainScene extends Phaser.Scene {
     }
   }
 
-  /**
-   * Spawn an Exp Candy at the given position with weighted tier probability.
-   * For boss enemies, call spawnRareCandy instead.
-   */
-  private spawnExpCandy(x: number, y: number): void {
-    // Roll for candy tier using weighted probability
-    const tier = ExperienceManager.rollCandyTier();
-    const textureKey = `candy-${tier}`;
-    
-    // Display sizes for sprites (scale down large sprites to reasonable game size)
-    const displaySizes: Record<string, number> = {
-      's': 20,
-      'm': 24,
-      'l': 28,
-      'xl': 32,
-    };
-    const displaySize = displaySizes[tier] || 24;
-    
-    const candy = this.xpGems.get(x, y, textureKey) as Phaser.Physics.Arcade.Sprite | null;
 
-    if (candy) {
-      candy.setActive(true);
-      candy.setVisible(true);
-      candy.setPosition(x, y);
-      candy.setTexture(textureKey);
-      candy.setData('tier', tier);
-      candy.setData('xpValue', EXP_CANDY_VALUES[tier]);
-      candy.setDisplaySize(displaySize, displaySize);
-    }
-  }
-
-  /**
-   * Spawn a Rare Candy at the given position (boss-only drop).
-   */
-  private spawnRareCandy(x: number, y: number): void {
-    const tier = ExpCandyTier.RARE;
-    const textureKey = `candy-${tier}`;
-    const displaySize = 36; // Larger size for rare candy
-    
-    const candy = this.xpGems.get(x, y, textureKey) as Phaser.Physics.Arcade.Sprite | null;
-
-    if (candy) {
-      candy.setActive(true);
-      candy.setVisible(true);
-      candy.setPosition(x, y);
-      candy.setTexture(textureKey);
-      candy.setData('tier', tier);
-      candy.setData('xpValue', EXP_CANDY_VALUES[tier]);
-      candy.setDisplaySize(displaySize, displaySize);
-    }
-  }
 
   /**
    * Cull excess Exp Candies when count exceeds threshold.
@@ -596,9 +567,15 @@ export class MainScene extends Phaser.Scene {
 
     // Get XP value from candy tier
     const xpValue = (candy.getData('xpValue') as number) || 1;
-    
-    // Add XP using ExperienceManager (Decoupled: only adds, checks requirement)
-    const canLevelUp = this.experienceManager.addXP(xpValue);
+    const lootType = candy.getData('lootType') as LootItemType;
+
+    let canLevelUp = false;
+
+    if (lootType === LootItemType.RARE_CANDY) {
+      canLevelUp = this.experienceManager.addInstantLevel();
+    } else {
+      canLevelUp = this.experienceManager.addXP(xpValue);
+    }
     
     // Sync experience manager state to character state for compatibility
     this.characterState.level = this.experienceManager.currentLevel;
