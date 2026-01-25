@@ -1,6 +1,6 @@
 import type { CharacterConfig } from '@/game/entities/characters/types';
 import { blazePassive } from '@/game/entities/passives';
-import { flamethrower } from '@/game/entities/weapons';
+import { ember } from '@/game/entities/weapons';
 import { seismicToss } from '@/game/entities/ultimates';
 
 /**
@@ -18,7 +18,7 @@ export const charmanderConfig: CharacterConfig = {
     baseDamage: 20,
   },
   passive: blazePassive,
-  weapon: flamethrower,
+  weapon: ember,
   ultimate: seismicToss,
   spriteKey: 'charmander',
 };

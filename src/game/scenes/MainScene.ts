@@ -201,6 +201,13 @@ export class MainScene extends Phaser.Scene {
 
     projectileGraphics.generateTexture('projectile-lightning', 32, 8);
     projectileGraphics.destroy();
+
+    // Projectile: Fireball (White Circle)
+    const fireballGraphics = this.make.graphics({ x: 0, y: 0 });
+    fireballGraphics.fillStyle(0xffffff, 1);
+    fireballGraphics.fillCircle(8, 8, 8); // 16x16 size
+    fireballGraphics.generateTexture('projectile-fireball', 16, 16);
+    fireballGraphics.destroy();
   }
 
   private createPlayer(): void {

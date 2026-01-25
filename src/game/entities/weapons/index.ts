@@ -1,5 +1,7 @@
-import Phaser from 'phaser';
 import type { CharacterContext, WeaponConfig } from '@/game/entities/characters/types';
+import { Ember } from './specific/Ember';
+
+export const ember = new Ember();
 
 /**
  * Helper to get the enemies group from scene registry
@@ -136,100 +138,7 @@ export const thunderShock: WeaponConfig = {
   },
 };
 
-// ============================================================================
-// CHARIZARD WEAPONS
-// ============================================================================
 
-/**
- * Blast Burn evolution: Blue piercing fire with DOT
- */
-export const blastBurn: WeaponConfig = {
-  id: 'blast-burn',
-  name: 'Blast Burn',
-  description: 'Blue fire pierces enemies, leaves burning ground',
-  cooldownMs: 1500,
-  fire: (ctx: CharacterContext) => {
-    const { scene, player, stats, currentHP } = ctx;
-    
-    // Calculate Blaze bonus
-    const hpPercent = currentHP / stats.maxHP;
-    const missingPercent = 1 - hpPercent;
-    const damageMultiplier = 1 + missingPercent;
-    
-    // Get facing direction
-    const vx = player.body?.velocity.x ?? 0;
-    const vy = player.body?.velocity.y ?? 0;
-    const len = Math.sqrt(vx * vx + vy * vy);
-    const dirX = len > 0 ? vx / len : 0;
-    const dirY = len > 0 ? vy / len : 1;
-    
-    // Create cone of blue fire particles
-    const coneAngle = Math.PI / 3; // 60 degree cone
-    const baseAngle = Math.atan2(dirY, dirX);
-    const range = 150;
-    
-    for (let i = 0; i < 5; i++) {
-      const angle = baseAngle - coneAngle / 2 + (coneAngle / 4) * i;
-      const endX = player.x + Math.cos(angle) * range;
-      const endY = player.y + Math.sin(angle) * range;
-      
-      // Spawn damage at end point
-      scene.events.emit('spawn-aoe-damage', endX, endY, 40, stats.baseDamage * damageMultiplier);
-      
-      // Leave burning ground (DOT)
-      scene.time.addEvent({
-        delay: 500,
-        repeat: 3,
-        callback: () => {
-          scene.events.emit('spawn-aoe-damage', endX, endY, 25, stats.baseDamage * 0.3);
-        },
-      });
-    }
-    
-    // Visual: blue flash
-    scene.cameras.main.flash(100, 0, 100, 255);
-  },
-};
-
-/**
- * Flamethrower: Cone of fire in facing direction
- */
-export const flamethrower: WeaponConfig = {
-  id: 'flamethrower',
-  name: 'Flamethrower',
-  description: 'Cone of fire in facing direction',
-  cooldownMs: 1200,
-  evolution: blastBurn,
-  evolutionLevel: 5,
-  fire: (ctx: CharacterContext) => {
-    const { scene, player, stats, currentHP } = ctx;
-    
-    // Calculate Blaze bonus
-    const hpPercent = currentHP / stats.maxHP;
-    const missingPercent = 1 - hpPercent;
-    const damageMultiplier = 1 + missingPercent;
-    
-    // Get facing direction
-    const vx = player.body?.velocity.x ?? 0;
-    const vy = player.body?.velocity.y ?? 0;
-    const len = Math.sqrt(vx * vx + vy * vy);
-    const dirX = len > 0 ? vx / len : 0;
-    const dirY = len > 0 ? vy / len : 1;
-    
-    // Create cone of fire
-    const coneAngle = Math.PI / 4; // 45 degree cone
-    const baseAngle = Math.atan2(dirY, dirX);
-    const range = 100;
-    
-    for (let i = 0; i < 3; i++) {
-      const angle = baseAngle - coneAngle / 2 + (coneAngle / 2) * i;
-      const endX = player.x + Math.cos(angle) * range;
-      const endY = player.y + Math.sin(angle) * range;
-      
-      scene.events.emit('spawn-aoe-damage', endX, endY, 35, stats.baseDamage * damageMultiplier);
-    }
-  },
-};
 
 // ============================================================================
 // BLASTOISE WEAPONS
