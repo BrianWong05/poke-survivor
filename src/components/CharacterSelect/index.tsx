@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getAllCharacters } from '@/game/entities/characters/registry';
 import type { CharacterConfig } from '@/game/entities/characters/types';
@@ -25,6 +25,17 @@ export function CharacterSelect({ onSelect }: CharacterSelectProps) {
       onSelect(selectedId);
     }
   };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' && selectedId && !showDex) {
+        onSelect(selectedId);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedId, showDex, onSelect]);
 
   return (
     <div className="character-select-overlay">
