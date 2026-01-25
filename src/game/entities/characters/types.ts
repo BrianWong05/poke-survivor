@@ -33,8 +33,8 @@ export interface CharacterContext {
  */
 export interface PassiveConfig {
   id: string;
-  name: string;
-  description: string;
+  nameKey: string;
+  descKey: string;
   /** Called once when character is created */
   onInit?: (ctx: CharacterContext) => void;
   /** Called every frame */
@@ -82,9 +82,9 @@ export interface UltimateConfig {
  */
 export interface CharacterConfig {
   id: string;
-  name: string;
-  displayName: string;
-  archetype: string;
+  name: string; // Internal name/id
+  nameKey: string; // Translation key
+  archetypeKey: string; // Translation key
   stats: CharacterStats;
   passive: PassiveConfig;
   weapon: WeaponConfig;

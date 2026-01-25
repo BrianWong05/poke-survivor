@@ -2,8 +2,8 @@ import { EnemyType, ENEMY_STATS } from '@/game/entities/enemies/EnemyConfig';
 
 export interface DexEntry {
   id: string;
-  name: string;
-  description: string;
+  nameKey: string;
+  descKey: string;
   spritePath: string; // Using texture key for Phaser, or asset path
 }
 
@@ -26,48 +26,48 @@ export interface WeaponDexEntry extends DexEntry {
 export const PLAYABLE_DEX: PlayableDexEntry[] = [
   {
     id: 'pikachu',
-    name: 'Pikachu',
-    description: 'High Speed, Low HP. Glass Cannon.',
+    nameKey: 'pokemon_pikachu_name',
+    descKey: 'pokemon_pikachu_desc',
     spritePath: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png',
     baseHp: 80,
     evolution: 'Raichu', // Lore evolution
   },
   {
     id: 'charmander',
-    name: 'Charmander',
-    description: 'A Fire-type Pokémon.',
+    nameKey: 'pokemon_charmander_name',
+    descKey: 'pokemon_charmander_desc',
     spritePath: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/4.png',
     baseHp: 100, // Placeholder
     evolution: 'Charmeleon',
   },
   {
     id: 'squirtle',
-    name: 'Squirtle',
-    description: 'A Water-type Pokémon.',
+    nameKey: 'pokemon_squirtle_name',
+    descKey: 'pokemon_squirtle_desc',
     spritePath: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/7.png',
     baseHp: 100, // Placeholder
     evolution: 'Wartortle',
   },
   {
     id: 'gastly',
-    name: 'Gastly',
-    description: 'Ghost/Poison type. Levitate.',
+    nameKey: 'pokemon_gastly_name',
+    descKey: 'pokemon_gastly_desc',
     spritePath: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/92.png',
     baseHp: 70,
     evolution: 'Haunter',
   },
   {
     id: 'riolu',
-    name: 'Riolu',
-    description: 'Fighting type. Emanation.',
+    nameKey: 'pokemon_riolu_name',
+    descKey: 'pokemon_riolu_desc',
     spritePath: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/447.png',
     baseHp: 100,
     evolution: 'Lucario',
   },
   {
     id: 'snorlax',
-    name: 'Snorlax',
-    description: 'Normal type. Sleeping.',
+    nameKey: 'pokemon_snorlax_name',
+    descKey: 'pokemon_snorlax_desc',
     spritePath: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/143.png',
     baseHp: 250,
     evolution: '',
@@ -77,8 +77,8 @@ export const PLAYABLE_DEX: PlayableDexEntry[] = [
 export const ENEMY_DEX: EnemyDexEntry[] = [
   {
     id: EnemyType.RATTATA,
-    name: 'Rattata',
-    description: 'A common Normal-type Pokémon. Very fast but weak.',
+    nameKey: 'enemy_rattata_name',
+    descKey: 'enemy_rattata_desc',
     spritePath: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/19.png',
     hp: ENEMY_STATS[EnemyType.RATTATA].maxHP,
     speed: ENEMY_STATS[EnemyType.RATTATA].speed,
@@ -86,8 +86,8 @@ export const ENEMY_DEX: EnemyDexEntry[] = [
   },
   {
     id: EnemyType.GEODUDE,
-    name: 'Geodude',
-    description: 'A Rock/Ground-type Pokémon. Slow and sturdy.',
+    nameKey: 'enemy_geodude_name',
+    descKey: 'enemy_geodude_desc',
     spritePath: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/74.png',
     hp: ENEMY_STATS[EnemyType.GEODUDE].maxHP,
     speed: ENEMY_STATS[EnemyType.GEODUDE].speed,
@@ -95,8 +95,8 @@ export const ENEMY_DEX: EnemyDexEntry[] = [
   },
   {
     id: EnemyType.ZUBAT,
-    name: 'Zubat',
-    description: 'A Poison/Flying-type Pokémon. Fast and annoying.',
+    nameKey: 'enemy_zubat_name',
+    descKey: 'enemy_zubat_desc',
     spritePath: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/41.png',
     hp: ENEMY_STATS[EnemyType.ZUBAT].maxHP,
     speed: ENEMY_STATS[EnemyType.ZUBAT].speed,
@@ -107,58 +107,59 @@ export const ENEMY_DEX: EnemyDexEntry[] = [
 export const WEAPON_DEX: WeaponDexEntry[] = [
   {
     id: 'thunder-shock',
-    name: 'Thunder Shock',
-    description: 'Targets nearest enemy with electric projectile',
+    nameKey: 'weapon_thundershock_name',
+    descKey: 'weapon_thundershock_desc',
     spritePath: 'projectile', // Placeholder texture
     type: 'Electric',
     damage: 'Base Damage',
   },
   {
     id: 'volt-tackle',
-    name: 'Volt Tackle',
-    description: 'Dash forward invincibly, leaving electric trail',
+    nameKey: 'weapon_volttackle_name',
+    descKey: 'weapon_volttackle_desc',
     spritePath: 'pikachu', // Uses player sprite for effect
     type: 'Electric',
     damage: '30 + Base',
   },
   {
     id: 'flamethrower',
-    name: 'Flamethrower',
-    description: 'Cone of fire in facing direction',
+    nameKey: 'weapon_flamethrower_name',
+    descKey: 'weapon_flamethrower_desc',
     spritePath: 'projectile',
     type: 'Fire',
     damage: '35 + Base * Multiplier',
   },
   {
     id: 'water-pulse',
-    name: 'Water Pulse',
-    description: 'Expanding ring pushes enemies back',
+    nameKey: 'weapon_waterpulse_name',
+    descKey: 'weapon_waterpulse_desc',
     spritePath: 'projectile',
     type: 'Water',
     damage: 'Base Damage',
   },
   {
     id: 'lick',
-    name: 'Lick',
-    description: 'Short range, ignores walls. Applies Curse debuff',
+    nameKey: 'weapon_lick_name',
+    descKey: 'weapon_lick_desc',
     spritePath: 'projectile',
     type: 'Ghost',
     damage: 'Base Damage',
   },
   {
     id: 'aura-sphere',
-    name: 'Aura Sphere',
-    description: 'Homing orb, pierces 2 enemies',
+    nameKey: 'weapon_aurasphere_name',
+    descKey: 'weapon_aurasphere_desc',
     spritePath: 'projectile',
     type: 'Fighting',
     damage: 'Base Damage',
   },
   {
     id: 'body-slam',
-    name: 'Body Slam',
-    description: 'Shockwave every 2s based on Max HP',
+    nameKey: 'weapon_bodyslam_name',
+    descKey: 'weapon_bodyslam_desc',
     spritePath: 'projectile',
     type: 'Normal',
     damage: '10% Max HP',
   },
 ];
+

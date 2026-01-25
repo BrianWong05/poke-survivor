@@ -6,8 +6,8 @@ import type { CharacterContext, DamageType, PassiveConfig } from '@/game/entitie
  */
 export const staticPassive: PassiveConfig = {
   id: 'static',
-  name: 'Static',
-  description: 'Enemies touching Pikachu have 30% chance to be stunned (0.5s)',
+  nameKey: 'passive_static_name',
+  descKey: 'passive_static_desc',
   onEnemyTouch: (ctx: CharacterContext, enemy: Phaser.Physics.Arcade.Sprite) => {
     if (Math.random() < 0.3) {
       // Stun the enemy by setting velocity to 0 and marking as stunned
@@ -30,8 +30,8 @@ export const staticPassive: PassiveConfig = {
  */
 export const blazePassive: PassiveConfig = {
   id: 'blaze',
-  name: 'Blaze',
-  description: 'Damage +1% for every 1% HP missing',
+  nameKey: 'passive_blaze_name',
+  descKey: 'passive_blaze_desc',
   // Damage bonus is calculated at fire time in weapon, not here
   // This passive is checked when calculating damage
 };
@@ -41,8 +41,8 @@ export const blazePassive: PassiveConfig = {
  */
 export const rainDishPassive: PassiveConfig = {
   id: 'rain-dish',
-  name: 'Rain Dish',
-  description: 'Regenerates 1 HP every 5 seconds',
+  nameKey: 'passive_raindish_name',
+  descKey: 'passive_raindish_desc',
   onInit: (ctx: CharacterContext) => {
     // Set up regeneration timer
     ctx.scene.time.addEvent({
@@ -66,8 +66,8 @@ export const rainDishPassive: PassiveConfig = {
  */
 export const shadowTagPassive: PassiveConfig = {
   id: 'shadow-tag',
-  name: 'Shadow Tag',
-  description: 'Enemies in aura are pushed away from Gengar and take +25% damage',
+  nameKey: 'passive_shadowtag_name',
+  descKey: 'passive_shadowtag_desc',
   onInit: (ctx: CharacterContext) => {
     // Create dark aura visual
     const aura = ctx.scene.add.circle(ctx.player.x, ctx.player.y, 100, 0x4a0080, 0.3);
@@ -136,8 +136,8 @@ export const shadowTagPassive: PassiveConfig = {
  */
 export const innerFocusPassive: PassiveConfig = {
   id: 'inner-focus',
-  name: 'Inner Focus',
-  description: 'Projectile Size +20%. Immunity to flinch/stun.',
+  nameKey: 'passive_innerfocus_name',
+  descKey: 'passive_innerfocus_desc',
   // Projectile size bonus is applied at weapon fire time
   // Stun immunity is checked in damage handler
   onDamageTaken: (ctx: CharacterContext, damage: number, _damageType: DamageType) => {
@@ -153,8 +153,8 @@ export const innerFocusPassive: PassiveConfig = {
  */
 export const thickFatPassive: PassiveConfig = {
   id: 'thick-fat',
-  name: 'Thick Fat',
-  description: '-50% damage from Fire/Ice projectiles (stubbed)',
+  nameKey: 'passive_thickfat_name',
+  descKey: 'passive_thickfat_desc',
   onDamageTaken: (_ctx: CharacterContext, damage: number, damageType: DamageType) => {
     // Reduce damage from fire/ice by 50%
     if (damageType === 'fire' || damageType === 'ice') {

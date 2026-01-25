@@ -1,14 +1,17 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { getAllCharacters } from '@/game/entities/characters/registry';
 import type { CharacterConfig } from '@/game/entities/characters/types';
 import './styles.css';
 import { DexScreen } from '@/components/Menus/DexScreen';
+import { LanguageToggle } from '@/components/Shared/LanguageToggle';
 
 interface CharacterSelectProps {
   onSelect: (characterId: string) => void;
 }
 
 export function CharacterSelect({ onSelect }: CharacterSelectProps) {
+  const { t } = useTranslation();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showDex, setShowDex] = useState(false);
   const characters = getAllCharacters();
@@ -25,11 +28,12 @@ export function CharacterSelect({ onSelect }: CharacterSelectProps) {
 
   return (
     <div className="character-select-overlay">
+      <LanguageToggle />
       <div className="character-select-container">
-        <h1 className="character-select-title">Choose Your Pokémon</h1>
+        <h1 className="character-select-title">{t('choose_pokemon')}</h1>
         
         <button className="dex-button" onClick={() => setShowDex(true)}>
-          📖 PokéDex
+          📖 {t('pokedex')}
         </button>
 
         {showDex && <DexScreen onClose={() => setShowDex(false)} />}
@@ -53,15 +57,15 @@ export function CharacterSelect({ onSelect }: CharacterSelectProps) {
                   } as React.CSSProperties}
                 />
               </div>
-              <h2 className="character-name">{character.displayName}</h2>
-              <p className="character-archetype">{character.archetype}</p>
+              <h2 className="character-name">{t(character.nameKey)}</h2>
+              <p className="character-archetype">{t(character.archetypeKey)}</p>
               <div className="character-stats">
                 <span className="stat">❤️ {character.stats.maxHP}</span>
                 <span className="stat">⚡ {character.stats.speed}</span>
                 <span className="stat">⚔️ {character.stats.baseDamage}</span>
               </div>
               <p className="character-passive">
-                <strong>{character.passive.name}:</strong> {character.passive.description}
+                <strong>{t(character.passive.nameKey)}:</strong> {t(character.passive.descKey)}
               </p>
             </button>
           ))}
@@ -72,7 +76,7 @@ export function CharacterSelect({ onSelect }: CharacterSelectProps) {
           disabled={!selectedId}
           onClick={handleConfirm}
         >
-          Start Game
+          {t('start_game')}
         </button>
       </div>
     </div>

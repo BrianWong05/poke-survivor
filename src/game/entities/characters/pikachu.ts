@@ -10,8 +10,8 @@ import { gigantamaxThunder } from '@/game/entities/ultimates';
 export const pikachuConfig: CharacterConfig = {
   id: 'pikachu',
   name: 'pikachu',
-  displayName: 'Pikachu',
-  archetype: 'Glass Cannon',
+  nameKey: 'pokemon_pikachu_name',
+  archetypeKey: 'archetype_glass_cannon',
   stats: {
     maxHP: 80,
     speed: 250,

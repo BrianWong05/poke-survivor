@@ -10,8 +10,8 @@ import { seismicToss } from '@/game/entities/ultimates';
 export const charmanderConfig: CharacterConfig = {
   id: 'charmander',
   name: 'charmander',
-  displayName: 'Charmander',
-  archetype: 'Area Denial / Tank',
+  nameKey: 'pokemon_charmander_name',
+  archetypeKey: 'archetype_area_denial_tank',
   stats: {
     maxHP: 150,
     speed: 180,

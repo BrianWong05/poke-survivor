@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import './styles.css';
 import { DexManager } from '@/systems/DexManager';
 import { PLAYABLE_DEX, ENEMY_DEX, WEAPON_DEX, type DexEntry, type PlayableDexEntry, type EnemyDexEntry, type WeaponDexEntry } from '@/config/GameData';
@@ -10,6 +11,7 @@ interface DexScreenProps {
 }
 
 export const DexScreen: React.FC<DexScreenProps> = ({ onClose }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabType>('pokemon');
   const [selectedItem, setSelectedItem] = useState<DexEntry | null>(null);
   const dexManager = DexManager.getInstance();
@@ -30,14 +32,6 @@ export const DexScreen: React.FC<DexScreenProps> = ({ onClose }) => {
     }
   };
 
-  // Helper to render placeholder or image
-  // Since we don't have asset paths mapped properly yet, we use CSS classes/placeholders.
-  
-  // Note: Since we are using Phaser placeholders (circles/squares) mostly, 
-  // we might want to just render CSS shapes or colors for now if images are missing.
-  // But for the 'Dex' feel, let's assume we want valid images.
-  // Since I don't have the assets, I will render styling based on the ID or name as text fallback.
-
   return (
     <div className="dex-screen-overlay">
       <div className="dex-header">
@@ -50,7 +44,7 @@ export const DexScreen: React.FC<DexScreenProps> = ({ onClose }) => {
           className={`dex-tab ${activeTab === 'pokemon' ? 'active' : ''}`}
           onClick={() => setActiveTab('pokemon')}
         >
-          Pokémon
+          Pokemon
         </button>
         <button 
           className={`dex-tab ${activeTab === 'enemies' ? 'active' : ''}`}
@@ -89,11 +83,10 @@ export const DexScreen: React.FC<DexScreenProps> = ({ onClose }) => {
                   {isUnlocked && entry.spritePath.includes('/') ? (
                        <img 
                          src={entry.spritePath} 
-                         alt={entry.name}
+                         alt={t(entry.nameKey)}
                          style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                          onError={(e) => {
                            (e.target as HTMLImageElement).style.display = 'none';
-                           // e.currentTarget.parentElement!.innerText = 'IMG'; 
                          }}
                        />
                   ) : (
@@ -108,7 +101,7 @@ export const DexScreen: React.FC<DexScreenProps> = ({ onClose }) => {
                 </div>
               )}
               <div className="dex-card-name">
-                {isUnlocked ? entry.name : (isSeen ? '???' : 'Locked')}
+                {isUnlocked ? t(entry.nameKey) : (isSeen ? '???' : 'Locked')}
               </div>
             </div>
           );
@@ -121,11 +114,10 @@ export const DexScreen: React.FC<DexScreenProps> = ({ onClose }) => {
             <button className="dex-close-modal" onClick={() => setSelectedItem(null)}>×</button>
             <div className="dex-modal-header">
               <div className="dex-modal-image">
-                 {/* Placeholder */}
                  {selectedItem.spritePath.includes('/') ? (
                    <img 
                      src={selectedItem.spritePath} 
-                     alt={selectedItem.name}
+                     alt={t(selectedItem.nameKey)}
                      style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                    />
                  ) : (
@@ -137,20 +129,19 @@ export const DexScreen: React.FC<DexScreenProps> = ({ onClose }) => {
                  )}
               </div>
               <div className="dex-modal-info">
-                <h2>{selectedItem.name}</h2>
+                <h2>{t(selectedItem.nameKey)}</h2>
                 <div style={{ color: '#888', fontStyle: 'italic' }}>{selectedItem.id.toUpperCase()}</div>
               </div>
             </div>
             
             <div className="dex-modal-description">
-              {selectedItem.description}
+              {t(selectedItem.descKey)}
             </div>
 
             <div className="dex-modal-stats">
-              {/* Type Narrowing for specific stats */}
               {(activeTab === 'pokemon') && (
                 <>
-                  <div className="dex-stat-label">HP:</div>
+                  <div className="dex-stat-label">{t('hp')}:</div>
                   <div>{(selectedItem as PlayableDexEntry).baseHp}</div>
                   <div className="dex-stat-label">Evolution:</div>
                   <div>{(selectedItem as PlayableDexEntry).evolution || 'None'}</div>
@@ -158,9 +149,9 @@ export const DexScreen: React.FC<DexScreenProps> = ({ onClose }) => {
               )}
               {(activeTab === 'enemies') && (
                 <>
-                  <div className="dex-stat-label">Max HP:</div>
+                  <div className="dex-stat-label">{t('hp')}:</div>
                   <div>{(selectedItem as EnemyDexEntry).hp}</div>
-                  <div className="dex-stat-label">Speed:</div>
+                  <div className="dex-stat-label">{t('speed')}:</div>
                   <div>{(selectedItem as EnemyDexEntry).speed}</div>
                   <div className="dex-stat-label">Drop Tier:</div>
                   <div>{(selectedItem as EnemyDexEntry).dropTier}</div>
@@ -170,7 +161,7 @@ export const DexScreen: React.FC<DexScreenProps> = ({ onClose }) => {
                 <>
                   <div className="dex-stat-label">Type:</div>
                   <div>{(selectedItem as WeaponDexEntry).type}</div>
-                  <div className="dex-stat-label">Damage:</div>
+                  <div className="dex-stat-label">{t('damage')}:</div>
                   <div>{(selectedItem as WeaponDexEntry).damage}</div>
                 </>
               )}
@@ -181,3 +172,4 @@ export const DexScreen: React.FC<DexScreenProps> = ({ onClose }) => {
     </div>
   );
 };
+

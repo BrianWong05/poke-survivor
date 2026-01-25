@@ -10,8 +10,8 @@ import { boneRush } from '@/game/entities/ultimates';
 export const rioluConfig: CharacterConfig = {
   id: 'riolu',
   name: 'riolu',
-  displayName: 'Riolu',
-  archetype: 'Precision Crit',
+  nameKey: 'pokemon_riolu_name',
+  archetypeKey: 'archetype_precision_crit',
   stats: {
     maxHP: 100,
     speed: 200,

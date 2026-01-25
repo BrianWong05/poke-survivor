@@ -10,8 +10,8 @@ import { shellSmash } from '@/game/entities/ultimates';
 export const squirtleConfig: CharacterConfig = {
   id: 'squirtle',
   name: 'squirtle',
-  displayName: 'Squirtle',
-  archetype: 'Knockback Tank',
+  nameKey: 'pokemon_squirtle_name',
+  archetypeKey: 'archetype_knockback_tank',
   stats: {
     maxHP: 180,
     speed: 140,

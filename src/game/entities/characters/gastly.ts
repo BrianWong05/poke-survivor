@@ -10,8 +10,8 @@ import { destinyBond } from '@/game/entities/ultimates';
 export const gastlyConfig: CharacterConfig = {
   id: 'gastly',
   name: 'gastly',
-  displayName: 'Gastly',
-  archetype: 'Wall Hacker / Debuffer',
+  nameKey: 'pokemon_gastly_name',
+  archetypeKey: 'archetype_wall_hacker_debuffer',
   stats: {
     maxHP: 70,
     speed: 240,

@@ -10,8 +10,8 @@ import { rest } from '@/game/entities/ultimates';
 export const snorlaxConfig: CharacterConfig = {
   id: 'snorlax',
   name: 'snorlax',
-  displayName: 'Snorlax',
-  archetype: 'AFK Tank',
+  nameKey: 'pokemon_snorlax_name',
+  archetypeKey: 'archetype_afk_tank',
   stats: {
     maxHP: 250,
     speed: 100,
