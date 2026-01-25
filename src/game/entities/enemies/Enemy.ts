@@ -42,6 +42,12 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     
     // Scale up enemies for better presence
     this.setScale(1.5);
+
+    // Reduce hitbox size to 70% of visual to be more forgiving/fair
+    const width = this.width;
+    const height = this.height;
+    this.setBodySize(width * 0.7, height * 0.7);
+    this.setOffset(width * 0.15, height * 0.15);
   }
 
   /**
