@@ -32,9 +32,11 @@ interface SpriteManifestEntry {
   animations: SpriteAnimation[];
 }
 
+import { Player } from '@/game/entities/Player';
+
 export class MainScene extends Phaser.Scene {
   // Player
-  private player!: Phaser.Physics.Arcade.Sprite;
+  private player!: Player;
   private isInvincible = false;
 
   // Character System
@@ -215,17 +217,16 @@ export class MainScene extends Phaser.Scene {
     const centerX = this.scale.width / 2;
     const centerY = this.scale.height / 2;
 
-    if (this.usePlaceholderGraphics) {
-      this.player = this.physics.add.sprite(centerX, centerY, 'player');
-    } else {
-      this.player = this.physics.add.sprite(centerX, centerY, this.characterConfig.spriteKey);
+    const spriteKey = this.usePlaceholderGraphics ? 'player' : this.characterConfig.spriteKey;
+    
+    this.player = new Player(this, centerX, centerY, spriteKey);
+
+    if (!this.usePlaceholderGraphics) {
       this.player.play(`${this.characterConfig.spriteKey}-idle-down`);
       // Scale sprite to reasonable size (PMD sprites are small)
       this.player.setScale(2);
     }
-    this.player.setCollideWorldBounds(true);
-    this.player.setDepth(10);
-
+    
     // Set Inner Focus flag for Lucario
     if (this.characterConfig.passive.id === 'inner-focus') {
       this.player.setData('innerFocus', true);
@@ -348,9 +349,9 @@ export class MainScene extends Phaser.Scene {
       this
     );
 
-    // Player collects XP gem
+    // Player collects XP gem (Magnet Zone)
     this.physics.add.overlap(
-      this.player,
+      this.player.collectionZone,
       this.xpGems,
       this.handleXPCollection as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback,
       undefined,

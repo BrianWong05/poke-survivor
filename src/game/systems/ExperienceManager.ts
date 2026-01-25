@@ -57,15 +57,25 @@ export class ExperienceManager {
   }
 
   /**
+   * XP Brackets for the "Step" leveling system.
+   * Key = Tier (Level / 10), Value = XP required per level in that tier.
+   */
+  private static readonly XP_BRACKETS: Record<number, number> = {
+    0: 5,   // 0-9: 5 XP (Fast Start)
+    1: 20,  // 10-19: 20 XP
+    2: 50,  // 20-29: 50 XP
+    3: 100, // 30-39: 100 XP
+    // 4+: 300 XP (Default)
+  };
+
+  /**
    * Calculate XP required to reach a specific level.
-   * Formula: 5 + (Level * 10)
-   * 
-   * @example
-   * Level 2: 5 + (2 * 10) = 25 XP
-   * Level 10: 5 + (10 * 10) = 105 XP
+   * Uses a "Step/Bracket" system where req XP increases every 10 levels.
    */
   public static getRequiredXP(level: number): number {
-    return 5 + (level * 10);
+    const tier = Math.floor(level / 10);
+    // Return specific tier value or default to 300 (Endgame)
+    return ExperienceManager.XP_BRACKETS[tier] || 300;
   }
 
   public getRequiredXP(level: number): number {
@@ -140,6 +150,9 @@ export class ExperienceManager {
       this.currentLevel += 1;
       this.currentXP -= this.xpToNextLevel;
       this.xpToNextLevel = this.getRequiredXP(this.currentLevel + 1);
+      
+      console.log(`Level Up! Level ${this.currentLevel}. Next Level requires: ${this.xpToNextLevel} XP`);
+      
       return true;
     }
     
