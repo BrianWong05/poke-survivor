@@ -134,9 +134,8 @@ export class OrbitWeapon implements WeaponConfig {
 
 // --- FIRE (Flame Wheel -> Fire Spin) ---
 
-export const fireSpin = new OrbitWeapon(
-  'fire-spin',
-  {
+// --- FIRE (Flame Wheel -> Fire Spin) ---
+export const FIRE_SPIN_CONFIG: OrbitVariantConfig = {
     name: 'Fire Spin',
     description: 'Permanent ring of fire that burns enemies.',
     color: 0xff4400, // Orange/Red
@@ -146,21 +145,13 @@ export const fireSpin = new OrbitWeapon(
     statusEffect: 'burn',
     duration: 0, // Permanent
     isPermanent: true,
-    cooldown: 5000, // Cooldown doesn't matter much if permanent, but maybe for refresh?
-                    // Actually if it's permanent, we need to prevent re-firing stacking infinitely?
-                    // For now, let's assume standard cooldown applies.
-                    // If it's permanent, maybe fire() should check if they already exist?
-                    // Or we just rely on long cooldown? Vampire Survivors King Bible Evo is permanent.
-                    // Implementation detail: If we blindly spawn, we get duplicates.
-                    // For simplicity in this task, we will just spawn. 
-                    // (User said: "Permanent duration (never vanishes)")
+    cooldown: 5000, 
     damageMultiplier: 1.5,
-  }
-);
+};
 
-export const flameWheel = new OrbitWeapon(
-  'flame-wheel',
-  {
+export const fireSpin = new OrbitWeapon('fire-spin', FIRE_SPIN_CONFIG);
+
+export const FLAME_WHEEL_CONFIG: OrbitVariantConfig = {
     name: 'Flame Wheel',
     description: 'A spinning wheel of fire. Causes burn.',
     color: 0xff0000,
@@ -169,15 +160,13 @@ export const flameWheel = new OrbitWeapon(
     radius: 90,
     statusEffect: 'burn',
     duration: 4,
-    cooldown: 2000, // 2s cooldown + 4s duration? Or Cooldown starts after?
-                    // "Duration: Projectiles last for 4 seconds... Cooldown 2 seconds."
-                    // Usually cooldown in this system is time between activatons. 
-                    // If duration > cooldown, we overlap. 
-                    // Let's set cooldown to 6000 (4s duration + 2s downtime) or just 2000?
-                    // User said "Duration.. 4s. Cooldown 2s." usually implies 4s active, then 2s wait. Total cycle 6s.
-                    // I will set cooldown to 6000ms.
+    cooldown: 2000, 
     damageMultiplier: 1.2,
-  },
+};
+
+export const flameWheel = new OrbitWeapon(
+  'flame-wheel',
+  FLAME_WHEEL_CONFIG,
   fireSpin,
   8
 );
@@ -186,9 +175,8 @@ export const flameWheel = new OrbitWeapon(
 
 // --- WATER (Aqua Ring -> Hydro Ring) ---
 
-export const hydroRing = new OrbitWeapon(
-  'hydro-ring',
-  {
+// --- WATER (Aqua Ring -> Hydro Ring) ---
+export const HYDRO_RING_CONFIG: OrbitVariantConfig = {
     name: 'Hydro Ring',
     description: 'A massive water ring with extreme knockback.',
     color: 0x0088ff,
@@ -199,12 +187,11 @@ export const hydroRing = new OrbitWeapon(
     knockback: 600, // Doubled knockback (300 * 2)
     duration: 4,
     cooldown: 6000,
-  }
-);
+};
 
-export const aquaRing = new OrbitWeapon(
-  'aqua-ring',
-  {
+export const hydroRing = new OrbitWeapon('hydro-ring', HYDRO_RING_CONFIG);
+
+export const AQUA_RING_CONFIG: OrbitVariantConfig = {
     name: 'Aqua Ring',
     description: 'A protective ring of water. Knocks enemies back.',
     color: 0x00ffff,
@@ -215,16 +202,19 @@ export const aquaRing = new OrbitWeapon(
     knockback: 300, // High Knockback
     duration: 4,
     cooldown: 6000,
-  },
+};
+
+export const aquaRing = new OrbitWeapon(
+  'aqua-ring',
+  AQUA_RING_CONFIG,
   hydroRing,
   8
 );
 
 // --- GRASS (Magical Leaf -> Leaf Storm) ---
 
-export const leafStorm = new OrbitWeapon(
-  'leaf-storm',
-  {
+// --- GRASS (Magical Leaf -> Leaf Storm) ---
+export const LEAF_STORM_CONFIG: OrbitVariantConfig = {
     name: 'Leaf Storm',
     description: 'A storm of leaves shreds enemies.',
     color: 0x00ff00,
@@ -238,12 +228,11 @@ export const leafStorm = new OrbitWeapon(
     extraRings: [
         { radiusMultiplier: 0.6, countMultiplier: 0.6, invertSpin: true } // Inner ring, smaller, fewer, reverse spin?
     ]
-  }
-);
+};
 
-export const magicalLeaf = new OrbitWeapon(
-  'magical-leaf',
-  {
+export const leafStorm = new OrbitWeapon('leaf-storm', LEAF_STORM_CONFIG);
+
+export const MAGICAL_LEAF_CONFIG: OrbitVariantConfig = {
     name: 'Magical Leaf',
     description: 'Sharp leaves that never miss.',
     color: 0x44ff44,
@@ -255,7 +244,11 @@ export const magicalLeaf = new OrbitWeapon(
     cooldown: 6000, 
     damageMultiplier: 1.0, 
     // "High Pierce" - Orbit projectiles pierce by default in our impl.
-  },
+};
+
+export const magicalLeaf = new OrbitWeapon(
+  'magical-leaf',
+  MAGICAL_LEAF_CONFIG,
   leafStorm,
   8
 );

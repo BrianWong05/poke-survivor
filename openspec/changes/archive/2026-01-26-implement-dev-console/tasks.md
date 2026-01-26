@@ -1,0 +1,26 @@
+# Tasks: Implement Developer Debug Console
+
+- [x] **Expose MainScene Global** <!-- id: 0 -->
+    - [x] Modify `src/game/scenes/MainScene.ts` to assign `window.gameScene = this` in `create()`.
+    - [x] Add explicit `public` methods to `MainScene` for debug access: `debugAddWeapon`, `debugLevelUp`, `debugHeal`, `debugKillAll`.
+- [x] **Create DevConsole Component** <!-- id: 1 -->
+    - [x] Create `src/components/UI/DevConsole.tsx`.
+    - [x] Implement visibility toggle listener (Backtick key).
+    - [x] Implement "Cheats" section UI and handlers calling `window.gameScene`.
+    - [x] Implement "Weapon Manager" section importing `OrbitWeapon` presets.
+- [x] **Dynamic Move Management** <!-- id: 4 -->
+    - [x] Update `MainScene` to support `debugRemoveWeapon` and `getDebugWeapons`.
+    - [x] Update `MainScene.debugAddWeapon` to generic `WeaponConfig` support.
+    - [x] Update `DevConsole` to poll/sync active weapon list.
+    - [x] Add "Active Moves" section with Remove buttons.
+    - [x] Create `WeaponRegistry` in `DevConsole` importing all specific weapons (Ember, WaterGun, etc.).
+    - [x] Add "All Moves" section listing every available weapon.
+- [x] **Integrate UI** <!-- id: 2 -->
+    - [x] Render `<DevConsole />` in `App.tsx`.
+- [x] **Validation** <!-- id: 3 -->
+    - [x] Verify hotkey toggles menu.
+    - [x] Verify "Level Up" triggers level up sequence.
+    - [x] Verify "Add Flame Wheel" spawns fireballs.
+    - [x] Verify adding generic moves (Ember).
+    - [x] Verify removing moves stops them.
+    - [x] Verify "Invincible Mode" prevents damage.

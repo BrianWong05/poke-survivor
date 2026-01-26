@@ -6,6 +6,7 @@ import {
   type CharacterConfig,
   type CharacterState,
   type CharacterContext,
+  type WeaponConfig,
   createCharacterState,
 } from '@/game/entities/characters/types';
 import {
@@ -15,6 +16,7 @@ import { EnemySpawner } from '@/game/systems/EnemySpawner';
 import { ENEMY_STATS, EnemyType, EnemyTier } from '@/game/entities/enemies';
 import { LootManager } from '@/game/systems/LootManager';
 import { LootItemType } from '@/game/systems/LootConfig';
+import { OrbitWeapon, type OrbitVariantConfig } from '@/game/entities/weapons/general/OrbitWeapon';
 import i18n from '@/i18n';
 
 interface SpriteAnimation {
@@ -81,11 +83,24 @@ export class MainScene extends Phaser.Scene {
   private experienceManager!: ExperienceManager;
   private cullFrameCounter = 0;
 
+  // Debug
+  private debugWeapons: Map<string, { 
+    name: string, 
+    timer: Phaser.Time.TimerEvent,
+    level: number,
+    baseConfig: WeaponConfig,
+    activeConfig: WeaponConfig
+  }> = new Map();
+  private debugInvincible = false;
+
   constructor() {
     super({ key: 'MainScene' });
   }
 
   create(): void {
+    // Expose scene globally for DevConsole
+    (window as any).gameScene = this;
+
     // Get callbacks from registry
     this.callbacks = this.registry.get('callbacks') as GameCallbacks;
 
@@ -917,7 +932,7 @@ export class MainScene extends Phaser.Scene {
     _playerObj: Phaser.Types.Physics.Arcade.GameObjectWithBody | Phaser.Tilemaps.Tile,
     enemyObj: Phaser.Types.Physics.Arcade.GameObjectWithBody | Phaser.Tilemaps.Tile
   ): void {
-    if (this.isInvincible || this.gameOver) return;
+    if (this.isInvincible || this.gameOver || this.debugInvincible) return;
     if (this.player.getData('invincible')) return;
 
     const enemy = enemyObj as Phaser.Physics.Arcade.Sprite;
@@ -980,6 +995,273 @@ export class MainScene extends Phaser.Scene {
   public setJoystickVector(x: number, y: number): void {
     this.joystickVector.x = x;
     this.joystickVector.y = y;
+  }
+
+  // ===========================================
+  // DEBUG METHODS (Accessed via DevConsole)
+  // ===========================================
+
+  public debugLevelUp(): void {
+    if (!this.experienceManager) return;
+    
+    // Add level
+    const leveled = this.experienceManager.addInstantLevel();
+    this.updateLevelUI();
+    
+    // Trigger sequence if actually leveled up
+    if (leveled && !this.isLevelUpPending) {
+      this.isLevelUpPending = true;
+      this.experienceManager.processLevelUp();
+      
+      this.cameras.main.flash(500, 255, 255, 255, false, (_camera: any, progress: number) => {
+        if (progress === 1) {
+          if (!this.sys || !this.sys.isActive()) return;
+          this.showLevelUpMenu();
+        }
+      });
+    }
+  }
+
+  public debugHeal(): void {
+    if (this.player) {
+      this.healPlayer(9999);
+    }
+  }
+
+  public debugKillAll(): void {
+    const enemies = this.registry.get('enemiesGroup') as Phaser.Physics.Arcade.Group;
+    const legacyEnemies = this.registry.get('legacyEnemiesGroup') as Phaser.Physics.Arcade.Group;
+    
+    const killGroup = (group: Phaser.Physics.Arcade.Group) => {
+      if (!group) return;
+      group.getChildren().forEach((child) => {
+        const enemy = child as Phaser.Physics.Arcade.Sprite;
+        if (enemy.active) {
+          this.damageEnemy(enemy, 99999);
+        }
+      });
+    };
+
+    killGroup(enemies);
+    killGroup(legacyEnemies);
+  }
+
+  public debugAddWeapon(weaponConfig: WeaponConfig | OrbitVariantConfig): void {
+    if (!this.player) return;
+
+    const id = `debug-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    
+    // Determine if we need to wrap it (OrbitVariantConfig) or use distinct instance (WeaponConfig)
+    let baseWeapon: WeaponConfig;
+    
+    // Check if it's an OrbitVariantConfig (duck typing: has 'spinSpeed' or 'projectileCount')
+    if ('spinSpeed' in weaponConfig) {
+       baseWeapon = new OrbitWeapon(id, weaponConfig as OrbitVariantConfig);
+    } else {
+       // It's a WeaponConfig (e.g. Ember instance)
+       baseWeapon = weaponConfig as WeaponConfig;
+       // We can clone it if needed, but for now specific instances are fine
+    }
+
+    const initialLevel = 1;
+    let activeWeapon = baseWeapon;
+
+    // Helper to fire
+    const fireWeapon = (weapon: WeaponConfig, level: number) => {
+         if (this.gameOver) return;
+         if (this.player.getData('canControl') === false) return;
+         
+         const ctx = {
+             ...this.getCharacterContext(),
+             level: level // Force weapon level
+         };
+         weapon.fire(ctx);
+    };
+
+    // Create timer for auto-fire
+    // Note: We use the COOLDOWN of the BASE weapon for simplicity, 
+    // or we'd need to recreate timer on evolution if cooldown changes.
+    // For now: assume cooldown is mostly constant or determined by base.
+    const timer = this.time.addEvent({
+      delay: baseWeapon.cooldownMs,
+      callback: () => {
+        const entry = this.debugWeapons.get(id);
+        if (entry) {
+            fireWeapon(entry.activeConfig, entry.level);
+        }
+      },
+      loop: true,
+    });
+
+    // Fire immediately
+    fireWeapon(activeWeapon, initialLevel);
+
+    this.debugWeapons.set(id, { 
+        name: baseWeapon.name, 
+        timer,
+        level: initialLevel,
+        baseConfig: baseWeapon,
+        activeConfig: activeWeapon
+    });
+    console.log(`[DevConsole] Added debug weapon: ${baseWeapon.name} (${id})`);
+  }
+
+  public debugSetWeaponLevel(id: string, newLevel: number): void {
+      if (id === 'main_weapon') {
+          // Handle Main Weapon (Character Level)
+          this.characterState.level = newLevel;
+          // Sync ExperienceManager
+          this.experienceManager.currentLevel = newLevel;
+          this.experienceManager.currentXP = 0;
+          this.experienceManager.xpToNextLevel = this.experienceManager.getRequiredXP(newLevel + 1);
+          
+          this.updateLevelUI();
+
+          // Check evolution logic manually 
+          const weaponConfig = this.characterState.config.weapon;
+          const evolutionLevel = weaponConfig.evolutionLevel ?? 5;
+          
+          let nextWeapon = weaponConfig;
+          if (newLevel >= evolutionLevel && weaponConfig.evolution) {
+              nextWeapon = weaponConfig.evolution;
+              // Mark as evolved
+              this.characterState.isEvolved = true;
+          } else {
+              // De-evolve if we lowered level below threshold?
+              // The original logic only upgrades, but debug should allow downgrade.
+              this.characterState.isEvolved = false;
+          }
+
+          if (this.characterState.activeWeapon.id !== nextWeapon.id) {
+               console.log(`[DevConsole] Main Weapon evolved/devolved to ${nextWeapon.name}`);
+               this.characterState.activeWeapon = nextWeapon;
+               
+               // Restart timer with new cooldown
+               if (this.fireTimer) {
+                   this.fireTimer.remove();
+                   this.fireTimer = this.time.addEvent({
+                       delay: nextWeapon.cooldownMs,
+                       callback: () => this.fireWeapon(),
+                       loop: true
+                   });
+               }
+          }
+          return;
+      }
+
+      const entry = this.debugWeapons.get(id);
+      if (!entry) return;
+
+      entry.level = newLevel;
+
+      // Check for evolution
+      // Simple logic: if newLevel >= evolutionLevel, use evolution
+      // This supports 1-step evolution.
+      let nextConfig = entry.baseConfig;
+      if (entry.baseConfig.evolution && entry.baseConfig.evolutionLevel && newLevel >= entry.baseConfig.evolutionLevel) {
+          nextConfig = entry.baseConfig.evolution;
+      }
+      
+      // Update config if changed
+      if (nextConfig !== entry.activeConfig) {
+          console.log(`[DevConsole] Weapon ${entry.name} evolved to ${nextConfig.name}`);
+          
+          // Cleanup old Orbit weapon if necessary (remove "active" flag)
+          // Since OrbitWeapon.fire checks for weapon_active_${id}, and ID might be same or different?
+          // OrbitWeapon constructor takes 'id'. Evolution usually has different ID if it's a new instance.
+          // Check IDs.
+          if (entry.activeConfig.id !== nextConfig.id) {
+               this.player.setData(`weapon_active_${entry.activeConfig.id}`, false);
+          }
+
+          entry.activeConfig = nextConfig;
+          entry.name = nextConfig.name; // Update display name potentially?
+          
+          // Force fire new config immediately to show change
+          // (Especially for Orbit weapons handled by 'permanent' flag)
+           const ctx = {
+             ...this.getCharacterContext(),
+             level: entry.level
+          };
+          entry.activeConfig.fire(ctx);
+      }
+  }
+
+  public debugRemoveWeapon(id: string): void {
+    // Handle main weapon
+    if (id === 'main_weapon') {
+        if (this.fireTimer) {
+            this.fireTimer.destroy();
+            // @ts-ignore
+            this.fireTimer = undefined;
+            console.log(`[DevConsole] Removed main weapon: ${this.characterState.activeWeapon.name}`);
+        }
+        return;
+    }
+
+    const entry = this.debugWeapons.get(id);
+    if (entry) {
+        entry.timer.remove();
+        this.debugWeapons.delete(id);
+        console.log(`[DevConsole] Removed debug weapon: ${entry.name}`);
+        
+        // If it was a permanent orbit weapon, we might need to clean up its projectiles?
+        // OrbitWeapon fires permanent projectiles once.
+        // We'd need to manually destroy them.
+        // The simple OrbitWeapon logic sets data on player: `weapon_active_${id}`
+        // We should clear that flag so it can be re-added.
+        if (this.player) {
+             // Try to find matching key
+             // Since we generated ID inside debugAddWeapon (for orbit), we might have issues matching 
+             // unless we propagated ID.
+             // Wait, for OrbitWeapon construction we passed 'id'. 
+             // In generic case we might not have set 'id' correctly on the object if we casted.
+        }
+    }
+  }
+
+  public getDebugWeapons(): { id: string, name: string, level: number }[] {
+      const list: { id: string, name: string, level: number }[] = Array.from(this.debugWeapons.entries()).map(([id, data]) => ({
+        id,
+        name: data.activeConfig.name,
+        level: data.level
+      }));
+
+      // Append main weapon if active
+      if (this.characterState && this.characterState.activeWeapon) {
+          list.unshift({
+              id: 'main_weapon',
+              name: `${this.characterState.activeWeapon.name} (Main)`,
+              level: this.characterState.level
+          });
+      }
+      return list;
+  }
+
+  public debugSetPaused(paused: boolean): void {
+    if (this.gameOver) return;
+    
+    this.isPaused = paused;
+    
+    if (paused) {
+      this.physics.pause();
+      this.anims.pauseAll();
+      this.time.paused = true;
+    } else {
+      this.physics.resume();
+      this.anims.resumeAll();
+      this.time.paused = false;
+    }
+  }
+
+  public debugSetInvincible(enabled: boolean): void {
+    this.debugInvincible = enabled;
+    if (enabled && this.player) {
+        this.player.setAlpha(0.7); // Visual feedback
+    } else if (this.player) {
+         this.player.setAlpha(1);
+    }
+    console.log(`[DevConsole] Invincible mode: ${enabled}`);
   }
 
   update(_time: number, delta: number): void {
