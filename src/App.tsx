@@ -83,7 +83,7 @@ function App() {
         isGameOver={isGameOver}
         onRestart={handleRestart}
       />
-      <DevConsole />
+      {import.meta.env.DEV && <DevConsole />}
     </>
   );
 }

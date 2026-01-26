@@ -4,7 +4,7 @@ export class BoneProjectile extends Phaser.Physics.Arcade.Sprite {
   // Config
   private damageAmount = 30; // High contact damage
   private knockbackForce = 500; // High Knockback
-  private hitEnemies: Phaser.GameObjects.GameObject[] = []; // Track cooldown per enemy?
+
   // Orbiting bones persist. Hit enemies should take damage again after cooldown or just once?
   // "Damage: High contact damage" usually implies continuous or interval damage if they stay in range.
   // But standard projectiles destroy/pierce.

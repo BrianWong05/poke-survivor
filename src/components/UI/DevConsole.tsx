@@ -20,6 +20,9 @@ import { BoneRush } from '@/game/entities/weapons/specific/BoneRush';
 import { type WeaponConfig } from '@/game/entities/characters/types';
 
 export const DevConsole: React.FC = () => {
+    // Internal Production Gate (Runtime Safety)
+    if (!import.meta.env.DEV) return null;
+
     const [isVisible, setIsVisible] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
     const [isInvincible, setIsInvincible] = useState(false);
@@ -41,6 +44,9 @@ export const DevConsole: React.FC = () => {
     }, [isVisible]);
     
     useEffect(() => {
+        // Double check for safety
+        if (!import.meta.env.DEV) return;
+
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === '`') {
                 setIsVisible(prev => {

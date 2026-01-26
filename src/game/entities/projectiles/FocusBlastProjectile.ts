@@ -56,7 +56,7 @@ export class FocusBlastProjectile extends Phaser.Physics.Arcade.Sprite {
     this.destroy();
   }
 
-  onHit(enemy: Phaser.Physics.Arcade.Sprite): void {
+  onHit(_enemy: Phaser.Physics.Arcade.Sprite): void {
     if (this.hasExploded) return;
     
     this.explode();
