@@ -1,0 +1,7 @@
+- [x] Create `OrbitProjectile` class in `src/game/entities/projectiles/OrbitProjectile.ts` <!-- id: 0 -->
+- [x] Create `OrbitWeapon` class in `src/game/entities/weapons/general/OrbitWeapon.ts` <!-- id: 1 -->
+- [x] Implement `Flame Wheel` variant and its evolution `Fire Spin` <!-- id: 2 -->
+- [x] Implement `Aqua Ring` variant and its evolution `Hydro Ring` <!-- id: 3 -->
+- [x] Implement `Magical Leaf` variant and its evolution `Leaf Storm` <!-- id: 4 -->
+- [x] Add `OrbitWeapon.isCompatible` static method logic <!-- id: 5 -->
+- [x] Verify implementation with manual test or integration test <!-- id: 6 -->
