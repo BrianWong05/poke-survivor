@@ -1,8 +1,18 @@
-# thunder-shock Specification
+# ThunderShock Specification
 
-## Purpose
-TBD - created by archiving change implement-thunder-shock. Update Purpose after archive.
-## Requirements
+## REMOVED Requirements
+
+### Requirement: Weapon Firing Mechanics
+The weapon SHALL automatically fire projectiles at the nearest enemy within range.
+
+### Requirement: Projectile Behavior
+The projectile SHALL deal damage and have a chance to inflict status effects on impact.
+
+### Requirement: Evolution
+The weapon SHALL upgrade to a stronger version upon reaching a specific character level.
+
+## ADDED Requirements
+
 ### Requirement: Level-Based Stats
 The weapon SHALL provide distinct stats for each level from 1 to 8.
 
@@ -43,4 +53,3 @@ The weapon SHALL display a jagged lightning bolt visual connecting hit targets.
 - **And** the line has a Cyan outer glow and Yellow/White core
 - **And** sparks are generated at the target position
 - **And** the visuals fade out within 150ms
-
