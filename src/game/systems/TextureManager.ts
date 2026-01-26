@@ -66,11 +66,32 @@ export class TextureManager {
     projectileGraphics.generateTexture('projectile-lightning', 32, 8);
     projectileGraphics.destroy();
 
-    // Projectile: Fireball (White Circle)
-    const fireballGraphics = this.scene.make.graphics({ x: 0, y: 0 });
-    fireballGraphics.fillStyle(0xffffff, 1);
-    fireballGraphics.fillCircle(8, 8, 8); // 16x16 size
-    fireballGraphics.generateTexture('projectile-fireball', 16, 16);
-    fireballGraphics.destroy();
+    // Projectile: Fireball (Flame Shape) -> MOVED TO ASSET (projectile-fireball-idle)
+    // const fireballGraphics = this.scene.make.graphics({ x: 0, y: 0 });
+    
+    // // Draw outer flame (Red/Orange) - Teardrop shape (Rounded bottom, pointed top)
+    // fireballGraphics.fillStyle(0xFF4500, 1);
+    // fireballGraphics.beginPath();
+    // // Arc for the bottom rounded part
+    // // Center(16, 22), Radius 10
+    // // Start at 0 (Right), End at PI (Left), clockwise (false)
+    // fireballGraphics.arc(16, 22, 10, 0, Math.PI, false);
+    // // Line to top tip
+    // fireballGraphics.lineTo(16, 0);   
+    // // Line back to start (automatically closed by fillPath or closePath)
+    // fireballGraphics.closePath();
+    // fireballGraphics.fillPath();
+    
+    // // Draw inner core (Yellow) - Smaller teardrop
+    // fireballGraphics.fillStyle(0xFFFF00, 1);
+    // fireballGraphics.beginPath();
+    // // Center(16, 22), Radius 6
+    // fireballGraphics.arc(16, 22, 6, 0, Math.PI, false);
+    // fireballGraphics.lineTo(16, 8);   // Lower top tip
+    // fireballGraphics.closePath();
+    // fireballGraphics.fillPath();
+
+    // fireballGraphics.generateTexture('projectile-fireball', 32, 32);
+    // fireballGraphics.destroy();
   }
 }

@@ -7,26 +7,28 @@ export class Fireball extends Phaser.Physics.Arcade.Sprite {
   private hitEnemies: Phaser.GameObjects.GameObject[] = [];
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
-    super(scene, x, y, 'projectile-fireball'); // Placeholder key, will use circle if texture missing
+    super(scene, x, y, 'projectile-fireball-idle'); 
 
     // Add to scene and physics
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
-    // Visuals (Red circle)
-    this.setTint(0xFF4500); 
-    this.setScale(1); 
+    // Visuals
+    this.setScale(0.25); // Adjusted scale (~55px)
     this.setDepth(100);
+    this.play('projectile-fireball-idle-down'); 
 
     // Physics
-    this.setBodySize(16, 16);
-    this.setCircle(8);
+    this.setBodySize(64, 64); 
+    this.setCircle(32); 
+    
+    // Origin is default 0.5
   }
 
   fireAt(targetX: number, targetY: number): void {
       const angle = Phaser.Math.Angle.Between(this.x, this.y, targetX, targetY);
       this.setVelocity(Math.cos(angle) * this.speed, Math.sin(angle) * this.speed);
-      this.setRotation(angle);
+      this.setRotation(angle + Math.PI / 2); // Texture points UP, so rotate +90 deg to align with velocity vector?
   }
 
   setDamage(amount: number): this {
@@ -64,7 +66,6 @@ export class Fireball extends Phaser.Physics.Arcade.Sprite {
     this.hitEnemies.push(enemy);
 
 
-
     // Pierce Logic
     if (this.pierceCount > 0) {
       this.pierceCount--;
@@ -75,6 +76,4 @@ export class Fireball extends Phaser.Physics.Arcade.Sprite {
         // Optional: Spawn ash particle
     }
   }
-
-
 }

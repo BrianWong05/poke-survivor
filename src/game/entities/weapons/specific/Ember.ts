@@ -123,8 +123,8 @@ export class Ember implements WeaponConfig {
         // Apply stats
         fireball.setDamage(stats.damage);
         fireball.setPierce(stats.pierce);
-        fireball.setProjectileTint(0xFF4500);
-        fireball.setScale(1.0);
+        // fireball.setProjectileTint(0xFF4500); // Removed tint to show natural sprite colors
+        // fireball.setScale(1.0); // Allow Fireball default scale (0.2) or override here. Default is 0.2. Let's stick to default.
         
         // Randomize speed slightly (0.9x to 1.1x)
         const speedVariance = Phaser.Math.FloatBetween(0.9, 1.1);

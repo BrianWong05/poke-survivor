@@ -4,19 +4,14 @@
 Defines the technical requirements for Charmander's starting weapon (Ember) and its evolved rapid-fire form (Flamethrower).
 ## Requirements
 ### Requirement: Fireball Projectile
-The system SHALL support a `Fireball` projectile with pierce capabilities.
+The system SHALL support a `Fireball` projectile with appropriate visuals.
 
 #### Scenario: Fireball Creation
+- **MODIFIED**:
 - **WHEN** a Fireball is spawned
-- **THEN** it renders as a circle (Red by default)
+- **THEN** it SHALL render as a flame-shaped sprite (not a simple circle)
+- **AND** it SHALL have an inner core (Yellow) and outer edge (Orange/Red)
 - **AND** it moves at a constant speed (400)
-
-#### Scenario: Fireball Collision
-- **WHEN** fitting an enemy
-- **THEN** deal damage
-- **AND** decrement `pierce` count
-- **IF** `pierce` count < 0
-- **THEN** destroy the projectile
 
 ### Requirement: Ember (Level 1-7)
 The weapon SHALL behave as a projectile launcher with level-based progression.

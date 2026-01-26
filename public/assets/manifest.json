@@ -218,5 +218,19 @@
         "directions": 8
       }
     ]
+  },
+  {
+    "id": "projectile-fireball",
+    "name": "projectile-fireball",
+    "animations": [
+      {
+        "key": "idle",
+        "path": "assets/sprites/fireball.png",
+        "frameWidth": 220,
+        "frameHeight": 184,
+        "frameCount": 5,
+        "directions": 1
+      }
+    ]
   }
 ]
