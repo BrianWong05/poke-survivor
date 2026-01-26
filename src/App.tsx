@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { GameCanvas } from '@/components/GameCanvas';
 import { HUD } from '@/components/HUD';
 import { CharacterSelect } from '@/components/CharacterSelect';
-import { DevConsole } from '@/components/UI/DevConsole';
+import { DevConsole } from '@/features/DevConsole';
 
 function App() {
   const [score, setScore] = useState(0);
