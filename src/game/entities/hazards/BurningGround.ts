@@ -4,8 +4,9 @@ export class BurningGround extends Phaser.Physics.Arcade.Sprite {
   public damagePerTick = 3;
   public tickRate = 500;
 
-  constructor(scene: Phaser.Scene, x: number, y: number) {
+  constructor(scene: Phaser.Scene, x: number, y: number, damage: number = 3) {
     super(scene, x, y, 'projectile-fireball'); // Using white circle texture
+    this.damagePerTick = damage;
 
     scene.add.existing(this);
     scene.physics.add.existing(this);

@@ -1,22 +1,6 @@
 # ember-weapon Specification
 
-## Purpose
-Defines the technical requirements for Charmander's starting weapon (Ember) and its evolved rapid-fire form (Flamethrower).
-## Requirements
-### Requirement: Fireball Projectile
-The system SHALL support a `Fireball` projectile with pierce capabilities.
-
-#### Scenario: Fireball Creation
-- **WHEN** a Fireball is spawned
-- **THEN** it renders as a circle (Red by default)
-- **AND** it moves at a constant speed (400)
-
-#### Scenario: Fireball Collision
-- **WHEN** fitting an enemy
-- **THEN** deal damage
-- **AND** decrement `pierce` count
-- **IF** `pierce` count < 0
-- **THEN** destroy the projectile
+## MODIFIED Requirements
 
 ### Requirement: Ember (Level 1-7)
 The weapon SHALL behave as a projectile launcher with level-based progression.
@@ -67,25 +51,9 @@ The weapon SHALL behave as a projectile launcher with level-based progression.
 - **When** Weapon Level is 8
 - **Then** Cooldown is 1000ms
 
-### Requirement: Flamethrower (Level 8+)
-The weapon SHALL behave as a rapid-fire stream.
 
-#### Scenario: Flamethrower Evolution
-- **WHEN** Weapon Level >= 8
-- **THEN** Name changes to "Flamethrower"
-- **AND** Cooldown becomes 150ms
-- **AND** Damage becomes 6
-- **AND** Pierce becomes 3
-- **AND** Projectile tint becomes Orange (`0xFFA500`)
 
-### Requirement: Burning Ground Hazard
-The system SHALL implement a Burning Ground effect.
-
-#### Scenario: Burning Ground properties
-- **WHEN** spawned
-- **THEN** it lasts for 3000ms
-- **AND** it deals 3 damage every 500ms to enemies inside its area
-- **AND** it renders as a flattened ellipse
+## ADDED Requirements
 
 ### Requirement: Ember Spread Mechanics
 The weapon SHALL fire multiple projectiles in a spread pattern when Count > 1.
@@ -100,4 +68,3 @@ The weapon SHALL fire multiple projectiles in a spread pattern when Count > 1.
 #### Scenario: Projectile Speed Variance
 - **When** firing projectiles (Spread or Single)
 - **Then** the speed of each projectile is randomized between 0.9x and 1.1x of the base speed
-

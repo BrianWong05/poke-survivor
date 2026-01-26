@@ -69,36 +69,78 @@ export class Flamethrower implements WeaponConfig {
 export class Ember implements WeaponConfig {
   id = 'ember';
   name = 'Ember';
-  description = 'Fires a small fireball';
-  cooldownMs = 1200; // Slow
+  description = 'Fires small fireballs';
+  cooldownMs = 1200; // Base cooldown
   
   evolution = new Flamethrower();
   evolutionLevel = 8;
 
+  getStats(level: number): { damage: number; count: number; pierce: number; speed: number; cooldown: number } {
+    const stats = {
+      damage: 10,
+      count: 1,
+      pierce: 0,
+      speed: 400,
+      cooldown: 1200
+    };
+
+    if (level >= 2) stats.damage = 15;
+    if (level >= 3) stats.count = 2; // Spread
+    if (level >= 4) stats.pierce = 1;
+    if (level >= 5) stats.damage = 20;
+    if (level >= 6) stats.count = 3;
+    if (level >= 7) stats.pierce = 2;
+    if (level >= 8) stats.cooldown = 1000;
+
+    return stats;
+  }
+
   fire(ctx: CharacterContext): void {
-    const { scene, player } = ctx;
+    const { scene, player, level } = ctx;
     const nearestEnemy = findNearestEnemy(scene, player);
     if (!nearestEnemy) return;
 
     const projectilesGroup = getProjectiles(scene);
     if (!projectilesGroup) return;
 
-    // Create fireball
-    const fireball = new Fireball(scene, player.x, player.y);
-    projectilesGroup.add(fireball);
+    const stats = this.getStats(level);
+    
+    // Calculate base angle
+    const baseAngle = Phaser.Math.Angle.Between(player.x, player.y, nearestEnemy.x, nearestEnemy.y);
+    
+    // Spread Logic
+    const angleStep = Phaser.Math.DegToRad(15);
+    const totalSpread = (stats.count - 1) * angleStep;
+    const startAngle = baseAngle - (totalSpread / 2);
 
-    // Ember stats (Level 1)
-    fireball.setDamage(8);
-    fireball.setPierce(0);
-    fireball.setProjectileTint(0xFF4500); // Red
-    fireball.setScale(1.0);
+    for (let i = 0; i < stats.count; i++) {
+        const currentAngle = startAngle + (i * angleStep);
+        
+        // Create fireball
+        const fireball = new Fireball(scene, player.x, player.y);
+        projectilesGroup.add(fireball);
 
-    // Fire at enemy
-    fireball.fireAt(nearestEnemy.x, nearestEnemy.y);
+        // Apply stats
+        fireball.setDamage(stats.damage);
+        fireball.setPierce(stats.pierce);
+        fireball.setProjectileTint(0xFF4500);
+        fireball.setScale(1.0);
+        
+        // Randomize speed slightly (0.9x to 1.1x)
+        const speedVariance = Phaser.Math.FloatBetween(0.9, 1.1);
+        fireball.setSpeed(stats.speed * speedVariance);
 
-    // Cleanup
-    scene.time.delayedCall(2000, () => {
-        if (fireball.active) fireball.destroy();
-    });
+        // Set velocity manually
+        fireball.setVelocity(
+            Math.cos(currentAngle) * stats.speed * speedVariance, 
+            Math.sin(currentAngle) * stats.speed * speedVariance
+        );
+        fireball.setRotation(currentAngle);
+        
+        // Cleanup
+        scene.time.delayedCall(2000, () => {
+            if (fireball.active) fireball.destroy();
+        });
+    }
   }
 }
