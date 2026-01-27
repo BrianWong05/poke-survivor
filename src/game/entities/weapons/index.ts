@@ -7,6 +7,7 @@ import { BodySlam } from './specific/BodySlam';
 import { AuraSphere } from './specific/AuraSphere';
 import { FocusBlast } from './specific/FocusBlast';
 import { WaterPulse } from './specific/WaterPulse';
+import { Psywave } from './specific/Psywave';
 
 export const ember = new Ember();
 
@@ -14,6 +15,7 @@ export const lick = new Lick();
 export const bodySlam = new BodySlam();
 export const auraSphere = new AuraSphere();
 export const focusBlast = new FocusBlast();
+export const psywave = new Psywave();
 
 // Exports for evolutions if needed directly (though usually accessed via weapon.evolution)
 export const dreamEater = lick.evolution;
