@@ -509,8 +509,17 @@ export class MainScene extends Phaser.Scene {
       const animState = isMoving ? 'walk' : 'idle';
       if (isMoving) {
         const direction = getDirectionFromVelocity(finalVelocity.x, finalVelocity.y);
+        
+        // Update horizontal facing preference
+        if (direction.includes('left')) {
+            this.player.setData('horizontalFacing', 'left');
+        } else if (direction.includes('right')) {
+            this.player.setData('horizontalFacing', 'right');
+        }
+        
         if (direction !== this.currentDirection) {
           this.currentDirection = direction;
+          this.player.setData('facingDirection', direction); // Sync explicit direction too
         }
       }
       this.player.play(`${this.characterConfig.spriteKey}-${animState}-${this.currentDirection}`, true);
