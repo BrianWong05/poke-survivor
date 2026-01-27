@@ -27,9 +27,9 @@ export class AquaRingShot extends Phaser.Physics.Arcade.Sprite {
         scene.physics.add.existing(this);
 
         this.setTint(0x00FFFF); // Cyan
-        this.setScale(1.2);
+        this.setScale(0.6); // NERF: Smaller size (was 1.2)
         this.setAlpha(0.8);
-        this.setCircle(12); 
+        this.setCircle(12); // Keep circle logic, scale applies to body too usually
     }
 
     setup(stats: { damage: number, knockback: number }) {
@@ -56,6 +56,23 @@ export class AquaRingShot extends Phaser.Physics.Arcade.Sprite {
         this.x = this.owner.x + Math.cos(rad) * this.radius;
         this.y = this.owner.y + Math.sin(rad) * this.radius;
         this.setRotation(rad + Math.PI / 2);
+
+        // Sparkle Effect
+        if (this.scene.time.now % 100 < delta) { // Roughly every few frames
+             // Create a simple sparkle particle
+             const sparkle = this.scene.add.sprite(this.x, this.y, 'projectile');
+             sparkle.setTint(0xFFFFFF); // White sparkle
+             sparkle.setScale(0.2); // Smaller sparkle too
+             sparkle.setAlpha(1);
+             
+             this.scene.tweens.add({
+                 targets: sparkle,
+                 scale: 0.05,
+                 alpha: 0,
+                 duration: 400,
+                 onComplete: () => sparkle.destroy()
+             });
+        }
     }
 
     canHit(enemy: Phaser.GameObjects.GameObject, now: number): boolean {
@@ -87,29 +104,30 @@ export class AquaRingShot extends Phaser.Physics.Arcade.Sprite {
 export class AquaRing implements WeaponConfig {
     id = 'aqua-ring';
     name = 'Aqua Ring (水流環)';
-    description = 'Water shield that pushes enemies back.';
+    description = 'Protective water ring. Gently pushes enemies.';
     cooldownMs = 6000;
     evolution = undefined;
     evolutionLevel = 999;
 
     getStats(level: number) {
         const stats = {
-            damage: 12,
-            count: 2,
-            speed: 150,
+            damage: 8,          // Low Damage
+            count: 2,           // Gaps
+            speed: 150,         // Slower
             duration: 3000, 
             cooldown: 5000,
-            radius: 110,
-            knockback: 150
+            radius: 120,        // Base Radius
+            knockback: 150      // Gentle Push
         };
-        // Progression
-        if (level >= 2) stats.count += 1; // 3
-        if (level >= 3) stats.duration += 1000; // 4000
-        if (level >= 4) stats.radius += 20; // 130
-        if (level >= 5) stats.count += 1; // 4
-        if (level >= 6) stats.duration += 1000; // 5000
-        if (level >= 7) stats.knockback += 100; // 250
-        if (level >= 8) stats.duration = 999999; 
+
+        // Progression (Nerfed)
+        if (level >= 2) stats.count += 1;        // 3
+        if (level >= 3) stats.duration += 1000;  // 4000
+        if (level >= 4) stats.damage += 4;       // 12
+        if (level >= 5) stats.knockback += 50;   // 200 (Cap)
+        if (level >= 6) stats.count += 1;        // 4
+        if (level >= 7) stats.radius += 20;      // 140
+        if (level >= 8) stats.duration = 999999; // Infinite
 
         return stats;
     }
@@ -130,34 +148,44 @@ export class AquaRing implements WeaponConfig {
             if (existing.length > 0) return; 
         }
 
-        // Cleanup
-        if (level < 8) {
-             const existing = projectilesGroup.getChildren().filter(
-                p => p.active && p.getData('weaponId') === 'aqua-ring' && p.getData('owner') === player
-            );
-            existing.forEach(p => p.destroy());
-        } else {
-             const existing = projectilesGroup.getChildren().filter(
-                p => p.active && p.getData('weaponId') === 'aqua-ring' && p.getData('owner') === player
-            );
-            existing.forEach(p => p.destroy());
-        }
+        // Cleanup existing (non-level 8 or refresh)
+        const existing = projectilesGroup.getChildren().filter(
+            p => p.active && p.getData('weaponId') === 'aqua-ring' && p.getData('owner') === player
+        );
+        existing.forEach(p => p.destroy());
 
-        const step = 360 / stats.count;
-        for (let i = 0; i < stats.count; i++) {
-            const startAngle = step * i;
-            const projectile = new AquaRingShot(
-                scene, player.x, player.y, player, 
-                stats.radius, stats.speed, startAngle
-            );
-            projectilesGroup.add(projectile);
-            projectile.setup({ damage: stats.damage, knockback: stats.knockback });
-            
-            if (level < 8) {
-                scene.time.delayedCall(stats.duration, () => {
-                    if (projectile.active) projectile.destroy();
-                });
+        // Spawn 3 Rings with smaller scale
+        const rings = [
+            { r: stats.radius - 30, scale: 0.8, speedMult: 1.1 },  // Inner
+            { r: stats.radius,      scale: 1.0, speedMult: 1.0 },  // Middle
+            { r: stats.radius + 30, scale: 1.2, speedMult: 0.9 }   // Outer
+        ];
+
+        rings.forEach((ringConfig, ringIndex) => {
+            const step = 360 / stats.count;
+            const angleOffset = ringIndex * (360 / (stats.count * 3)); 
+
+            for (let i = 0; i < stats.count; i++) {
+                const startAngle = step * i + angleOffset;
+                const projectile = new AquaRingShot(
+                    scene, player.x, player.y, player, 
+                    ringConfig.r, 
+                    stats.speed * ringConfig.speedMult, 
+                    startAngle
+                );
+                
+                projectilesGroup.add(projectile);
+                projectile.setup({ damage: stats.damage, knockback: stats.knockback });
+                
+                // Base 0.6 scaled by ring config
+                projectile.setScale(0.6 * ringConfig.scale); 
+                
+                if (level < 8) {
+                    scene.time.delayedCall(stats.duration, () => {
+                        if (projectile.active) projectile.destroy();
+                    });
+                }
             }
-        }
+        });
     }
 }
