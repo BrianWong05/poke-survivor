@@ -74,6 +74,7 @@ export class Preloader extends Phaser.Scene {
 
     // Weapon sprites
     this.load.image('will-o-wisp', 'assets/sprites/will-o-wisp.png');
+    this.load.image('petal', 'assets/sprites/petal.png');
 
     // Load manifest first as JSON
     this.load.json('manifest', 'assets/manifest.json');

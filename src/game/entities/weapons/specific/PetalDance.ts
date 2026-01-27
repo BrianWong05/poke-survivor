@@ -17,7 +17,7 @@ export class PetalDanceShot extends Phaser.Physics.Arcade.Sprite {
     private immunityDuration = 400; // Slightly lower immunity to hit faster?
 
     constructor(scene: Phaser.Scene, x: number, y: number, owner: Phaser.Physics.Arcade.Sprite, radius: number, speed: number, startAngle: number) {
-        super(scene, x, y, 'projectile'); 
+        super(scene, x, y, 'petal'); 
         this.owner = owner;
         this.radius = radius;
         this.orbitSpeed = speed;
@@ -26,9 +26,10 @@ export class PetalDanceShot extends Phaser.Physics.Arcade.Sprite {
         scene.add.existing(this);
         scene.physics.add.existing(this);
 
-        this.setTint(0xFF69B4); // Hot Pink
-        this.setScale(0.8); // Smaller
+        // Visuals
+        this.setScale(1.0 + Math.random() * 0.5); // Variance (Larger)
         this.setAlpha(0.9);
+        this.setAngle(Math.random() * 360);       // Random start rotation
         this.setCircle(8); 
     }
 
@@ -55,7 +56,9 @@ export class PetalDanceShot extends Phaser.Physics.Arcade.Sprite {
         const rad = Phaser.Math.DegToRad(this.currentAngle);
         this.x = this.owner.x + Math.cos(rad) * this.radius;
         this.y = this.owner.y + Math.sin(rad) * this.radius;
-        this.setRotation(rad + Math.PI / 2);
+
+        // Tumbling effect
+        this.rotation += 4 * (delta / 1000); // Fast spin
     }
 
     canHit(enemy: Phaser.GameObjects.GameObject, now: number): boolean {
@@ -100,7 +103,7 @@ export class PetalDance implements WeaponConfig {
         if (level >= 5) stats.speed += 50; // 350
         if (level >= 6) stats.count += 2; // 8
         if (level >= 7) stats.damage += 3; // 8
-        if (level >= 8) stats.duration = 999999;
+        if (level >= 8) { stats.duration = 999999; stats.count += 4; } // 12 Petals (Storm!)
 
         return stats;
     }
@@ -128,10 +131,11 @@ export class PetalDance implements WeaponConfig {
         const step = 360 / stats.count;
         for (let i = 0; i < stats.count; i++) {
             const startAngle = step * i;
-            // Add some variance or spiral for visual flair? Spec says standard orbit logic.
+            // Swarm Variance
+            const variance = (Math.random() - 0.5) * 40; // +/- 20px radius variance
             const projectile = new PetalDanceShot(
                 scene, player.x, player.y, player, 
-                stats.radius, stats.speed, startAngle
+                stats.radius + variance, stats.speed + (variance * 2), startAngle // Inner petals spin faster? or just variance
             );
             projectilesGroup.add(projectile);
             projectile.setup({ damage: stats.damage, knockback: stats.knockback });
