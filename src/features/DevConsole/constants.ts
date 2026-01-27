@@ -1,43 +1,38 @@
-import { 
-    FLAME_WHEEL_CONFIG, 
-    AQUA_RING_CONFIG, 
-    MAGICAL_LEAF_CONFIG,
-    FIRE_SPIN_CONFIG,
-    HYDRO_RING_CONFIG,
-    LEAF_STORM_CONFIG,
-} from '@/game/entities/weapons/general/OrbitWeapon';
-// Specific Weapons
-import { Ember, Flamethrower } from '@/game/entities/weapons/specific/Ember';
 
-import { WaterPulse } from '@/game/entities/weapons/specific/WaterPulse';
-import { ThunderShock } from '@/game/entities/weapons/specific/ThunderShock';
-import { Lick, DreamEater } from '@/game/entities/weapons/specific/Lick';
-import { AuraSphere } from '@/game/entities/weapons/specific/AuraSphere';
-import { FocusBlast } from '@/game/entities/weapons/specific/FocusBlast';
-import { BodySlam } from '@/game/entities/weapons/specific/BodySlam';
-import { BoneRush } from '@/game/entities/weapons/specific/BoneRush';
+import * as weapons from '@/game/entities/weapons/index';
+import type { WeaponConfig } from '@/game/entities/characters/types';
 
-import { type DevMove } from './types';
+export interface DevMove {
+    name: string;
+    create: () => any;
+    outline?: boolean;
+}
 
-export const AVAILABLE_MOVES: DevMove[] = [
-    { name: 'Ember', create: () => new Ember() },
-    { name: 'Flamethrower', create: () => new Flamethrower(), outline: true },
+// Helper to determine if an object is a valid weapon config
+const isWeapon = (obj: any): obj is WeaponConfig => {
+    return obj && typeof obj === 'object' && 'id' in obj && 'name' in obj && 'fire' in obj;
+};
 
+// Start with all exported values from the weapons index
+const allExports = Object.values(weapons);
 
-    { name: 'Thunder Shock', create: () => new ThunderShock() },
-    // { name: 'Thunderbolt', create: () => new Thunderbolt(), outline: true },
-    { name: 'Lick', create: () => new Lick() },
-    { name: 'Dream Eater', create: () => new DreamEater(), outline: true },
-    { name: 'Aura Sphere', create: () => new AuraSphere() },
-    { name: 'Focus Blast', create: () => new FocusBlast(), outline: true },
-    { name: 'Body Slam', create: () => new BodySlam() },
-    { name: 'Bone Rush', create: () => new BoneRush() },
-    // Orbit Weapons
-    { name: 'Flame Wheel', create: () => FLAME_WHEEL_CONFIG, outline: false },
-    { name: 'Fire Spin', create: () => FIRE_SPIN_CONFIG, outline: true },
-    { name: 'Aqua Ring', create: () => AQUA_RING_CONFIG, outline: false },
-    { name: 'Hydro Ring', create: () => HYDRO_RING_CONFIG, outline: true },
-    { name: 'Magical Leaf', create: () => MAGICAL_LEAF_CONFIG, outline: false },
-    { name: 'Leaf Storm', create: () => LEAF_STORM_CONFIG, outline: true },
-    { name: 'Water Pulse', create: () => new WaterPulse() },
-];
+// Detect evolutions to outline them
+const evolutionIds = new Set<string>();
+allExports.forEach(exp => {
+    if (isWeapon(exp) && exp.evolution) {
+        // checks if evolution is a weapon config object or just a reference?
+        // usually it's a WeaponConfig object.
+        if (isWeapon(exp.evolution)) {
+            evolutionIds.add(exp.evolution.id);
+        }
+    }
+});
+
+export const AVAILABLE_MOVES: DevMove[] = allExports
+    .filter(isWeapon)
+    .map((weapon) => ({
+        name: weapon.name,
+        create: () => weapon, // Return the singleton/instance itself
+        outline: evolutionIds.has(weapon.id)
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
