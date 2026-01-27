@@ -17,7 +17,7 @@ export class StealthRockShot extends Phaser.Physics.Arcade.Sprite {
     private immunityDuration = 800; // Slower hit rate
 
     constructor(scene: Phaser.Scene, x: number, y: number, owner: Phaser.Physics.Arcade.Sprite, radius: number, speed: number, startAngle: number) {
-        super(scene, x, y, 'projectile'); 
+        super(scene, x, y, 'jagged-rock'); 
         this.owner = owner;
         this.radius = radius;
         this.orbitSpeed = speed;
@@ -26,10 +26,11 @@ export class StealthRockShot extends Phaser.Physics.Arcade.Sprite {
         scene.add.existing(this);
         scene.physics.add.existing(this);
 
-        this.setTint(0x8B4513); // Saddle Brown
-        this.setScale(1.8); // Big
+        // Visuals
+        this.setScale(1.2 + Math.random() * 0.5); // Variance in size
+        this.setAngle(Math.random() * 360);       // Random start rotation
         this.setAlpha(1.0);
-        this.setCircle(14); 
+        this.setCircle(12); // Slightly smaller hitbox than texture 
     }
 
     setup(stats: { damage: number, knockback: number }) {
@@ -55,7 +56,9 @@ export class StealthRockShot extends Phaser.Physics.Arcade.Sprite {
         const rad = Phaser.Math.DegToRad(this.currentAngle);
         this.x = this.owner.x + Math.cos(rad) * this.radius;
         this.y = this.owner.y + Math.sin(rad) * this.radius;
-        this.setRotation(rad + Math.PI / 2);
+        
+        // Tumbling effect
+        this.rotation += 2 * (delta / 1000); // Slow spin
     }
 
     canHit(enemy: Phaser.GameObjects.GameObject, now: number): boolean {
@@ -95,12 +98,12 @@ export class StealthRock implements WeaponConfig {
         };
         // Progression
         if (level >= 2) stats.damage += 10;
-        if (level >= 3) stats.duration += 1000;
-        if (level >= 4) stats.damage += 10;
+        if (level >= 3) stats.duration += 500;
+        if (level >= 4) { stats.damage += 10; stats.speed += 10; }
         if (level >= 5) stats.count += 1;
-        if (level >= 6) stats.damage += 15;
-        if (level >= 7) stats.radius += 20;
-        if (level >= 8) stats.duration = 999999;
+        if (level >= 6) { stats.damage += 15; stats.speed += 10; }
+        if (level >= 7) { stats.radius += 20; stats.count += 1; }
+        if (level >= 8) { stats.duration = 999999; stats.count += 1; }
 
         return stats;
     }

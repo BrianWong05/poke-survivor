@@ -1,8 +1,18 @@
-# stealth-rock Specification
+# Stealth Rock Visual Redesign
 
-## Purpose
-TBD - created by archiving change implement-orbiting-guard-weapons. Update Purpose after archive.
-## Requirements
+## ADDED Requirements
+
+### Requirement: Custom Rock Visuals
+The system SHALL display projectiles as jagged, rocky shapes.
+
+#### Scenario: Jagged Texture
+- **Given** the weapon spawns a projectile
+- **Then** it uses a "jagged rock" texture (not a perfect circle)
+- **And** it rotates slowly (tumbling effect) to simulate 3D floating rocks
+- **And** it has random initial rotation for variety
+
+## MODIFIED Requirements
+
 ### Requirement: Stealth Rock Stats & Progression
 The system SHALL update the stats to ensure sufficient coverage.
 
@@ -22,13 +32,3 @@ The system SHALL ensure visual weight matches the mechanical weight.
 - **Given** the projectile moves
 - **Then** it moves slowly
 - **And** its tumbling animation is slow (heavy feeling)
-
-### Requirement: Custom Rock Visuals
-The system SHALL display projectiles as jagged, rocky shapes.
-
-#### Scenario: Jagged Texture
-- **Given** the weapon spawns a projectile
-- **Then** it uses a "jagged rock" texture (not a perfect circle)
-- **And** it rotates slowly (tumbling effect) to simulate 3D floating rocks
-- **And** it has random initial rotation for variety
-

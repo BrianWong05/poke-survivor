@@ -115,6 +115,34 @@ export class Preloader extends Phaser.Scene {
       graphics.generateTexture('electric-field', 256, 256);
       graphics.destroy();
     }
+
+    if (!this.textures.exists('jagged-rock')) {
+      const graphics = this.make.graphics({ x: 0, y: 0 });
+      graphics.fillStyle(0x795548); // Brown Rock color
+      
+      // Draw a jagged polygon
+      const points = [
+        { x: 16, y: 0 },
+        { x: 32, y: 8 },
+        { x: 28, y: 24 },
+        { x: 16, y: 32 },
+        { x: 4, y: 24 },
+        { x: 0, y: 8 }
+      ];
+      graphics.fillPoints(points, true, true);
+      
+      // Add some shading/highlights
+      graphics.fillStyle(0x4E342E); // Darker shadow
+      graphics.fillPoints([
+        { x: 16, y: 16 },
+        { x: 28, y: 24 },
+        { x: 16, y: 32 },
+        { x: 4, y: 24 }
+      ], true, true);
+
+      graphics.generateTexture('jagged-rock', 32, 32);
+      graphics.destroy();
+    }
   }
 
   private loadSprites(): void {
