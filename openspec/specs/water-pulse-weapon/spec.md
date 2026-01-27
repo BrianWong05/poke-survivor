@@ -15,20 +15,11 @@ The `WaterPulse` class MUST implement the `WeaponConfig` interface and define th
   - Then the Cooldown drops to 200ms (Machine Gun mode) and Pierce is 2.
 
 ### Requirement: Projectile Behavior
-The `WaterPulseShot` projectile MUST handle movement, visuals, and collision consequences.
+The `WaterPulseShot` visuals MUST be updated to represent a "pulse" of water.
 
-#### Scenario: Visuals
-  - When a shot is fired
-  - Then it should be tinted `0x00FFFF` (Cyan).
-
-#### Scenario: Piercing
-  - When a shot hits an enemy
-  - And `pierce` is > 0
-  - Then the shot continues but `pierce` is decremented.
-  - And it adds the enemy to a `hitList` to avoid double-hitting.
-
-#### Scenario: Knockback Application
-  - When a shot hits an enemy
-  - Then it calculates the vector from projectile to enemy.
-  - And calls `enemy.applyKnockback(vector, 100)`.
+#### Scenario: Visual Texture
+- **WHEN** the projectile texture is generated
+- **THEN** it MUST be a **hollow ring** (stroked circle) instead of a solid dot.
+- **AND** the stroke thickness should be visible (e.g., 2-3px).
+- **AND** the color should remain Cyan (`0x00FFFF`) or similar.
 

@@ -50,6 +50,7 @@ export class UIManager {
     if (this.isPaused) {
       if (this.scene.physics.world) this.scene.physics.pause();
       this.scene.anims.pauseAll();
+      this.scene.tweens.pauseAll(); // Fix: Stop all tweens (e.g. Water Pulse breathing)
       this.scene.time.paused = true; 
       
       if (showMenu) {
@@ -59,6 +60,7 @@ export class UIManager {
     } else {
       if (this.scene.physics.world) this.scene.physics.resume();
       this.scene.anims.resumeAll();
+      this.scene.tweens.resumeAll(); // Fix: Resume tweens
       this.scene.time.paused = false;
       
       if (this.pauseContainer) {

@@ -41,12 +41,23 @@ export class WaterPulseShot extends Phaser.Physics.Arcade.Sprite {
   private speed = 700;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
-    const textureKey = 'projectile-water-pulse-gen';
+    const textureKey = 'projectile-water-pulse-gen-v2';
     if (!scene.textures.exists(textureKey)) {
         const graphics = scene.make.graphics({ x: 0, y: 0 });
-        graphics.fillStyle(0xffffff); 
-        graphics.fillCircle(8, 8, 8); 
-        graphics.generateTexture(textureKey, 16, 16);
+        
+        // Center Core
+        graphics.fillStyle(0x00FFFF, 0.8);
+        graphics.fillCircle(16, 16, 6);
+
+        // Inner Ring
+        graphics.lineStyle(2, 0x00FFFF, 1.0);
+        graphics.strokeCircle(16, 16, 10);
+
+        // Outer Ring
+        graphics.lineStyle(2, 0x0088FF, 0.6);
+        graphics.strokeCircle(16, 16, 14);
+
+        graphics.generateTexture(textureKey, 32, 32);
         graphics.destroy();
     }
 
@@ -56,12 +67,24 @@ export class WaterPulseShot extends Phaser.Physics.Arcade.Sprite {
     scene.physics.add.existing(this);
 
     // Visuals
-    this.setTint(0x00FFFF); 
-    this.setScale(1.0);
+    this.clearTint(); // Use generated color
+    this.setScale(0.8, 1.0); // Start smaller for extreme breathing range
     this.setDepth(100);
 
     // Physics
-    this.setCircle(8); 
+    this.setCircle(10, 6, 6); // Radius 10, Offset (6,6) to center in 32x32 frame 
+
+    // Animation: Pulsing Effect (Extreme Breathing)
+    this.scene.tweens.add({
+        targets: this,
+        scaleX: { from: 0.8, to: 1.8 },  // Extreme range: 0.8 -> 1.8
+        scaleY: { from: 1.0, to: 2.2 },  // Extreme range: 1.0 -> 2.2 (Maintains oval ratio)
+        alpha: { from: 1.0, to: 0.6 },   // deeper alpha pulse
+        duration: 300,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut'
+    });
   }
 
   fireAt(targetX: number, targetY: number): void {
