@@ -144,6 +144,51 @@ export class Preloader extends Phaser.Scene {
       graphics.generateTexture('jagged-rock', 32, 32);
       graphics.destroy();
     }
+
+    if (!this.textures.exists('electric-spark')) {
+      const graphics = this.make.graphics({ x: 0, y: 0 });
+      
+      const cx = 32;
+      const cy = 32;
+
+      // Layer 1: Outer Blue Glow/Jagged
+      graphics.fillStyle(0x00FFFF, 0.8); 
+      const spikes = 12;
+      const points: {x: number, y: number}[] = [];
+      
+      for (let i = 0; i < spikes * 2; i++) {
+        // Randomize radius for "chaotic" electric look
+        const baseRadius = (i % 2 === 0) ? 28 : 10;
+        const randomFactor = (Math.random() * 10) - 5; // +/- 5px jitter
+        const radius = baseRadius + randomFactor;
+        
+        const angle = (Math.PI / spikes) * i;
+        points.push({
+          x: cx + Math.cos(angle) * radius,
+          y: cy + Math.sin(angle) * radius
+        });
+      }
+      graphics.fillPoints(points, true, true);
+
+      // Layer 2: Inner White/Bright Core
+      graphics.fillStyle(0xFFFFFF, 1);
+      const innerPoints: {x: number, y: number}[] = [];
+      for (let i = 0; i < spikes * 2; i++) {
+        const baseRadius = (i % 2 === 0) ? 14 : 5;
+        const randomFactor = (Math.random() * 4) - 2;
+        const radius = baseRadius + randomFactor;
+        
+        const angle = (Math.PI / spikes) * i;
+        innerPoints.push({
+          x: cx + Math.cos(angle) * radius,
+          y: cy + Math.sin(angle) * radius
+        });
+      }
+      graphics.fillPoints(innerPoints, true, true);
+
+      graphics.generateTexture('electric-spark', 64, 64);
+      graphics.destroy();
+    }
   }
 
   private loadSprites(): void {

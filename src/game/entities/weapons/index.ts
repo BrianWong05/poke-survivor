@@ -11,6 +11,7 @@ import { WillOWisp } from './specific/WillOWisp';
 import { PetalDance } from './specific/PetalDance';
 import { StealthRock } from './specific/StealthRock';
 import { ParabolicCharge } from './specific/ParabolicCharge';
+import { ThunderWave } from './specific/ThunderWave';
 
 export const ember = new Ember();
 
@@ -24,6 +25,7 @@ export const willOWisp = new WillOWisp();
 export const petalDance = new PetalDance();
 export const stealthRock = new StealthRock();
 export const parabolicCharge = new ParabolicCharge();
+export const thunderWave = new ThunderWave();
 
 // Exports for evolutions if needed directly (though usually accessed via weapon.evolution)
 export const dreamEater = lick.evolution;
