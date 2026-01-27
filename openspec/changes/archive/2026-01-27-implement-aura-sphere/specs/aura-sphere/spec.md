@@ -1,9 +1,6 @@
-# aura-sphere Specification
+# Aura Sphere Weapon Spec
 
-## Purpose
-Homing missile weapon logic with an 8-level progression system, featuring increasing turn rate, damage, count, and pierce.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Aura Sphere Progression
 The weapon MUST follow a strict 8-level progression for damage, count, pierce, and homing capabilities.
@@ -48,5 +45,5 @@ Projectiles MUST handle pierce and immunity correctly.
 #### Scenario: On Hit
 - **Pierce:** Decrement pierce count. Destroy projectile if pierce < 0.
 - **Immunity:** Do not hit the same enemy twice (use `hitList`).
-- **Damage Falloff:** Damage MUST decrease by 25% for each subsequent enemy hit (e.g., 100% -> 75% -> 56%).
+- **Damage Falloff:** Damage MUST decrease by 25% for each subsequent enemy hit (compounding or flat, e.g., 100% -> 75% -> 56%).
 - **Effect:** Deal Damage and apply small Knockback (50).
