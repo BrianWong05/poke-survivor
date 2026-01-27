@@ -42,7 +42,6 @@ export class CombatManager {
 
   public setupCollisions(
       enemySpawner: EnemySpawner,
-      enemiesGroup: Phaser.Physics.Arcade.Group,
       projectilesGroup: Phaser.Physics.Arcade.Group,
       hazardGroup: Phaser.Physics.Arcade.Group
   ): void {

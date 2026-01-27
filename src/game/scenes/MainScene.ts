@@ -149,7 +149,6 @@ export class MainScene extends Phaser.Scene {
     // 5. Setup Collisions
     this.combatManager.setupCollisions(
         this.enemySpawner,
-        this.enemySpawner.getEnemyGroup() as Phaser.Physics.Arcade.Group,
         this.projectiles,
         this.hazardGroup
     );
