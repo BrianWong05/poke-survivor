@@ -1,0 +1,15 @@
+- [x] Propose Body Slam Redesign <!-- id: 0 -->
+    - [x] Scaffold proposal <!-- id: 1 -->
+    - [x] Draft specifications <!-- id: 2 -->
+    - [x] Validate proposal <!-- id: 3 -->
+- [x] Implement Body Slam <!-- id: 4 -->
+    - [x] Implement `getStats` progression <!-- id: 5 -->
+    - [x] Implement `fire` visual effects (Graphics, Tween, Shake) <!-- id: 6 -->
+    - [x] Implement `fire` physics logic (Overlap, Damage, Knockback, Stun) <!-- id: 7 -->
+- [x] Verify Implementation <!-- id: 8 -->
+    - [x] Manual test of visuals and progression <!-- id: 9 -->
+- [x] Refine Implementation <!-- id: 10 -->
+    - [x] Adjust stats (Area 140, Dmg 20, CD 2000) <!-- id: 11 -->
+    - [x] Update visuals to Shockwave style <!-- id: 12 -->
+    - [x] Adjust stats Round 2 (Area 160, Dmg 15, CD 1500) <!-- id: 13 -->
+    - [x] Fix visual radius mismatch (Outer edge alignment) <!-- id: 14 -->
