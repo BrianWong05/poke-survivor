@@ -50,6 +50,7 @@ export class PsywaveShot extends Phaser.Physics.Arcade.Sprite {
 
     preUpdate(time: number, delta: number) {
         super.preUpdate(time, delta);
+        if (this.scene.time.paused) return;
         
         if (!this.owner || !this.owner.active) {
             this.destroy();

@@ -44,6 +44,7 @@ export class BoneProjectile extends Phaser.Physics.Arcade.Sprite {
 
   preUpdate(time: number, delta: number): void {
     super.preUpdate(time, delta);
+    if (this.scene.time.paused) return;
     
     if (!this.player || !this.player.active) {
         this.destroy();
