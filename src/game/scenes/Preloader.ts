@@ -72,6 +72,9 @@ export class Preloader extends Phaser.Scene {
     this.load.image('candy-xl', 'assets/candies/Exp._Candy_L_SV_Sprite.png'); // Use L sprite for XL (scale up)
     this.load.image('candy-rare', 'assets/candies/Rare_Candy_SV.png');
 
+    // Weapon sprites
+    this.load.image('will-o-wisp', 'assets/sprites/will-o-wisp.png');
+
     // Load manifest first as JSON
     this.load.json('manifest', 'assets/manifest.json');
   }

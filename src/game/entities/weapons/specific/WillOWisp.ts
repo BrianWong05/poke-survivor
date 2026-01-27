@@ -17,7 +17,7 @@ export class WillOWispShot extends Phaser.Physics.Arcade.Sprite {
     private immunityDuration = 500; 
 
     constructor(scene: Phaser.Scene, x: number, y: number, owner: Phaser.Physics.Arcade.Sprite, radius: number, speed: number, startAngle: number) {
-        super(scene, x, y, 'projectile'); 
+        super(scene, x, y, 'will-o-wisp'); 
         this.owner = owner;
         this.radius = radius;
         this.orbitSpeed = speed;
@@ -26,10 +26,11 @@ export class WillOWispShot extends Phaser.Physics.Arcade.Sprite {
         scene.add.existing(this);
         scene.physics.add.existing(this);
 
-        this.setTint(0x800080); // Purple
-        this.setScale(1.1);
+        // this.setTint(0x9932CC); // Use original sprite colors
+        this.setScale(0.7);     
         this.setAlpha(0.9);
-        this.setCircle(10); 
+        this.setCircle(15); // Adjust hitbox for new sprite 
+        this.setDepth(100); // Ensure main projectile is above trails
     }
 
     setup(stats: { damage: number, knockback: number }) {
@@ -55,7 +56,26 @@ export class WillOWispShot extends Phaser.Physics.Arcade.Sprite {
         const rad = Phaser.Math.DegToRad(this.currentAngle);
         this.x = this.owner.x + Math.cos(rad) * this.radius;
         this.y = this.owner.y + Math.sin(rad) * this.radius;
-        this.setRotation(rad + Math.PI / 2);
+        // this.setRotation(rad + Math.PI / 2); // Removed rotation as requested
+
+        // Flame Trail Effect
+        // Frequent spawning for smooth trail
+        // Limit trail frequency slightly to avoid too many sprites if needed, but 50ms is okay
+        if (this.scene.time.now % 50 < delta) { 
+             const trail = this.scene.add.sprite(this.x, this.y, 'will-o-wisp'); // Use actual sprite for trail
+             trail.setTint(0x8A2BE2); // BlueViolet for trail depth
+             trail.setScale(this.scale * 0.8);
+             trail.setAlpha(0.6);
+             trail.setDepth(50); // Below main projectile
+             
+             this.scene.tweens.add({
+                 targets: trail,
+                 scale: 0.1,
+                 alpha: 0,
+                 duration: 300,
+                 onComplete: () => trail.destroy()
+             });
+        }
     }
 
     canHit(enemy: Phaser.GameObjects.GameObject, now: number): boolean {

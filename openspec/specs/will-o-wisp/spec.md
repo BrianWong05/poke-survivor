@@ -4,19 +4,14 @@
 TBD - created by archiving change implement-orbiting-guard-weapons. Update Purpose after archive.
 ## Requirements
 ### Requirement: Will-O-Wisp Stats & Progression
-The system SHALL implement the `Will-O-Wisp` weapon.
+The system SHALL configure the visual properties of the Will-O-Wisp.
 
-#### Scenario: Level 1 Stats
-- **Given** the weapon is Level 1
-- **Then** Dmg: 10
-- **And** Count: 3
-- **And** Speed: 180
-- **And** Radius: 100
-- **And** Duration: 3000ms
-
-#### Scenario: Progression
-- **Then** it follows standard progression up to Level 8
-- **And** Level 8 has Infinite Duration
+#### Scenario: Visual Configuration
+- **Given** the weapon is spawned
+- **Then** Use texture 'will-o-wisp'
+- **And** Scale: 0.7
+- **And** Sprite rotation: Disabled (stays upright during orbit)
+- **And** Depth: 100 (high priority)
 
 ### Requirement: Burn Logic
 The system SHALL apply burn status.
@@ -25,4 +20,13 @@ The system SHALL apply burn status.
 - **When** an enemy is hit
 - **Then** roll for burn chance (e.g. 30%)
 - **And** if successful, apply 'burn' status for 3000ms
+
+### Requirement: Ghostly Flame Visuals
+The system SHALL display the Will-O-Wisp projectiles as burning ghostly fireballs with trails.
+
+#### Scenario: Flame Trail
+- **Given** the projectile is moving
+- **Then** it MUST emit trail particles using the `will-o-wisp` texture
+- **And** the particles MUST be tinted to match the "fire" aesthetic (e.g. BlueViolet)
+- **And** the particles MUST be rendered behind (lower depth) than the main projectile
 
