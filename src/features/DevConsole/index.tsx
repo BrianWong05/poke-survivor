@@ -34,7 +34,10 @@ export const DevConsole: React.FC = () => {
             <Header 
                 isPaused={isPaused} 
                 onTogglePause={() => setIsPaused(!isPaused)} 
-                onClose={() => setIsVisible(false)} 
+                onClose={() => {
+                    setIsVisible(false);
+                    setIsPaused(false);
+                }} 
             />
             
             <CheatSection 

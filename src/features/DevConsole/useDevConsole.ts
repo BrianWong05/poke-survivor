@@ -14,12 +14,17 @@ export const useDevConsole = () => {
     
     // Poll for active weapons when visible
     useEffect(() => {
+        const gameScene = (window as any).gameScene;
+        if (gameScene) {
+            gameScene.isDevConsoleOpen = isVisible;
+        }
+
         if (!isVisible) return;
         
         const pollInterval = setInterval(() => {
-             const gameScene = (window as any).gameScene;
-             if (gameScene && gameScene.getDebugWeapons) {
-                 setActiveWeapons(gameScene.getDebugWeapons());
+             const scene = (window as any).gameScene;
+             if (scene && scene.getDebugWeapons) {
+                 setActiveWeapons(scene.getDebugWeapons());
              }
         }, 500);
         
@@ -39,10 +44,15 @@ export const useDevConsole = () => {
                     return newState;
                 });
             }
+            if (e.key === 'Escape') {
+                if (isVisible) {
+                    setIsPaused(prev => !prev);
+                }
+            }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, []);
+    }, [isVisible]);
 
     // Sync pause state with game
     useEffect(() => {

@@ -27,6 +27,7 @@ export class InputManager {
       this.spaceKey = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
       // Pause toggle (ESC)
       this.scene.input.keyboard.on('keydown-ESC', () => {
+        if ((this.scene as any).isDevConsoleOpen) return;
         if (this.togglePauseCallback) {
             this.togglePauseCallback();
         }

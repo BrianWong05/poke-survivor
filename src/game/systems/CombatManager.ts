@@ -232,7 +232,7 @@ export class CombatManager {
     // Debug invincibility is handled by not calling this or checking a flag
     // We can assume if debug is on, we won't get hurt if we check a global or similar.
     // For now, check standard flags.
-    if (this.isInvincible || this.isGameOver() || this.player.getData('invincible')) return;
+    if (this.isInvincible || this.isGameOver() || this.player.getData('invincible') || this.player.getData('debugInvincible')) return;
 
     const enemy = enemyObj as Phaser.Physics.Arcade.Sprite;
 

@@ -109,10 +109,13 @@ export class DevDebugSystem {
 
   public debugSetInvincible(enabled: boolean): void {
     this.debugInvincible = enabled;
-    if (enabled && this.player) {
-        this.player.setAlpha(0.7); // Visual feedback
-    } else if (this.player) {
-         this.player.setAlpha(1);
+    if (this.player) {
+        this.player.setData('debugInvincible', enabled);
+        if (enabled) {
+            this.player.setAlpha(0.7); // Visual feedback
+        } else {
+             this.player.setAlpha(1);
+        }
     }
     console.log(`[DevConsole] Invincible mode: ${enabled}`);
   }
