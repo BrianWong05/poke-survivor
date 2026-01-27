@@ -124,7 +124,7 @@ function drawLightning(scene: Phaser.Scene, start: { x: number, y: number }, end
 
 export class ThunderShock implements WeaponConfig {
   id = 'thunder-shock';
-  name = 'Thunder Shock';
+  name = 'Thunder Shock (電擊)';
   description = 'Chains electricity between enemies';
   
   // Dynamic cooldown based on level, handled in fire() check or external system?

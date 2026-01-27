@@ -29,6 +29,7 @@ export class DevDebugSystem {
   private debugWeapons: Map<string, DebugWeaponEntry> = new Map();
   // @ts-ignore
   private debugInvincible = false;
+  private isMainWeaponRemoved = false;
 
 
   // We need to keep a reference to fireTimer if we are debugging the main weapon
@@ -246,6 +247,7 @@ export class DevDebugSystem {
                 timer.destroy();
                 // We can't set it to undefined easily on the REF type if validation strict, 
                 // but effectively we killed it.
+                this.isMainWeaponRemoved = true;
                 console.log(`[DevConsole] Removed main weapon`);
             }
         }
@@ -267,7 +269,7 @@ export class DevDebugSystem {
         level: data.level
       }));
 
-      if (this.characterState && this.characterState.activeWeapon) {
+      if (this.characterState && this.characterState.activeWeapon && !this.isMainWeaponRemoved) {
           list.unshift({
               id: 'main_weapon',
               name: `${this.characterState.activeWeapon.name} (Main)`,

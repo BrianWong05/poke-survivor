@@ -32,7 +32,7 @@ function findNearestEnemy(
 
 export class AuraSphere implements WeaponConfig {
   id = 'aura-sphere';
-  name = 'Aura Sphere';
+  name = 'Aura Sphere (波導彈)';
   description = 'Releases an aura power that chases enemies.';
   cooldownMs = 1500; 
 

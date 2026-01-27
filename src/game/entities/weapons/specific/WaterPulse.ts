@@ -157,7 +157,7 @@ export class WaterPulseShot extends Phaser.Physics.Arcade.Sprite {
 
 export class WaterPulse implements WeaponConfig {
   id = 'water-pulse';
-  name = 'Water Pulse';
+  name = 'Water Pulse (水之波動)';
   description = 'High speed pulses of water.';
   cooldownMs = 400; 
 

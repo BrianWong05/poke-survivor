@@ -68,7 +68,7 @@ export class Flamethrower implements WeaponConfig {
 
 export class Ember implements WeaponConfig {
   id = 'ember';
-  name = 'Ember';
+  name = 'Ember (火花)';
   description = 'Fires small fireballs';
   cooldownMs = 1200; // Base cooldown
   

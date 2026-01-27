@@ -3,7 +3,7 @@ import type { WeaponConfig, CharacterContext } from '@/game/entities/characters/
 
 export class BodySlam implements WeaponConfig {
     id = 'body-slam';
-    name = 'Body Slam';
+    name = 'Body Slam (泰山壓頂)';
     description = 'Slam the ground to create a shockwave (AOE).';
     cooldownMs = 1500;
 

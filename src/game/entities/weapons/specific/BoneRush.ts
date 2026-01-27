@@ -7,7 +7,7 @@ function getProjectiles(scene: Phaser.Scene): Phaser.Physics.Arcade.Group | null
 
 export class BoneRush implements UltimateConfig {
   id = 'bone-rush';
-  name = 'Bone Rush';
+  name = 'Bone Rush (骨頭衝鋒)';
   description = 'Summons bones to orbit the player, increasing speed.';
   cooldownMs = 20000; // 20s cooldown
   durationMs = 8000; // 8s duration

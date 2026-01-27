@@ -31,7 +31,7 @@ function findNearestEnemy(
 
 export class FocusBlast implements WeaponConfig {
   id = 'focus-blast';
-  name = 'Focus Blast';
+  name = 'Focus Blast (真氣彈)';
   description = 'Powerful blast that explodes on impact. High critical chance.';
   cooldownMs = 2000; // Slower fire rate
 
