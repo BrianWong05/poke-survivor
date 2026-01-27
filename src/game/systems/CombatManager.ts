@@ -86,7 +86,8 @@ export class CombatManager {
       );
     });
 
-    // Legacy support
+    // Legacy support (Removed to prevent double-collision)
+    /* 
     this.scene.physics.add.overlap(
       projectilesGroup,
       enemiesGroup,
@@ -102,6 +103,7 @@ export class CombatManager {
       undefined,
       this.scene
     );
+    */
   }
 
   public healPlayer(amount: number): void {
@@ -165,8 +167,25 @@ export class CombatManager {
     projectileObj: Phaser.Types.Physics.Arcade.GameObjectWithBody | Phaser.Tilemaps.Tile,
     enemyObj: Phaser.Types.Physics.Arcade.GameObjectWithBody | Phaser.Tilemaps.Tile
   ): void {
-    const projectile = projectileObj as Phaser.Physics.Arcade.Sprite;
-    const enemy = enemyObj as Phaser.Physics.Arcade.Sprite;
+    let projectile = projectileObj as Phaser.Physics.Arcade.Sprite;
+    let enemy = enemyObj as Phaser.Physics.Arcade.Sprite;
+
+    // Detect Swapped Arguments
+    // If 'enemy' has projectile properties (onHit, pierceCount) and 'projectile' doesn't
+    const enemyHasProjectileTraits = 'onHit' in enemy || (enemy.getData && (enemy.getData('pierceCount') !== undefined));
+    const projectileHasProjectileTraits = 'onHit' in projectile || (projectile.getData && (projectile.getData('pierceCount') !== undefined));
+
+    if (enemyHasProjectileTraits && !projectileHasProjectileTraits) {
+        // Swap them
+        const temp = projectile;
+        projectile = enemy;
+        enemy = temp;
+    }
+
+    // Guard against non-projectile objects being processed as projectiles
+    if (!('onHit' in projectile || projectile.getData('pierceCount') !== undefined || projectile.getData('damage') !== undefined)) {
+        return;
+    }
 
     // Custom onHit handler
     if ('onHit' in projectile && typeof (projectile as any).onHit === 'function') {

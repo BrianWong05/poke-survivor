@@ -524,6 +524,9 @@ export class MainScene extends Phaser.Scene {
            return;
        }
 
+       // CRITICAL FIX: Respect Knockback State
+       if ((enemy as any).isKnockedBack) return;
+
        const angle = Phaser.Math.Angle.Between(enemy.x, enemy.y, this.player.x, this.player.y);
        const enemySpeed = 80;
        const vx = Math.cos(angle) * enemySpeed;

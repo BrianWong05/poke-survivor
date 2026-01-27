@@ -8,7 +8,8 @@ import {
 } from '@/game/entities/weapons/general/OrbitWeapon';
 // Specific Weapons
 import { Ember, Flamethrower } from '@/game/entities/weapons/specific/Ember';
-import { WaterGun, HydroPump } from '@/game/entities/weapons/specific/WaterGun';
+
+import { WaterPulse } from '@/game/entities/weapons/specific/WaterPulse';
 import { ThunderShock } from '@/game/entities/weapons/specific/ThunderShock';
 import { Lick, DreamEater } from '@/game/entities/weapons/specific/Lick';
 import { AuraSphere } from '@/game/entities/weapons/specific/AuraSphere';
@@ -21,8 +22,8 @@ import { type DevMove } from './types';
 export const AVAILABLE_MOVES: DevMove[] = [
     { name: 'Ember', create: () => new Ember() },
     { name: 'Flamethrower', create: () => new Flamethrower(), outline: true },
-    { name: 'Water Gun', create: () => new WaterGun() },
-    { name: 'Hydro Pump', create: () => new HydroPump(), outline: true },
+
+
     { name: 'Thunder Shock', create: () => new ThunderShock() },
     // { name: 'Thunderbolt', create: () => new Thunderbolt(), outline: true },
     { name: 'Lick', create: () => new Lick() },
@@ -38,4 +39,5 @@ export const AVAILABLE_MOVES: DevMove[] = [
     { name: 'Hydro Ring', create: () => HYDRO_RING_CONFIG, outline: true },
     { name: 'Magical Leaf', create: () => MAGICAL_LEAF_CONFIG, outline: false },
     { name: 'Leaf Storm', create: () => LEAF_STORM_CONFIG, outline: true },
+    { name: 'Water Pulse', create: () => new WaterPulse() },
 ];

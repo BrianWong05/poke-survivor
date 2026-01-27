@@ -35,8 +35,16 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   /** Timestamp of the last time this enemy took hazard damage */
   public lastHazardHitTime: number = 0;
 
+  /** Whether the enemy is currently being knocked back (stunned) */
+  public isKnockedBack: boolean = false;
+
+  /** Unique instance ID for hit tracking safety */
+  public readonly instanceId: string;
+
   constructor(scene: Phaser.Scene, x: number, y: number, texture: string) {
     super(scene, x, y, texture);
+    
+    this.instanceId = Phaser.Utils.String.UUID();
 
     // Add to scene and enable physics
     scene.add.existing(this);
@@ -88,6 +96,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     if (stats.mass && this.body) {
       (this.body as Phaser.Physics.Arcade.Body).mass = stats.mass;
     }
+
+    // Assign unique ID for this lifecycle (hit tracking)
+    this.setData('uid', Phaser.Utils.String.UUID());
   }
 
   /**
@@ -114,7 +125,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     if (!this.target || !this.scene) return;
 
     // Check for knockback/stun
-    if (this.getData('knockbackUntil') > this.scene.time.now) return;
+    if (this.isKnockedBack) return; // <--- STOP moving if stunned
 
     this.scene.physics.moveToObject(this, this.target, this.speed);
   }
@@ -139,7 +150,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
    */
   public takeDamage(amount: number, isCrit: boolean = false): void {
     if (this.isDying || !this.active) return;
-
+    
     // Handle Critical Hits
     if (isCrit) {
       this.showCritText();
@@ -152,7 +163,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
 
     this.hp -= amount;
-
+    
     // Flash white on hit
     this.flashHit();
     
@@ -244,16 +255,21 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   /**
    * Flash white tint for 100ms to indicate damage.
    */
+  /**
+   * Flash visually to indicate damage.
+   * Uses Alpha toggle to avoid WebGL tint rendering issues.
+   */
   protected flashHit(): void {
-    this.setTintFill(0xffffff); // Solid white flash
+    this.setTintFill(0xffffff);
+    // this.setAlpha(0.5); // Reverted alpha debug
 
     this.scene.time.delayedCall(100, () => {
       if (this.active && !this.isDying) {
+        // this.setAlpha(1);
         if (this.isParalyzed) {
-          this.clearTint(); // Clear the Fill
-          this.setTint(0xFFFF00); // Restore paralysis yellow
+           this.setTint(0xFFFF00);
         } else {
-          this.clearTint();
+           this.clearTint();
         }
       }
     });
@@ -264,6 +280,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
    */
   protected die(): void {
     if (this.isDying) return;
+    console.log(`[Enemy] ${this.getData('uid') || 'NoID'} Dying.`);
     this.isDying = true;
 
     // Stop movement and disable physics body
@@ -296,12 +313,13 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
    * Deactivate and hide the enemy, returning it to the pool.
    */
   protected returnToPool(): void {
+    console.log(`[Enemy] ${this.getData('uid') || 'NoID'} Returned to Pool.`);
     this.setActive(false);
     this.setVisible(false);
     this.hp = 0;
     this.isDying = false;
     this.target = null;
-
+    
     // Stop all velocity
     if (this.body) {
       (this.body as Phaser.Physics.Arcade.Body).setVelocity(0, 0);
@@ -366,6 +384,26 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       duration: 800,
       ease: 'Power2',
       onComplete: () => text.destroy()
+    });
+  }
+  /**
+   * Apply knockback force and stun the enemy for a duration.
+   */
+  public applyKnockback(force: Phaser.Math.Vector2, duration: number): void {
+    if (!this.active || this.isDying || this.isBoss) return;
+
+    this.isKnockedBack = true;
+    console.log('Knockback applied to', this);
+
+    // Apply velocity
+    if (this.body) {
+      (this.body as Phaser.Physics.Arcade.Body).setVelocity(force.x, force.y);
+    }
+
+    // Reset after duration
+    this.scene.time.delayedCall(duration, () => {
+      if (!this.active) return;
+      this.isKnockedBack = false;
     });
   }
 }

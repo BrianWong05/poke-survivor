@@ -1,14 +1,15 @@
 import type { CharacterContext, WeaponConfig } from '@/game/entities/characters/types';
 import Phaser from 'phaser'; // Needed for helpers below
 import { Ember } from './specific/Ember';
-import { WaterGun } from './specific/WaterGun';
+
 import { Lick } from './specific/Lick';
 import { BodySlam } from './specific/BodySlam';
 import { AuraSphere } from './specific/AuraSphere';
 import { FocusBlast } from './specific/FocusBlast';
+import { WaterPulse } from './specific/WaterPulse';
 
 export const ember = new Ember();
-export const waterGun = new WaterGun();
+
 export const lick = new Lick();
 export const bodySlam = new BodySlam();
 export const auraSphere = new AuraSphere();
@@ -210,55 +211,6 @@ export const hydroCannon: WeaponConfig = {
 };
 
 /**
- * Water Pulse: Expanding ring with knockback
+ * Water Pulse: High speed pulses of water
  */
-export const waterPulse: WeaponConfig = {
-  id: 'water-pulse',
-  name: 'Water Pulse',
-  description: 'Expanding ring pushes enemies back',
-  cooldownMs: 1500,
-  evolution: hydroCannon,
-  evolutionLevel: 5,
-  fire: (ctx: CharacterContext) => {
-    const { scene, player, stats } = ctx;
-    
-    // Create expanding ring effect
-    const ring = scene.add.circle(player.x, player.y, 20, 0x0088ff, 0.5);
-    
-    scene.tweens.add({
-      targets: ring,
-      radius: 150,
-      alpha: 0,
-      duration: 500,
-      onUpdate: () => {
-        // Damage and knockback enemies within ring
-        const enemies = getEnemies(scene);
-        if (!enemies) return;
-        
-        enemies.getChildren().forEach((child) => {
-          const enemy = child as Phaser.Physics.Arcade.Sprite;
-          if (!enemy.active) return;
-          
-          const dist = Phaser.Math.Distance.Between(player.x, player.y, enemy.x, enemy.y);
-          if (dist <= ring.radius && dist >= ring.radius - 30) {
-            // Apply knockback
-            const angle = Phaser.Math.Angle.Between(player.x, player.y, enemy.x, enemy.y);
-            const knockbackForce = 300;
-            enemy.setVelocity(
-              Math.cos(angle) * knockbackForce,
-              Math.sin(angle) * knockbackForce
-            );
-            
-            // Apply damage once
-            if (!enemy.getData('waterPulseHit')) {
-              enemy.setData('waterPulseHit', true);
-              scene.events.emit('damage-enemy', enemy, stats.baseDamage);
-              scene.time.delayedCall(100, () => enemy.setData('waterPulseHit', false));
-            }
-          }
-        });
-      },
-      onComplete: () => ring.destroy(),
-    });
-  },
-};
+export const waterPulse = new WaterPulse();
