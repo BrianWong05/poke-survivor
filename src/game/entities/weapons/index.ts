@@ -8,6 +8,11 @@ import { AuraSphere } from './specific/AuraSphere';
 import { FocusBlast } from './specific/FocusBlast';
 import { WaterPulse } from './specific/WaterPulse';
 import { Psywave } from './specific/Psywave';
+import { AquaRing } from './specific/AquaRing';
+import { WillOWisp } from './specific/WillOWisp';
+import { PetalDance } from './specific/PetalDance';
+import { StealthRock } from './specific/StealthRock';
+import { ParabolicCharge } from './specific/ParabolicCharge';
 
 export const ember = new Ember();
 
@@ -16,6 +21,11 @@ export const bodySlam = new BodySlam();
 export const auraSphere = new AuraSphere();
 export const focusBlast = new FocusBlast();
 export const psywave = new Psywave();
+export const aquaRing = new AquaRing();
+export const willOWisp = new WillOWisp();
+export const petalDance = new PetalDance();
+export const stealthRock = new StealthRock();
+export const parabolicCharge = new ParabolicCharge();
 
 // Exports for evolutions if needed directly (though usually accessed via weapon.evolution)
 export const dreamEater = lick.evolution;

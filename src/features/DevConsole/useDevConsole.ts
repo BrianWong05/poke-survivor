@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { type WeaponConfig } from '@/game/entities/characters/types';
-import { type OrbitVariantConfig } from '@/game/entities/weapons/general/OrbitWeapon';
+
 import { type ActiveWeapon } from './types';
 
 export const useDevConsole = () => {
@@ -80,7 +80,7 @@ export const useDevConsole = () => {
         }
     };
 
-    const handleAddWeapon = (config: OrbitVariantConfig | WeaponConfig) => {
+    const handleAddWeapon = (config: WeaponConfig) => {
         const gameScene = (window as any).gameScene;
         if (gameScene && gameScene.debugAddWeapon) {
             gameScene.debugAddWeapon(config);

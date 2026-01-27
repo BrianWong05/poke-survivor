@@ -89,8 +89,21 @@ export class Preloader extends Phaser.Scene {
     // Store manifest in registry for other scenes to access
     this.registry.set('spriteManifest', this.manifest);
 
+    // Generate fallback textures (programmatic assets)
+    this.generateFallbackTextures();
+
     // Start loading sprites
     this.loadSprites();
+  }
+
+  private generateFallbackTextures(): void {
+    if (!this.textures.exists('projectile')) {
+      const graphics = this.make.graphics({ x: 0, y: 0 });
+      graphics.fillStyle(0xffffff);
+      graphics.fillCircle(16, 16, 16); // 32x32 white circle
+      graphics.generateTexture('projectile', 32, 32);
+      graphics.destroy();
+    }
   }
 
   private loadSprites(): void {

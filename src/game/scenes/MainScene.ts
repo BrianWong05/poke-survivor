@@ -13,7 +13,7 @@ import { ExperienceManager } from '@/game/systems/ExperienceManager';
 import { EnemySpawner } from '@/game/systems/EnemySpawner';
 import { ENEMY_STATS, EnemyType, EnemyTier } from '@/game/entities/enemies';
 import { LootManager } from '@/game/systems/LootManager';
-import { type OrbitVariantConfig } from '@/game/entities/weapons/general/OrbitWeapon';
+
 import { Player } from '@/game/entities/Player';
 
 // New Systems
@@ -442,7 +442,7 @@ export class MainScene extends Phaser.Scene {
   }); }
   public debugHeal(): void { this.debugSystem.debugHeal(); }
   public debugKillAll(): void { this.debugSystem.debugKillAll(); }
-  public debugAddWeapon(config: WeaponConfig | OrbitVariantConfig): void { this.debugSystem.debugAddWeapon(config, this.gameOver); }
+  public debugAddWeapon(config: WeaponConfig): void { this.debugSystem.debugAddWeapon(config, this.gameOver); }
   public debugSetWeaponLevel(id: string, level: number): void { this.debugSystem.debugSetWeaponLevel(id, level); }
   public debugRemoveWeapon(id: string): void { this.debugSystem.debugRemoveWeapon(id); }
   public getDebugWeapons() { return this.debugSystem.getDebugWeapons(); }

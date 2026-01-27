@@ -1,0 +1,24 @@
+# Tasks: Implement Orbiting Guard Weapons
+
+- [ ] Create `src/game/entities/weapons/specific/AquaRing.ts`
+  - [ ] Implement `AquaRingShot` with knockback logic.
+  - [ ] Implement `AquaRing` class stats (Lvl 1-8).
+- [ ] Create `src/game/entities/weapons/specific/WillOWisp.ts`
+  - [ ] Implement `WillOWispShot` with burn chance logic.
+  - [ ] Implement `WillOWisp` class stats (Lvl 1-8).
+- [ ] Create `src/game/entities/weapons/specific/PetalDance.ts`
+  - [ ] Implement `PetalDanceShot` (High speed/count).
+  - [ ] Implement `PetalDance` class stats (Lvl 1-8).
+- [ ] Create `src/game/entities/weapons/specific/StealthRock.ts`
+  - [ ] Implement `StealthRockShot` (High damage/slow).
+  - [ ] Implement `StealthRock` class stats (Lvl 1-8).
+- [ ] Create `src/game/entities/weapons/specific/ParabolicCharge.ts`
+  - [ ] Implement `ParabolicChargeShot` with heal logic.
+  - [ ] Implement `ParabolicCharge` class stats (Lvl 1-8).
+- [ ] Register all 5 weapons in `src/game/entities/weapons/index.ts`.
+- [ ] Verify functionality (Manual Test):
+  - [ ] Check Aqua Ring knockback.
+  - [ ] Check Will-O-Wisp burn application.
+  - [ ] Check Petal Dance high count/speed.
+  - [ ] Check Stealth Rock single-hit damage.
+  - [ ] Check Parabolic Charge healing.

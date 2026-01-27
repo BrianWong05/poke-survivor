@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { type CharacterState, type WeaponConfig } from '@/game/entities/characters/types';
-import { OrbitWeapon, type OrbitVariantConfig } from '@/game/entities/weapons/general/OrbitWeapon';
+
 import { ExperienceManager } from '@/game/systems/ExperienceManager';
 import { CombatManager } from '@/game/systems/CombatManager';
 import { UIManager } from '@/game/systems/UIManager';
@@ -116,17 +116,13 @@ export class DevDebugSystem {
     console.log(`[DevConsole] Invincible mode: ${enabled}`);
   }
 
-  public debugAddWeapon(weaponConfig: WeaponConfig | OrbitVariantConfig, isGameOver: boolean): void {
+  public debugAddWeapon(weaponConfig: WeaponConfig, isGameOver: boolean): void {
     if (!this.player) return;
 
     const id = `debug-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     
-    let baseWeapon: WeaponConfig;
-    if ('spinSpeed' in weaponConfig) {
-       baseWeapon = new OrbitWeapon(id, weaponConfig as OrbitVariantConfig);
-    } else {
-       baseWeapon = weaponConfig as WeaponConfig;
-    }
+    // We assume it's a valid WeaponConfig instance (or object)
+    const baseWeapon: WeaponConfig = weaponConfig;
 
     const initialLevel = 1;
     let activeWeapon = baseWeapon;
