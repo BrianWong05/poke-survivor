@@ -1,8 +1,18 @@
-# parabolic-charge Specification
+# Parabolic Charge Redesign
 
-## Purpose
-TBD - created by archiving change implement-orbiting-guard-weapons. Update Purpose after archive.
-## Requirements
+## ADDED Requirements
+
+### Requirement: Electric Field Visuals
+The system SHALL display the Parabolic Charge as an electric field surrounding the player.
+
+#### Scenario: Pulsing Field
+- **Given** the weapon is active
+- **Then** it displays a large yellow circular field (Radius ~100-150)
+- **And** the field pulses (using `electric-field` high-res texture)
+- **And** it emits jagged "lightning" sparks
+
+## MODIFIED Requirements
+
 ### Requirement: Parabolic Charge Stats & Progression
 The system SHALL update the stats to reflect the field nature and balance.
 
@@ -24,20 +34,3 @@ The system SHALL update the stats to reflect the field nature and balance.
 - **And** Level 6: +250ms Duration, +0.1 Scale
 - **And** Level 7: +5 Damage
 - **And** Level 8: Infinite Duration
-
-### Requirement: Heal Logic
-The system SHALL heal the player.
-
-#### Scenario: On Hit
-- **When** an enemy is hit
-- **Then** heal the player for 1 HP
-
-### Requirement: Electric Field Visuals
-The system SHALL display the Parabolic Charge as an electric field surrounding the player.
-
-#### Scenario: Pulsing Field
-- **Given** the weapon is active
-- **Then** it displays a large yellow circular field (Radius ~100-150)
-- **And** the field pulses (using `electric-field` high-res texture)
-- **And** it emits jagged "lightning" sparks
-

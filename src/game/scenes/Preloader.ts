@@ -107,6 +107,14 @@ export class Preloader extends Phaser.Scene {
       graphics.generateTexture('projectile', 32, 32);
       graphics.destroy();
     }
+
+    if (!this.textures.exists('electric-field')) {
+      const graphics = this.make.graphics({ x: 0, y: 0 });
+      graphics.fillStyle(0xffffff);
+      graphics.fillCircle(128, 128, 128); // 256x256 white high-res circle
+      graphics.generateTexture('electric-field', 256, 256);
+      graphics.destroy();
+    }
   }
 
   private loadSprites(): void {

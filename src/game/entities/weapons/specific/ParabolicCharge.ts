@@ -12,12 +12,14 @@ export class ParabolicChargeShot extends Phaser.Physics.Arcade.Sprite {
     currentAngle: number;
     damage: number = 0;
     knockback: number = 0;
+
+    baseScale: number = 0.6;
     
     private hitList: Map<Phaser.GameObjects.GameObject, number> = new Map();
     private immunityDuration = 500; 
 
     constructor(scene: Phaser.Scene, x: number, y: number, owner: Phaser.Physics.Arcade.Sprite, radius: number, speed: number, startAngle: number) {
-        super(scene, x, y, 'projectile'); 
+        super(scene, x, y, 'electric-field'); 
         this.owner = owner;
         this.radius = radius;
         this.orbitSpeed = speed;
@@ -27,14 +29,17 @@ export class ParabolicChargeShot extends Phaser.Physics.Arcade.Sprite {
         scene.physics.add.existing(this);
 
         this.setTint(0xFFFF00); // Yellow
-        this.setScale(1.2); 
-        this.setAlpha(0.8);
-        this.setCircle(10); 
+        this.setScale(this.baseScale); 
+        this.setAlpha(0.3);
+        this.setDepth(5); // Behind player
+        this.setCircle(128); 
+        this.body?.setCircle(128); 
     }
 
-    setup(stats: { damage: number, knockback: number }) {
+    setup(stats: { damage: number, knockback: number, scale?: number }) {
         this.damage = stats.damage;
         this.knockback = stats.knockback;
+        if (stats.scale) this.baseScale = stats.scale;
         
         this.setData('damage', this.damage);
         this.setData('knockback', this.knockback);
@@ -51,11 +56,50 @@ export class ParabolicChargeShot extends Phaser.Physics.Arcade.Sprite {
             this.destroy();
             return;
         }
-        this.currentAngle += this.orbitSpeed * (delta / 1000);
-        const rad = Phaser.Math.DegToRad(this.currentAngle);
-        this.x = this.owner.x + Math.cos(rad) * this.radius;
-        this.y = this.owner.y + Math.sin(rad) * this.radius;
-        this.setRotation(rad + Math.PI / 2);
+        
+        // Stick to owner center (Field)
+        this.x = this.owner.x;
+        this.y = this.owner.y;
+
+        // Pulse Effect
+
+        const pulse = Math.sin(time / 150) * 0.05;
+        this.setScale(this.baseScale + pulse);
+
+        // Lightning Effect
+        if (time % 100 < delta) { // Frequent sparks
+             const angle = Math.random() * Math.PI * 2;
+             const dist = Math.random() * (120 * this.scale); // Within field (approx radius)
+             const tx = this.x + Math.cos(angle) * dist;
+             const ty = this.y + Math.sin(angle) * dist;
+
+             const graphics = this.scene.add.graphics();
+             graphics.lineStyle(3, 0xFFFFAA, 1);
+             
+             // Jagged Line
+             graphics.beginPath();
+             graphics.moveTo(this.x, this.y);
+             const segments = 5;
+             for (let i = 1; i < segments; i++) {
+                 const t = i / segments;
+                 const px = this.x + (tx - this.x) * t;
+                 const py = this.y + (ty - this.y) * t;
+                 const offset = 15;
+                 const ox = (Math.random() - 0.5) * 2 * offset;
+                 const oy = (Math.random() - 0.5) * 2 * offset;
+                 graphics.lineTo(px + ox, py + oy);
+             }
+             graphics.lineTo(tx, ty);
+             graphics.strokePath();
+             
+             // Fade out lightning
+             this.scene.tweens.add({
+                 targets: graphics,
+                 alpha: 0,
+                 duration: 100,
+                 onComplete: () => graphics.destroy()
+             });
+        }
     }
 
     canHit(enemy: Phaser.GameObjects.GameObject, now: number): boolean {
@@ -70,24 +114,10 @@ export class ParabolicChargeShot extends Phaser.Physics.Arcade.Sprite {
         if (this.canHit(enemy, now)) {
             this.hitList.set(enemy, now);
             
-            // Heal Player
-            // Assuming owner is Player and has heal method or we trigger it via scene event/helper?
-            // Actually, we can check if owner has `heal` method or use setData 'hp'.
-            // CombatManager has `healPlayer` but we don't have reference to CombatManager here directly.
-            // But we can emit a heal event or increment HP data directly if logical.
-            // Safer: Emit event 'player-heal' if listener exists? 
-            // Or access scene registry 'combatManager'?
-            // Simplest: Check if owner has Heal method (Player class might not expose it publicly to projectile).
-            // Let's use `spawn-aoe-damage` for damage, and try to access player state.
-            // NOTE: The previous turn CombatManager logic showed `healPlayer` public method.
-            // But getting CombatManager instance from scene?
-            // HACK/Convention: Emit 'heal-player'. If not, try to modify HP directly?
-            // Let's assume `combatManager` is on scene?
+            // Heal (existing logic)
             const combatManager = this.scene.registry.get('combatManager');
             if (combatManager && typeof combatManager.healPlayer === 'function') {
                 combatManager.healPlayer(1);
-            } else {
-               // Fallback
             }
 
             const e = enemy as Phaser.Physics.Arcade.Sprite;
@@ -99,29 +129,30 @@ export class ParabolicChargeShot extends Phaser.Physics.Arcade.Sprite {
 export class ParabolicCharge implements WeaponConfig {
     id = 'parabolic-charge';
     name = 'Parabolic Charge (拋物面充電)';
-    description = 'Electric ring that heals you.';
+    description = 'Electric field that heals you.';
     cooldownMs = 4000;
     evolution = undefined;
     evolutionLevel = 999;
 
     getStats(level: number) {
         const stats = {
-            damage: 12,
-            count: 3,
-            speed: 180,
+            damage: 8,
+            count: 1,           
+            speed: 0,           
             duration: 3000, 
-            cooldown: 4000,
-            radius: 100,
-            knockback: 10
+            cooldown: 4500,
+            radius: 0,          
+            knockback: 50,
+            scale: 0.6          // Base Scale
         };
         // Progression
-        if (level >= 2) stats.count += 1;
-        if (level >= 3) stats.duration += 1000;
-        if (level >= 4) stats.radius += 20;
-        if (level >= 5) stats.count += 1;
-        if (level >= 6) stats.damage += 5;
-        if (level >= 7) stats.duration += 1000;
-        if (level >= 8) stats.duration = 999999;
+        if (level >= 2) stats.damage += 2;
+        if (level >= 3) stats.duration += 250;
+        if (level >= 4) { stats.knockback += 10; stats.scale += 0.1; }
+        if (level >= 5) stats.damage += 5;
+        if (level >= 6) { stats.duration += 250; stats.scale += 0.1; }
+        if (level >= 7) stats.damage += 5;
+        if (level >= 8) { stats.duration = 999999; } // Removed extra scale boost 
 
         return stats;
     }
@@ -134,33 +165,27 @@ export class ParabolicCharge implements WeaponConfig {
         const projectilesGroup = scene.registry.get('projectilesGroup') as Phaser.Physics.Arcade.Group;
         if (!projectilesGroup) return;
 
-        if (level >= 8) {
-            const existing = projectilesGroup.getChildren().filter(
-                p => p.active && p.getData('weaponId') === 'parabolic-charge' && p.getData('owner') === player
-            );
-            if (existing.length > 0) return; 
-        }
-
+        // Ensure only one field exists per player
         const existing = projectilesGroup.getChildren().filter(
             p => p.active && p.getData('weaponId') === 'parabolic-charge' && p.getData('owner') === player
         );
-        existing.forEach(p => p.destroy());
+        
+        if (existing.length > 0) {
+             if (level >= 8) return;
+             existing.forEach(p => p.destroy());
+        }
 
-        const step = 360 / stats.count;
-        for (let i = 0; i < stats.count; i++) {
-            const startAngle = step * i;
-            const projectile = new ParabolicChargeShot(
-                scene, player.x, player.y, player, 
-                stats.radius, stats.speed, startAngle
-            );
-            projectilesGroup.add(projectile);
-            projectile.setup({ damage: stats.damage, knockback: stats.knockback });
-            
-            if (level < 8) {
-                scene.time.delayedCall(stats.duration, () => {
-                    if (projectile.active) projectile.destroy();
-                });
-            }
+        const projectile = new ParabolicChargeShot(
+            scene, player.x, player.y, player, 
+            stats.radius, stats.speed, 0
+        );
+        projectilesGroup.add(projectile);
+        projectile.setup({ damage: stats.damage, knockback: stats.knockback, scale: stats.scale });
+        
+        if (level < 8) {
+            scene.time.delayedCall(stats.duration, () => {
+                if (projectile.active) projectile.destroy();
+            });
         }
     }
 }
