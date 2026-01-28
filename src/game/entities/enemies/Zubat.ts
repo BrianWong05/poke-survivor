@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { Enemy } from '@/game/entities/enemies/Enemy';
-import { EnemyType, ENEMY_STATS } from '@/game/entities/enemies/EnemyConfig';
+import { type EnemyStats, EnemyType, ENEMY_STATS } from '@/game/entities/enemies/EnemyConfig';
 
 /**
  * Zubat - Fast rusher with evasive sine-wave movement.
@@ -22,8 +22,8 @@ export class Zubat extends Enemy {
   /**
    * Initialize with Zubat-specific stats.
    */
-  public spawn(target: Phaser.Physics.Arcade.Sprite): void {
-    const stats = ENEMY_STATS[EnemyType.ZUBAT];
+  public spawn(target: Phaser.Physics.Arcade.Sprite, statsOverride?: EnemyStats): void {
+    const stats = statsOverride || ENEMY_STATS[EnemyType.ZUBAT];
     this.init(stats, target, EnemyType.ZUBAT);
   }
 

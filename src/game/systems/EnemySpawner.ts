@@ -5,6 +5,8 @@ import {
   Rattata,
   Geodude,
   Zubat,
+  ENEMY_STATS,
+  type EnemyStats,
 } from '@/game/entities/enemies';
 import { DexManager } from '@/systems/DexManager';
 
@@ -189,8 +191,29 @@ export class EnemySpawner {
     const spawnX = this.player.x + Math.cos(angle) * SPAWN_RADIUS;
     const spawnY = this.player.y + Math.sin(angle) * SPAWN_RADIUS;
 
+    // Calculate HP Multiplier based on Player Level
+    // Formula: 1 + (PlayerLevel * 0.05)
+    // Level 1: 1.05x, Level 20: 2.0x
+    
+    const currentLevel = (this.player as any).level || 1;
+    const hpMultiplier = 1 + (currentLevel * 0.05);
+
+    // Get Base Stats
+    const baseStats = ENEMY_STATS[enemyType];
+    
+    // Scale HP
+    const scaledHP = Math.floor(baseStats.maxHP * hpMultiplier);
+    
+    // Create Scaled Stats
+    const scaledStats = {
+      ...baseStats,
+      maxHP: scaledHP,
+    };
+
+    console.log(`[EnemySpawner] Spawning ${enemyType} at Level ${currentLevel}. Multiplier: ${hpMultiplier.toFixed(2)}. HP: ${scaledHP} (Base: ${baseStats.maxHP})`);
+
     // Get enemy from appropriate pool
-    const enemy = this.getEnemyFromPool(enemyType, spawnX, spawnY);
+    const enemy = this.getEnemyFromPool(enemyType, spawnX, spawnY, scaledStats);
 
     if (enemy) {
       // Add to combined group for collision detection
@@ -209,7 +232,8 @@ export class EnemySpawner {
   private getEnemyFromPool(
     type: EnemyType,
     x: number,
-    y: number
+    y: number,
+    stats: EnemyStats
   ): Enemy | null {
     let pool: Phaser.GameObjects.Group;
     let enemy: Enemy | null = null;
@@ -219,7 +243,7 @@ export class EnemySpawner {
         pool = this.rattataPool;
         enemy = pool.get(x, y) as Rattata | null;
         if (enemy) {
-          (enemy as Rattata).spawn(this.player);
+          (enemy as Rattata).spawn(this.player, stats);
         }
         break;
 
@@ -227,7 +251,7 @@ export class EnemySpawner {
         pool = this.geodudePool;
         enemy = pool.get(x, y) as Geodude | null;
         if (enemy) {
-          (enemy as Geodude).spawn(this.player);
+          (enemy as Geodude).spawn(this.player, stats);
         }
         break;
 
@@ -235,7 +259,7 @@ export class EnemySpawner {
         pool = this.zubatPool;
         enemy = pool.get(x, y) as Zubat | null;
         if (enemy) {
-          (enemy as Zubat).spawn(this.player);
+          (enemy as Zubat).spawn(this.player, stats);
         }
         break;
     }

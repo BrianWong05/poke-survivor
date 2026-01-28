@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { Enemy } from '@/game/entities/enemies/Enemy';
-import { EnemyType, ENEMY_STATS } from '@/game/entities/enemies/EnemyConfig';
+import { type EnemyStats, EnemyType, ENEMY_STATS } from '@/game/entities/enemies/EnemyConfig';
 
 /**
  * Rattata - Fast chaff enemy that swarms the player.
@@ -16,8 +16,8 @@ export class Rattata extends Enemy {
   /**
    * Initialize with Rattata-specific stats.
    */
-  public spawn(target: Phaser.Physics.Arcade.Sprite): void {
-    const stats = ENEMY_STATS[EnemyType.RATTATA];
+  public spawn(target: Phaser.Physics.Arcade.Sprite, statsOverride?: EnemyStats): void {
+    const stats = statsOverride || ENEMY_STATS[EnemyType.RATTATA];
     this.init(stats, target, EnemyType.RATTATA);
   }
 

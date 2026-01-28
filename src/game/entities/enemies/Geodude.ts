@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { Enemy } from '@/game/entities/enemies/Enemy';
-import { EnemyType, ENEMY_STATS } from '@/game/entities/enemies/EnemyConfig';
+import { type EnemyStats, EnemyType, ENEMY_STATS } from '@/game/entities/enemies/EnemyConfig';
 
 /**
  * Geodude - Slow tank enemy with high HP and knockback resistance.
@@ -16,8 +16,8 @@ export class Geodude extends Enemy {
   /**
    * Initialize with Geodude-specific stats including high mass.
    */
-  public spawn(target: Phaser.Physics.Arcade.Sprite): void {
-    const stats = ENEMY_STATS[EnemyType.GEODUDE];
+  public spawn(target: Phaser.Physics.Arcade.Sprite, statsOverride?: EnemyStats): void {
+    const stats = statsOverride || ENEMY_STATS[EnemyType.GEODUDE];
     this.init(stats, target, EnemyType.GEODUDE);
   }
 
