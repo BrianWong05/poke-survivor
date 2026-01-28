@@ -32,39 +32,6 @@ function findNearestEnemy(
   return scene.physics.closest(player, activeEnemies) as Phaser.Physics.Arcade.Sprite | null;
 }
 
-export class Flamethrower implements WeaponConfig {
-  id = 'flamethrower';
-  name = 'Flamethrower';
-  description = 'Rapid fire stream of embers';
-  cooldownMs = 150; // Rapid fire
-
-  fire(ctx: CharacterContext): void {
-    const { scene, player } = ctx;
-    const nearestEnemy = findNearestEnemy(scene, player);
-    if (!nearestEnemy) return;
-
-    const projectilesGroup = getProjectiles(scene);
-    if (!projectilesGroup) return;
-
-    // Create fireball
-    const fireball = new Fireball(scene, player.x, player.y);
-    projectilesGroup.add(fireball);
-
-    // Flamethrower stats
-    fireball.setDamage(6);
-    fireball.setPierce(3);
-    fireball.setProjectileTint(0xFFA500); // Orange
-    fireball.setScale(0.8); // Slightly smaller
-    
-    // Fire at enemy
-    fireball.fireAt(nearestEnemy.x, nearestEnemy.y);
-
-    // Cleanup
-    scene.time.delayedCall(2000, () => {
-      if (fireball.active) fireball.destroy();
-    });
-  }
-}
 
 export class Ember implements WeaponConfig {
   id = 'ember';
@@ -72,7 +39,7 @@ export class Ember implements WeaponConfig {
   description = 'Fires small fireballs';
   cooldownMs = 1200; // Base cooldown
   
-  evolution = new Flamethrower();
+  evolution = undefined;
   evolutionLevel = 8;
 
   getStats(level: number): { damage: number; count: number; pierce: number; speed: number; cooldown: number } {

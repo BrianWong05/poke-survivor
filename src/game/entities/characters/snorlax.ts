@@ -1,6 +1,6 @@
 import type { CharacterConfig } from '@/game/entities/characters/types';
 import { thickFatPassive } from '@/game/entities/passives';
-import { bodySlam } from '@/game/entities/weapons';
+import { weapons } from '@/game/entities/weapons';
 import { rest } from '@/game/entities/ultimates';
 
 /**
@@ -18,7 +18,7 @@ export const snorlaxConfig: CharacterConfig = {
     baseDamage: 25,
   },
   passive: thickFatPassive,
-  weapon: bodySlam,
+  weapon: weapons.bodySlam,
   ultimate: rest,
   spriteKey: 'snorlax',
 };

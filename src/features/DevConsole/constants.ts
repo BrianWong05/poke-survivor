@@ -1,5 +1,5 @@
 
-import * as weapons from '@/game/entities/weapons/index';
+import { weapons } from '@/game/entities/weapons/index';
 import type { WeaponConfig } from '@/game/entities/characters/types';
 
 export interface DevMove {

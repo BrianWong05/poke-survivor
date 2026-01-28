@@ -1,6 +1,6 @@
 import type { CharacterConfig } from '@/game/entities/characters/types';
 import { innerFocusPassive } from '@/game/entities/passives';
-import { auraSphere } from '@/game/entities/weapons';
+import { weapons } from '@/game/entities/weapons';
 import { boneRush } from '@/game/entities/ultimates';
 
 /**
@@ -18,7 +18,7 @@ export const rioluConfig: CharacterConfig = {
     baseDamage: 18,
   },
   passive: innerFocusPassive,
-  weapon: auraSphere,
+  weapon: weapons.auraSphere,
   ultimate: boneRush,
   spriteKey: 'pokemon_447',
 };

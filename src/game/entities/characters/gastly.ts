@@ -1,6 +1,6 @@
 import type { CharacterConfig } from '@/game/entities/characters/types';
 import { shadowTagPassive } from '@/game/entities/passives';
-import { lick } from '@/game/entities/weapons';
+import { weapons } from '@/game/entities/weapons';
 import { destinyBond } from '@/game/entities/ultimates';
 
 /**
@@ -18,7 +18,7 @@ export const gastlyConfig: CharacterConfig = {
     baseDamage: 12,
   },
   passive: shadowTagPassive,
-  weapon: lick,
+  weapon: weapons.lick,
   ultimate: destinyBond,
   spriteKey: 'gastly',
 };

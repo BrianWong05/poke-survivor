@@ -1,57 +1,36 @@
-import { Ember } from './specific/Ember';
+import type { WeaponConfig } from '@/game/entities/characters/types';
 
-import { Lick } from './specific/Lick';
-import { BodySlam } from './specific/BodySlam';
-import { AuraSphere } from './specific/AuraSphere';
-import { FocusBlast } from './specific/FocusBlast';
-import { WaterPulse } from './specific/WaterPulse';
-import { Psywave } from './specific/Psywave';
-import { AquaRing } from './specific/AquaRing';
-import { WillOWisp } from './specific/WillOWisp';
-import { PetalDance } from './specific/PetalDance';
-import { StealthRock } from './specific/StealthRock';
-import { ParabolicCharge } from './specific/ParabolicCharge';
-import { ThunderWave } from './specific/ThunderWave';
-import { SludgeBomb } from './specific/SludgeBomb';
-import { Swift } from './specific/Swift';
-import { Thunderbolt } from './specific/Thunderbolt';
+// Auto-import all specific weapon files
+const modules = import.meta.glob('./specific/*.ts', { eager: true });
 
-export const ember = new Ember();
+export const weapons: Record<string, WeaponConfig> = {};
 
-export const lick = new Lick();
-export const bodySlam = new BodySlam();
-export const auraSphere = new AuraSphere();
-export const focusBlast = new FocusBlast();
-export const psywave = new Psywave();
-export const aquaRing = new AquaRing();
-export const willOWisp = new WillOWisp();
-export const petalDance = new PetalDance();
-export const stealthRock = new StealthRock();
-export const parabolicCharge = new ParabolicCharge();
-export const thunderWave = new ThunderWave();
-export const sludgeBomb = new SludgeBomb();
-export const swift = new Swift();
-export const thunderbolt = new Thunderbolt();
+// Helper to convert kebab-case to camelCase (e.g., 'aura-sphere' -> 'auraSphere')
+function toCamelCase(str: string): string {
+  return str.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+}
 
-// Exports for evolutions if needed directly (though usually accessed via weapon.evolution)
-export const dreamEater = lick.evolution;
-
-
-
-// ============================================================================
-// PIKACHU WEAPONS
-// ============================================================================
-
-
-import { ThunderShock } from './specific/ThunderShock';
-export const thunderShock = new ThunderShock();
-
-// ============================================================================
-// BLASTOISE WEAPONS
-// ============================================================================
-
-
-/**
- * Water Pulse: High speed pulses of water
- */
-export const waterPulse = new WaterPulse();
+for (const path in modules) {
+  const mod = modules[path] as any;
+  for (const key in mod) {
+    const ExportedItem = mod[key];
+    
+    // Check if it's a class (constructor function) by checking for prototype methods we expect
+    // Simple duck typing: must be function and have 'fire' in prototype or looks like a class
+    if (typeof ExportedItem === 'function' && ExportedItem.prototype) {
+      try {
+        // Instantiate to check properties
+        const instance = new ExportedItem();
+        
+        // Check if it matches WeaponConfig shape (has id, name, fire method)
+        if (instance.id && typeof instance.fire === 'function') {
+           const camelKey = toCamelCase(instance.id);
+           weapons[camelKey] = instance;
+        }
+      } catch (e) {
+        // Ignore non-constructible exports or errors
+        // console.warn(`[Weapon Registry] Skipped export ${key} in ${path}:`, e);
+      }
+    }
+  }
+}
