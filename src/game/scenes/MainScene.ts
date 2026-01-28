@@ -283,7 +283,9 @@ export class MainScene extends Phaser.Scene {
     if (this.gameOver) return;
     if (this.player.getData('canControl') === false) return;
     const ctx = this.getCharacterContext();
-    this.characterState.activeWeapon.fire(ctx);
+    // Clamp level to max 8 for weapon stats
+    const weaponCtx = { ...ctx, level: Math.min(ctx.level, 8) };
+    this.characterState.activeWeapon.fire(weaponCtx);
   }
 
   private triggerUltimate(): void {

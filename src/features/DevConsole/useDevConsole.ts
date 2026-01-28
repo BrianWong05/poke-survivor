@@ -115,6 +115,9 @@ export const useDevConsole = () => {
 
     const handleSetLevel = (id: string, newLevel: number) => {
         if (newLevel < 1) return;
+        // Strict Cap at 8 for UI
+        if (newLevel > 8) newLevel = 8;
+        
         const gameScene = (window as any).gameScene;
          if (gameScene && gameScene.debugSetWeaponLevel) {
             gameScene.debugSetWeaponLevel(id, newLevel);

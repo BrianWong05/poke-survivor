@@ -141,7 +141,7 @@ export class DevDebugSystem {
              player: this.player,
              stats: this.characterState.config.stats, // Access from state config
              currentHP: this.characterState.currentHP,
-             level: level,
+             level: Math.min(level, 8),
              xp: this.characterState.xp,
          };
          weapon.fire(ctx);
