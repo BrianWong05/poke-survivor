@@ -9,7 +9,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   // Stats
   public health: number = 100;
   public maxHP: number = 100;
+  public regen: number = 0;
+  public defense: number = 0;
   public isInvulnerable: boolean = false;
+  
+  private regenTimer: number = 0;
   
   // Invulnerability duration in ms
   private readonly INVULNERABILITY_DURATION = 100;
@@ -36,6 +40,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // Set circle physics body for the zone (Radius 50)
     const body = this.collectionZone.body as Phaser.Physics.Arcade.Body;
     body.setCircle(50);
+    
+    // Initialize stats
+    this.health = this.maxHP;
+    this.regen = 0;
+    this.defense = 0;
   }
 
   /**
@@ -47,6 +56,35 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   /**
+   * Heal the player by a specific amount.
+   * Caps at maxHP and emits 'health-change'.
+   */
+  public heal(amount: number): void {
+    if (this.health >= this.maxHP) return;
+
+    this.health += amount;
+    if (this.health > this.maxHP) this.health = this.maxHP;
+
+    this.scene.events.emit('health-change', this.health);
+    
+    // Visual feedback for healing (Green text)
+    const popup = this.scene.add.text(this.x, this.y - 20, `+${Math.floor(amount)}`, {
+        fontSize: '16px',
+        color: '#00ff00',
+        stroke: '#000000',
+        strokeThickness: 2
+    }).setOrigin(0.5);
+
+    this.scene.tweens.add({
+        targets: popup,
+        y: popup.y - 30,
+        alpha: 0,
+        duration: 1000,
+        onComplete: () => popup.destroy()
+    });
+  }
+
+  /**
    * Handle taking damage from enemies.
    * Applies damage, emits event, and triggers short invulnerability.
    */
@@ -54,14 +92,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // 1. Check Immunity
     if (this.isInvulnerable) return;
 
-    // 2. Apply Damage
-    this.health -= amount;
+    // 2. Apply Damage (mitigated by defense)
+    const mitigatedDamage = Math.max(1, amount - this.defense);
+    this.health -= mitigatedDamage;
     if (this.health < 0) this.health = 0;
     
     // Emit health change event for UI
     this.scene.events.emit('health-change', this.health);
 
-    console.log(`[Player] Took ${amount} damage. HP: ${this.health}`);
+    console.log(`[Player] Took ${amount} damage (Def: ${this.defense}, Final: ${mitigatedDamage}). HP: ${this.health}`);
 
     // 3. Trigger Short Immunity
     this.isInvulnerable = true;
@@ -93,6 +132,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   preUpdate(time: number, delta: number): void {
     super.preUpdate(time, delta);
+
+    // Regen Logic (Tick every 1s)
+    if (this.regen > 0 && time > this.regenTimer + 1000) {
+        this.heal(this.regen);
+        this.regenTimer = time;
+    }
     
     // Sync collection zone with player position
     if (this.collectionZone) {

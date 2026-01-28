@@ -1,0 +1,6 @@
+- [x] Modify `Player.ts`: Add `regen`, `defense`, `regenTimer` properties. <!-- id: 0 -->
+- [x] Modify `Player.ts`: Initialize new stats in `constructor`. <!-- id: 1 -->
+- [x] Modify `Player.ts`: Implement `heal(amount)` method with `maxHP` cap and visual feedback. <!-- id: 2 -->
+- [x] Modify `Player.ts`: Update `takeDamage(amount)` to subtract `defense` from damage (min 1). <!-- id: 3 -->
+- [x] Modify `Player.ts`: Implement regen logic in `preUpdate` (tick every 1s). <!-- id: 4 -->
+- [x] Manual Verification: Use Dev Console to set stats and verify behavior. <!-- id: 5 -->
