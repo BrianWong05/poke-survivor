@@ -185,6 +185,8 @@ export class MainScene extends Phaser.Scene {
     const spriteKey = this.usePlaceholderGraphics ? 'player' : this.characterConfig.spriteKey;
     
     this.player = new Player(this, centerX, centerY, spriteKey);
+    // Initialize stats from configuration
+    this.player.setHealth(this.characterConfig.stats.maxHP, this.characterConfig.stats.maxHP);
 
     if (!this.usePlaceholderGraphics) {
       this.player.play(`${this.characterConfig.spriteKey}-idle-down`);

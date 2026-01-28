@@ -41,6 +41,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   /** Unique instance ID for hit tracking safety */
   public readonly instanceId: string;
 
+  /** Damage dealt on contact */
+  public damage: number = 1;
+
   constructor(scene: Phaser.Scene, x: number, y: number, texture: string) {
     super(scene, x, y, texture);
     
@@ -70,6 +73,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.maxHP = stats.maxHP;
     this.hp = stats.maxHP;
     this.speed = stats.speed;
+    this.damage = stats.damage;
     this.target = target;
     this.enemyType = enemyType;
     this.isBoss = stats.tier === EnemyTier.BOSS;

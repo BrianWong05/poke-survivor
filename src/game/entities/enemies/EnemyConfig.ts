@@ -31,6 +31,8 @@ export type EnemyTier = typeof EnemyTier[keyof typeof EnemyTier];
  * Stats configuration for an enemy type.
  */
 export interface EnemyStats {
+  /** Power of the enemy's attack (HP loss per hit) */
+  damage: number;
   /** Movement speed in pixels per second */
   speed: number;
   /** Maximum hit points */
@@ -54,6 +56,7 @@ export const ENEMY_STATS: Record<EnemyType, EnemyStats> = {
   [EnemyType.RATTATA]: {
     speed: 100,
     maxHP: 10,
+    damage: 1,
     textureKey: 'rattata-walk',
     placeholderSize: 24,
     placeholderColor: 0x9b59b6, // Purple
@@ -62,6 +65,7 @@ export const ENEMY_STATS: Record<EnemyType, EnemyStats> = {
   [EnemyType.GEODUDE]: {
     speed: 40,
     maxHP: 50,
+    damage: 1,
     mass: 100,
     textureKey: 'geodude-walk',
     placeholderSize: 28,
@@ -71,6 +75,7 @@ export const ENEMY_STATS: Record<EnemyType, EnemyStats> = {
   [EnemyType.ZUBAT]: {
     speed: 140,
     maxHP: 5,
+    damage: 1,
     textureKey: 'zubat-walk',
     placeholderSize: 20,
     placeholderColor: 0x3498db, // Blue

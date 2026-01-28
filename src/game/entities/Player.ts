@@ -6,6 +6,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   public moveSpeedMultiplier = 1.0;
   public projectileSizeModifier = 1.0;
 
+  // Stats
+  public health: number = 100;
+  public maxHP: number = 100;
+  public isInvulnerable: boolean = false;
+  
+  // Invulnerability duration in ms
+  private readonly INVULNERABILITY_DURATION = 100;
+
   constructor(scene: Phaser.Scene, x: number, y: number, texture: string, frame?: string | number) {
     super(scene, x, y, texture, frame);
 
@@ -28,6 +36,59 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // Set circle physics body for the zone (Radius 50)
     const body = this.collectionZone.body as Phaser.Physics.Arcade.Body;
     body.setCircle(50);
+  }
+
+  /**
+   * Initialize player stats (called by Game Scene usually, or relies on defaults)
+   */
+  public setHealth(current: number, max: number): void {
+    this.health = current;
+    this.maxHP = max;
+  }
+
+  /**
+   * Handle taking damage from enemies.
+   * Applies damage, emits event, and triggers short invulnerability.
+   */
+  public takeDamage(amount: number): void {
+    // 1. Check Immunity
+    if (this.isInvulnerable) return;
+
+    // 2. Apply Damage
+    this.health -= amount;
+    if (this.health < 0) this.health = 0;
+    
+    // Emit health change event for UI
+    this.scene.events.emit('health-change', this.health);
+
+    console.log(`[Player] Took ${amount} damage. HP: ${this.health}`);
+
+    // 3. Trigger Short Immunity
+    this.isInvulnerable = true;
+    
+    // Visual Feedback: Red Tint + Flicker
+    this.setTint(0xff0000);
+    this.setAlpha(1); // Ensure start at 1
+
+    // Stop existing tweens to prevent conflict
+    this.scene.tweens.killTweensOf(this);
+
+    this.scene.tweens.add({
+        targets: this,
+        alpha: 0.5,
+        duration: 50, // 50ms fade out, 50ms fade in = 100ms total
+        yoyo: true,
+        repeat: 0, // Run exactly once to match 100ms invuln window
+        onComplete: () => {
+            this.clearTint();
+            this.setAlpha(1);
+        }
+    });
+
+    // Reset Immunity matches visual duration
+    this.scene.time.delayedCall(this.INVULNERABILITY_DURATION, () => {
+        this.isInvulnerable = false;
+    });
   }
 
   preUpdate(time: number, delta: number): void {

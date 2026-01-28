@@ -1,0 +1,6 @@
+- [x] Add `damage` property to `EnemyStats` interface in `EnemyConfig.ts` <!-- id: 1 -->
+- [x] Update `ENEMY_STATS` to include `damage: 1` for all enemies <!-- id: 2 -->
+- [x] Add `damage` property to `Enemy` class in `Enemy.ts` <!-- id: 3 -->
+- [x] Implement `takeDamage` in `Player.ts` with 100ms invincibility <!-- id: 4 -->
+- [x] Update `CombatManager.ts` to delegate damage to `Player` <!-- id: 5 -->
+- [x] Verify player takes 1 damage rapidly <!-- id: 7 -->

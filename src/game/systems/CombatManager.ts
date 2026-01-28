@@ -17,8 +17,6 @@ export class CombatManager {
   // Game state flag reference (needs to be passed or accessed)
   private isGameOver: () => boolean;
   private triggerGameOver: () => void;
-  // Invincibility state
-  private isInvincible = false;
   
   constructor(
       scene: Phaser.Scene, 
@@ -232,7 +230,8 @@ export class CombatManager {
     // Debug invincibility is handled by not calling this or checking a flag
     // We can assume if debug is on, we won't get hurt if we check a global or similar.
     // For now, check standard flags.
-    if (this.isInvincible || this.isGameOver() || this.player.getData('invincible') || this.player.getData('debugInvincible')) return;
+    // Debug invincible check
+    if (this.isInverseGameOver() || this.player.isInvulnerable || this.player.getData('debugInvincible')) return;
 
     const enemy = enemyObj as Phaser.Physics.Arcade.Sprite;
 
@@ -242,12 +241,14 @@ export class CombatManager {
       this.characterConfig.passive.onEnemyTouch(ctx, enemy);
     }
 
-    // Destroy enemy
-    enemy.setActive(false);
-    enemy.setVisible(false);
+    // Do NOT destroy enemy on contact (Continuous Damage Style)
+    // enemy.setActive(false);
+    // enemy.setVisible(false);
 
-    // Calculate damage
-    let damage = 20;
+    // Get damage from enemy stats (default 1)
+    let damage = (enemy as any).damage || 1;
+
+    // Apply passive modifiers
     if (this.characterConfig.passive.onDamageTaken) {
       const ctx = this.getCharacterContext();
       damage = this.characterConfig.passive.onDamageTaken(ctx, damage, 'normal');
@@ -263,23 +264,24 @@ export class CombatManager {
       });
     }
 
-    // Damage player
-    this.characterState.currentHP -= damage;
+    // Delegate damage to Player (Handles invincibility and HP)
+    this.player.takeDamage(damage);
+
+    // Sync local state (Source of Truth is now Player, but we keep this for compatibility)
+    this.characterState.currentHP = this.player.health;
     this.callbacks.onHPUpdate(this.characterState.currentHP);
 
     if (this.characterState.currentHP <= 0) {
       this.triggerGameOver();
       return;
     }
+    
+    // Invincibility is now handled inside Player.takeDamage()
+  }
 
-    // Brief invincibility
-    this.isInvincible = true;
-    this.player.setAlpha(0.5);
-
-    this.scene.time.delayedCall(1000, () => {
-      this.isInvincible = false;
-      this.player.setAlpha(1);
-    });
+  // Helper for inversion because I used a function call in the condition
+  private isInverseGameOver(): boolean {
+      return this.isGameOver();
   }
 
   private handleHazardDamage(
