@@ -19,21 +19,14 @@ The system SHALL use updated XP values aligned with tier-based loot.
 ---
 
 ### Requirement: XP Curve Calculation
-The system SHALL calculate required XP for each level using a linear formula.
+The experience required to reach the next level MUST follow a specific linear formula: `10 + (Level * 12)`.
 
-#### Scenario: Calculating XP for level progression
-- **WHEN** `getRequiredXP(level)` is called
-- **THEN** the result is `5 + (level * 10)`
-
-#### Scenario: Level 1 progression
-- **WHEN** player is at level 1
-- **THEN** 15 XP is required to reach level 2
-
-#### Scenario: Level 10 progression
-- **WHEN** player is at level 10
-- **THEN** 105 XP is required to reach level 11
-
----
+#### Scenario: Calculating XP Cap
+- **WHEN** the player is at a given level
+- **THEN** the XP required for the NEXT level is `10 + (Level * 12)`
+- **AND** for Level 1, the cap is 22
+- **AND** for Level 2, the cap is 34
+- **AND** for Level 10, the cap is 130
 
 ### Requirement: Diminishing Returns
 The system SHALL apply a multiplier to XP gains based on player level.

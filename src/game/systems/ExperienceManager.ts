@@ -53,33 +53,24 @@ export class ExperienceManager {
   constructor(startLevel: number = 1) {
     this.currentLevel = startLevel;
     this.currentXP = 0;
-    this.xpToNextLevel = this.getRequiredXP(startLevel + 1);
+    this.xpToNextLevel = this.getNextLevelXpCap(startLevel);
   }
 
   /**
-   * XP Brackets for the "Step" leveling system.
-   * Key = Tier (Level / 10), Value = XP required per level in that tier.
+   * Calculate XP required to reach the next level.
+   * Formula: 10 + (Level * 12)
+   * Example: Lvl 1: 22, Lvl 2: 34, Lvl 10: 130
    */
-  private static readonly XP_BRACKETS: Record<number, number> = {
-    0: 5,   // 0-9: 5 XP (Fast Start)
-    1: 20,  // 10-19: 20 XP
-    2: 50,  // 20-29: 50 XP
-    3: 100, // 30-39: 100 XP
-    // 4+: 300 XP (Default)
-  };
-
-  /**
-   * Calculate XP required to reach a specific level.
-   * Uses a "Step/Bracket" system where req XP increases every 10 levels.
-   */
-  public static getRequiredXP(level: number): number {
-    const tier = Math.floor(level / 10);
-    // Return specific tier value or default to 300 (Endgame)
-    return ExperienceManager.XP_BRACKETS[tier] || 300;
+  public getNextLevelXpCap(level: number): number {
+    return 10 + (level * 12);
   }
 
-  public getRequiredXP(level: number): number {
-    return ExperienceManager.getRequiredXP(level);
+  /**
+   * Helper to expose static-like access if needed, or just instance method.
+   * Keeping instance method as primary.
+   */
+  public static getNextLevelXpCap(level: number): number {
+    return 10 + (level * 12);
   }
 
   /**
@@ -134,7 +125,7 @@ export class ExperienceManager {
     // Effectively we just advance the level
     this.currentLevel += 1;
     this.currentXP = 0; // Reset bar for new level
-    this.xpToNextLevel = this.getRequiredXP(this.currentLevel + 1);
+    this.xpToNextLevel = this.getNextLevelXpCap(this.currentLevel);
     return true;
   }
 
@@ -149,7 +140,11 @@ export class ExperienceManager {
       // Level up!
       this.currentLevel += 1;
       this.currentXP -= this.xpToNextLevel;
-      this.xpToNextLevel = this.getRequiredXP(this.currentLevel + 1);
+      // Ensure we don't have negative XP (though logic above should prevent massive over-subtraction if handled correctly, 
+      // but loop handles remainder)
+      
+      // Update requirement for NEXT level
+      this.xpToNextLevel = this.getNextLevelXpCap(this.currentLevel);
       
       console.log(`Level Up! Level ${this.currentLevel}. Next Level requires: ${this.xpToNextLevel} XP`);
       
@@ -165,6 +160,6 @@ export class ExperienceManager {
   public reset(): void {
     this.currentLevel = 1;
     this.currentXP = 0;
-    this.xpToNextLevel = this.getRequiredXP(2);
+    this.xpToNextLevel = this.getNextLevelXpCap(1);
   }
 }

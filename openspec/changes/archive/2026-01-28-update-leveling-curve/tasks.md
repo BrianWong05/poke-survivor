@@ -1,0 +1,3 @@
+- [x] Refactor ExperienceManager.ts <!-- id: 0 -->
+- [x] Update call sites (MainScene, DevDebugSystem, types) <!-- id: 1 -->
+- [x] Verify leveling curve <!-- id: 2 -->

@@ -111,10 +111,10 @@ export interface CharacterState {
 
 /**
  * Calculate XP required to reach the next level.
- * Formula: 5 + (level * 10) (via ExperienceManager)
+ * Formula: 10 + (Level * 12) (via ExperienceManager)
  */
 export function xpToLevel(level: number): number {
-  return ExperienceManager.getRequiredXP(level);
+  return ExperienceManager.getNextLevelXpCap(level);
 }
 
 /**
@@ -126,7 +126,7 @@ export function createCharacterState(config: CharacterConfig): CharacterState {
     currentHP: config.stats.maxHP,
     level: 1,
     xp: 0,
-    xpToNextLevel: xpToLevel(2),
+    xpToNextLevel: xpToLevel(1),
     isEvolved: false,
     activeWeapon: config.weapon,
     ultimateCooldownRemaining: 0,
@@ -145,7 +145,7 @@ export function addXP(state: CharacterState, amount: number): boolean {
   if (state.xp >= state.xpToNextLevel) {
     state.level += 1;
     state.xp -= state.xpToNextLevel;
-    state.xpToNextLevel = xpToLevel(state.level + 1);
+    state.xpToNextLevel = xpToLevel(state.level);
     
     // Check for weapon evolution
     const evolutionLevel = state.config.weapon.evolutionLevel ?? 5;

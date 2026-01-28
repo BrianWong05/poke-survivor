@@ -177,7 +177,7 @@ export class DevDebugSystem {
           this.characterState.level = newLevel;
           this.experienceManager.currentLevel = newLevel;
           this.experienceManager.currentXP = 0;
-          this.experienceManager.xpToNextLevel = this.experienceManager.getRequiredXP(newLevel + 1);
+          this.experienceManager.xpToNextLevel = this.experienceManager.getNextLevelXpCap(newLevel);
           
           this.uiManager.updateLevelUI();
 
