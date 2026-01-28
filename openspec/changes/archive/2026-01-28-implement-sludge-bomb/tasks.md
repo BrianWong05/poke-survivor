@@ -1,0 +1,22 @@
+# Tasks: Implement Sludge Bomb
+
+- [x] Implement `SludgeBomb` Class Structure <!-- id: 0 -->
+    - Create `src/game/entities/weapons/specific/SludgeBomb.ts`.
+    - Define `SludgeBomb` class implementing `WeaponConfig`.
+    - Set base strings (ID: `sludge-bomb`, Name: "Sludge Bomb (污泥炸彈)").
+- [x] Implement Upgrade Stats (`getStats`) <!-- id: 1 -->
+    - Implement the 8-level progression for Damage, Count, Duration, Radius, Speed, and Cooldown.
+- [x] Implement Fire Logic (Lob Arc) <!-- id: 2 -->
+    - Implement `fire()` method.
+    - Add logic to pick random target within 200px.
+    - Add Tween logic for the visual "Lob" arc (Purple projectile).
+- [x] Implement Zone Logic (`SludgeZone`) <!-- id: 3 -->
+    - Implement `spawnSludgeZone` or inline logic in `onComplete`.
+    - Create visual graphic for the puddle.
+    - Implement the 500ms tick damage loop using manual distance check.
+    - Ensure self-destruction after duration.
+- [x] Verify Implementation <!-- id: 4 -->
+    - Verify visual arc matches "lob" feel.
+    - Verify puddle spawns at correct target.
+    - Verify damage ticks occur on overlapping enemies.
+    - Verify level upgrades apply correct stat changes.
