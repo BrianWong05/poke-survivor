@@ -14,6 +14,7 @@ import { ParabolicCharge } from './specific/ParabolicCharge';
 import { ThunderWave } from './specific/ThunderWave';
 import { SludgeBomb } from './specific/SludgeBomb';
 import { Swift } from './specific/Swift';
+import { Thunderbolt } from './specific/Thunderbolt';
 
 export const ember = new Ember();
 
@@ -30,6 +31,7 @@ export const parabolicCharge = new ParabolicCharge();
 export const thunderWave = new ThunderWave();
 export const sludgeBomb = new SludgeBomb();
 export const swift = new Swift();
+export const thunderbolt = new Thunderbolt();
 
 // Exports for evolutions if needed directly (though usually accessed via weapon.evolution)
 export const dreamEater = lick.evolution;

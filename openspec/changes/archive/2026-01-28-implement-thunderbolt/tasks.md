@@ -1,0 +1,5 @@
+- [x] Create \`Thunderbolt.ts\` with \`getStats\` configuration <!-- id: 0 -->
+- [x] Implement \`fire\` method with random targeting logic <!-- id: 1 -->
+- [x] Implement \`ThunderboltStrike\` visual entity <!-- id: 2 -->
+- [x] Register weapon in \`weapons/index.ts\` <!-- id: 3 -->
+- [x] Manual verification of gameplay <!-- id: 4 -->
