@@ -1,0 +1,10 @@
+- [x] Create `Item` abstract base class in `src/game/entities/items/Item.ts`. <!-- id: 0 -->
+- [x] Create `PassiveItem` base class in `src/game/entities/items/passive/PassiveItem.ts` (or similar). <!-- id: 1 -->
+- [x] Implement `HpUp` in `src/game/entities/items/passive/HpUp.ts`.
+      - Effect: +20 MaxHP/lvl.
+      - Logic: Heal on upgrade. <!-- id: 2 -->
+- [x] Implement `Leftovers` in `src/game/entities/items/passive/Leftovers.ts`.
+      - Effect: +1 HP/sec (lvl 1), +0.5 or +1 /lvl. <!-- id: 3 -->
+- [x] Implement `Iron` in `src/game/entities/items/passive/Iron.ts`.
+      - Effect: +1 Defense (lvl 1), +1 Def / 2 lvls. <!-- id: 4 -->
+- [x] Manual Verification: Instantiate items via console and verify stat updates. <!-- id: 5 -->

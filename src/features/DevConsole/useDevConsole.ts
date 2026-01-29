@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { type WeaponConfig } from '@/game/entities/characters/types';
 
-import { type ActiveWeapon } from './types';
+import { type ActiveWeapon, type ActiveItem } from './types';
 
 export const useDevConsole = () => {
     // Internal Production Gate (Runtime Safety) is handled in the component
@@ -10,7 +10,9 @@ export const useDevConsole = () => {
     const [isPaused, setIsPaused] = useState(false);
     const [isInvincible, setIsInvincible] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [itemSearchQuery, setItemSearchQuery] = useState('');
     const [activeWeapons, setActiveWeapons] = useState<ActiveWeapon[]>([]);
+    const [activeItems, setActiveItems] = useState<ActiveItem[]>([]);
     
     // Poll for active weapons when visible
     useEffect(() => {
@@ -25,6 +27,19 @@ export const useDevConsole = () => {
              const scene = (window as any).gameScene;
              if (scene && scene.getDebugWeapons) {
                  setActiveWeapons(scene.getDebugWeapons());
+             }
+             if (scene && scene.debugSystem && scene.debugSystem.player) {
+                 // Fetch items directly from player if exposed, or via debugSystem helper
+                 // We didn't create getDebugItems yet in MainScene/DevDebugSystem, need to check or add it?
+                 // Wait, I didn't add getDebugItems in Step 214? 
+                 // Checked DevDebugSystem.ts (Step 216), I only added debugAddItem.
+                 // I need to add getDebugItems to DevDebugSystem.ts first? OR just read player.items if exposed?
+                 // Player is private in DevDebugSystem but debugSystem is private in MainScene.
+                 // MainScene exposes "getDebugWeapons".
+                 // Let's assume I'll add "getDebugItems" to MainScene/DevDebugSystem in a moment.
+                 if (scene.getDebugItems) {
+                     setActiveItems(scene.getDebugItems());
+                 }
              }
         }, 500);
         
@@ -127,6 +142,19 @@ export const useDevConsole = () => {
         }
     };
 
+
+
+    const handleAddItem = (id: string) => {
+        const gameScene = (window as any).gameScene;
+        if (gameScene && gameScene.debugAddItem) {
+            gameScene.debugAddItem(id);
+            // Instant update attempt
+            if (gameScene.getDebugItems) {
+                setActiveItems(gameScene.getDebugItems());
+            }
+        }
+    };
+
     return {
         isVisible,
         setIsVisible,
@@ -135,10 +163,14 @@ export const useDevConsole = () => {
         isInvincible,
         searchQuery,
         setSearchQuery,
+        itemSearchQuery,
+        setItemSearchQuery,
         activeWeapons,
+        activeItems,
         handleCheat,
         handleAddWeapon,
         handleRemoveWeapon,
-        handleSetLevel
+        handleSetLevel,
+        handleAddItem
     };
 };

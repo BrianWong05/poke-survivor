@@ -1,3 +1,5 @@
+import type { Item } from './items/Item';
+
 export class Player extends Phaser.Physics.Arcade.Sprite {
   // Collection zone for XP gems (Magnet)
   public collectionZone: Phaser.GameObjects.Zone;
@@ -5,6 +7,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   // Modifiers
   public moveSpeedMultiplier = 1.0;
   public projectileSizeModifier = 1.0;
+
+  // Inventory
+  public items: Item[] = [];
 
   // Stats
   public health: number = 100;
@@ -45,6 +50,35 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.health = this.maxHP;
     this.regen = 0;
     this.defense = 0;
+    
+    this.items = [];
+  }
+
+  /**
+   * Add an item to the player's inventory.
+   * Handles acquiring new items or leveling up existing ones.
+   */
+  public addItem(item: Item): void {
+    const existingItem = this.items.find(i => i.id === item.id);
+    
+    const ctx = {
+        scene: this.scene,
+        player: this,
+        stats: { maxHP: this.maxHP, speed: 0, baseDamage: 0 }, // Stub stats if needed, or fetch real ones
+        currentHP: this.health,
+        level: 0, // Player level not strictly needed for item logic usually, or pass it if available
+        xp: 0
+    };
+
+    if (existingItem) {
+        // Upgrade existing
+        existingItem.levelUp(ctx);
+    } else {
+        // Add new
+        this.items.push(item);
+        item.onAcquire(ctx);
+        console.log(`[Player] Acquired item: ${item.name}`);
+    }
   }
 
   /**

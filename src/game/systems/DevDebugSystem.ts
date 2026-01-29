@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import { type CharacterState, type WeaponConfig } from '@/game/entities/characters/types';
 
+import { createItem } from '@/game/entities/items/registry';
+
 import { ExperienceManager } from '@/game/systems/ExperienceManager';
 import { CombatManager } from '@/game/systems/CombatManager';
 import { UIManager } from '@/game/systems/UIManager';
@@ -118,6 +120,27 @@ export class DevDebugSystem {
         }
     }
     console.log(`[DevConsole] Invincible mode: ${enabled}`);
+  }
+
+  public getDebugItems(): { id: string, name: string, level: number }[] {
+      if (!this.player) return [];
+      return this.player.items.map(item => ({
+          id: item.id,
+          name: item.name,
+          level: item.level
+      }));
+  }
+
+  public debugAddItem(itemId: string): void {
+      if (!this.player) return;
+
+      const item = createItem(itemId);
+      if (item) {
+          this.player.addItem(item);
+          console.log(`[DevConsole] Added item: ${itemId} (Level ${item.level})`);
+      } else {
+          console.warn(`[DevConsole] Failed to create item: ${itemId}`);
+      }
   }
 
   public debugAddWeapon(weaponConfig: WeaponConfig, isGameOver: boolean): void {

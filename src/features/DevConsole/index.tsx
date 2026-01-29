@@ -5,6 +5,8 @@ import { Header } from './components/Header';
 import { CheatSection } from './components/CheatSection';
 import { ActiveMovesSection } from './components/ActiveMovesSection';
 import { MovesRegistrySection } from './components/MovesRegistrySection';
+import { ActiveItemsSection } from './components/ActiveItemsSection';
+import { ItemsRegistrySection } from './components/ItemsRegistrySection';
 
 export const DevConsole: React.FC = () => {
     // Internal Production Gate (Runtime Safety)
@@ -18,14 +20,20 @@ export const DevConsole: React.FC = () => {
         isInvincible,
         searchQuery,
         setSearchQuery,
+        itemSearchQuery,
+        setItemSearchQuery,
         activeWeapons,
+        activeItems,
         handleCheat,
         handleAddWeapon,
         handleRemoveWeapon,
-        handleSetLevel
+        handleSetLevel,
+        handleAddItem
     } = useDevConsole();
 
     const overlayRef = useRef<HTMLDivElement>(null);    
+
+    const [activeTab, setActiveTab] = React.useState<'weapons' | 'items' | 'cheats'>('weapons');
 
     if (!isVisible) return null;
 
@@ -40,22 +48,72 @@ export const DevConsole: React.FC = () => {
                 }} 
             />
             
-            <CheatSection 
-                handleCheat={handleCheat} 
-                isInvincible={isInvincible} 
-            />
+            <div style={styles.tabContainer}>
+                <button 
+                    style={{
+                        ...styles.tabButton,
+                        ...(activeTab === 'weapons' ? styles.activeTabButton : {})
+                    }}
+                    onClick={() => setActiveTab('weapons')}
+                >
+                    WEAPONS
+                </button>
+                <button 
+                    style={{
+                        ...styles.tabButton,
+                        ...(activeTab === 'items' ? styles.activeTabButton : {})
+                    }}
+                    onClick={() => setActiveTab('items')}
+                >
+                    ITEMS
+                </button>
+                <button 
+                    style={{
+                        ...styles.tabButton,
+                        ...(activeTab === 'cheats' ? styles.activeTabButton : {})
+                    }}
+                    onClick={() => setActiveTab('cheats')}
+                >
+                    CHEATS
+                </button>
+            </div>
 
-            <ActiveMovesSection 
-                activeWeapons={activeWeapons} 
-                onRemove={handleRemoveWeapon} 
-                onSetLevel={handleSetLevel} 
-            />
+            {activeTab === 'cheats' && (
+                <CheatSection 
+                    handleCheat={handleCheat} 
+                    isInvincible={isInvincible} 
+                />
+            )}
 
-            <MovesRegistrySection 
-                searchQuery={searchQuery} 
-                onSearchChange={setSearchQuery} 
-                onAddWeapon={handleAddWeapon} 
-            />
+            {activeTab === 'weapons' && (
+                <>
+                    <ActiveMovesSection 
+                        activeWeapons={activeWeapons} 
+                        onRemove={handleRemoveWeapon} 
+                        onSetLevel={handleSetLevel} 
+                    />
+
+                    <MovesRegistrySection 
+                        searchQuery={searchQuery} 
+                        onSearchChange={setSearchQuery} 
+                        onAddWeapon={handleAddWeapon} 
+                    />
+                </>
+            )}
+
+            {activeTab === 'items' && (
+                <>
+                    <ActiveItemsSection 
+                        activeItems={activeItems} 
+                    />
+
+                    <ItemsRegistrySection 
+                        searchQuery={itemSearchQuery} 
+                        onSearchChange={setItemSearchQuery} 
+                        onAddItem={handleAddItem}
+                    />
+                </>
+            )}
 
             <div style={styles.footer}>
                 <button 

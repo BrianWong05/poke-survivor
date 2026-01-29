@@ -446,10 +446,13 @@ export class MainScene extends Phaser.Scene {
   }); }
   public debugHeal(): void { this.debugSystem.debugHeal(); }
   public debugKillAll(): void { this.debugSystem.debugKillAll(); }
+  public debugAddItem(id: string): void { this.debugSystem.debugAddItem(id); }
   public debugAddWeapon(config: WeaponConfig): void { this.debugSystem.debugAddWeapon(config, this.gameOver); }
   public debugSetWeaponLevel(id: string, level: number): void { this.debugSystem.debugSetWeaponLevel(id, level); }
   public debugRemoveWeapon(id: string): void { this.debugSystem.debugRemoveWeapon(id); }
+
   public getDebugWeapons() { return this.debugSystem.getDebugWeapons(); }
+  public getDebugItems() { return this.debugSystem.getDebugItems(); }
   public debugSetPaused(paused: boolean): void { this.uiManager.setPaused(paused, false); }
   public debugSetInvincible(enabled: boolean): void { this.debugSystem.debugSetInvincible(enabled); }
 
