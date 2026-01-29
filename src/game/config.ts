@@ -8,6 +8,7 @@ export interface GameCallbacks {
   onGameOver: () => void;
   onQuit: () => void;
   onLevelUpdate?: (level: number, xp: number, xpToNext: number) => void;
+  onMaxHPChange?: (maxHP: number) => void;
 }
 
 export const createGameConfig = (

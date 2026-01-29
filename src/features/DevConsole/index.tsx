@@ -28,7 +28,9 @@ export const DevConsole: React.FC = () => {
         handleAddWeapon,
         handleRemoveWeapon,
         handleSetLevel,
-        handleAddItem
+        handleAddItem,
+        handleRemoveItem,
+        handleSetItemLevel
     } = useDevConsole();
 
     const overlayRef = useRef<HTMLDivElement>(null);    
@@ -105,6 +107,8 @@ export const DevConsole: React.FC = () => {
                 <>
                     <ActiveItemsSection 
                         activeItems={activeItems} 
+                        onRemove={handleRemoveItem}
+                        onSetLevel={handleSetItemLevel}
                     />
 
                     <ItemsRegistrySection 

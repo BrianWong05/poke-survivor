@@ -29,6 +29,12 @@ export abstract class Item {
   abstract onUpgrade(ctx: CharacterContext): void;
 
   /**
+   * Called when the item is removed from the player.
+   * Should revert any stats or effects applied by the item.
+   */
+  abstract onRemove(ctx: CharacterContext): void;
+
+  /**
    * Safe method to level up the item and trigger effects.
    */
   public levelUp(ctx: CharacterContext): void {

@@ -155,6 +155,33 @@ export const useDevConsole = () => {
         }
     };
 
+    const handleSetItemLevel = (id: string, newLevel: number) => {
+        console.log(`[DevConsole] handleSetItemLevel called for ${id} -> ${newLevel}`);
+        if (newLevel < 1) return;
+        if (newLevel > 5) newLevel = 5; // Passive Max is usually 5
+
+        const gameScene = (window as any).gameScene;
+        if (gameScene && gameScene.debugSetItemLevel) {
+            gameScene.debugSetItemLevel(id, newLevel);
+            if (gameScene.getDebugItems) {
+                console.log("[DevConsole] Refreshing items...");
+                setActiveItems(gameScene.getDebugItems());
+            }
+        } else {
+            console.warn("[DevConsole] gameScene.debugSetItemLevel not found");
+        }
+    };
+
+    const handleRemoveItem = (id: string) => {
+        const gameScene = (window as any).gameScene;
+        if (gameScene && gameScene.debugRemoveItem) {
+            gameScene.debugRemoveItem(id);
+            if (gameScene.getDebugItems) {
+                setActiveItems(gameScene.getDebugItems());
+            }
+        }
+    };
+
     return {
         isVisible,
         setIsVisible,
@@ -171,6 +198,8 @@ export const useDevConsole = () => {
         handleAddWeapon,
         handleRemoveWeapon,
         handleSetLevel,
-        handleAddItem
+        handleAddItem,
+        handleRemoveItem,
+        handleSetItemLevel
     };
 };

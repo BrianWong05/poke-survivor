@@ -143,6 +143,16 @@ export class DevDebugSystem {
       }
   }
 
+  public debugSetItemLevel(itemId: string, level: number): void {
+      if (!this.player) return;
+      this.player.setItemLevel(itemId, level);
+  }
+
+  public debugRemoveItem(itemId: string): void {
+      if (!this.player) return;
+      this.player.removeItem(itemId);
+  }
+
   public debugAddWeapon(weaponConfig: WeaponConfig, isGameOver: boolean): void {
     if (!this.player) return;
 

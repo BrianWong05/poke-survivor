@@ -76,9 +76,73 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     } else {
         // Add new
         this.items.push(item);
-        item.onAcquire(ctx);
+        item.levelUp(ctx);
         console.log(`[Player] Acquired item: ${item.name}`);
     }
+  }
+
+  /**
+   * Remove an item from the player's inventory by ID.
+   * Reverts effects via item.onRemove().
+   */
+  public removeItem(itemId: string): void {
+    const index = this.items.findIndex(i => i.id === itemId);
+    if (index === -1) return;
+
+    const item = this.items[index];
+    
+    const ctx = {
+        scene: this.scene,
+        player: this,
+        stats: { maxHP: this.maxHP, speed: 0, baseDamage: 0 },
+        currentHP: this.health,
+        level: 0,
+        xp: 0
+    };
+
+    item.onRemove(ctx);
+    this.items.splice(index, 1);
+    console.log(`[Player] Removed item: ${item.name}`);
+  }
+
+  /**
+   * Set the level of an item in the inventory.
+   * Resets the item and re-applies upgrades to reach the target level.
+   */
+  public setItemLevel(itemId: string, targetLevel: number): void {
+      console.log(`[Player] setItemLevel: setting ${itemId} to ${targetLevel}`);
+      const item = this.items.find(i => i.id === itemId);
+      if (!item) {
+          console.warn(`[Player] setItemLevel: item ${itemId} not found`);
+          return;
+      }
+
+      if (targetLevel < 1) targetLevel = 1;
+      if (targetLevel > item.maxLevel) targetLevel = item.maxLevel;
+
+      if (targetLevel === item.level) return;
+
+      const ctx = {
+          scene: this.scene,
+          player: this,
+          stats: { maxHP: this.maxHP, speed: 0, baseDamage: 0 },
+          currentHP: this.health,
+          level: 0,
+          xp: 0
+      };
+
+      // 1. Remove current effects completely
+      item.onRemove(ctx);
+
+      // 2. Reset level
+      item.level = 0;
+
+      // 3. Level up to target
+      while (item.level < targetLevel) {
+          item.levelUp(ctx);
+      }
+      
+      console.log(`[Player] Set item ${item.name} to Level ${targetLevel}`);
   }
 
   /**
@@ -90,8 +154,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   /**
+   * Increase (or decrease) Max HP.
+   * Emits 'max-hp-change'.
+   */
+  public addMaxHP(amount: number): void {
+      this.maxHP += amount;
+      this.scene.events.emit('max-hp-change', this.maxHP);
+  }
+
+  /**
    * Heal the player by a specific amount.
-   * Caps at maxHP and emits 'health-change'.
+   * Caps at maxHP and emits 'hp-update'.
    */
   public heal(amount: number): void {
     if (this.health >= this.maxHP) return;
@@ -99,7 +172,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.health += amount;
     if (this.health > this.maxHP) this.health = this.maxHP;
 
-    this.scene.events.emit('health-change', this.health);
+    this.scene.events.emit('hp-update', this.health);
     
     // Visual feedback for healing (Green text)
     const popup = this.scene.add.text(this.x, this.y - 20, `+${Math.floor(amount)}`, {
@@ -132,7 +205,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (this.health < 0) this.health = 0;
     
     // Emit health change event for UI
-    this.scene.events.emit('health-change', this.health);
+    this.scene.events.emit('hp-update', this.health);
 
     console.log(`[Player] Took ${amount} damage (Def: ${this.defense}, Final: ${mitigatedDamage}). HP: ${this.health}`);
 

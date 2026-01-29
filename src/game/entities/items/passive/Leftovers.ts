@@ -34,4 +34,10 @@ export class Leftovers extends PassiveItem {
     ctx.player.regen += amount;
     console.log(`[Leftovers] Increased Regen by ${amount}. New Regen: ${ctx.player.regen}`);
   }
+
+  onRemove(ctx: CharacterContext): void {
+    const stats = this.getStats(this.level);
+    ctx.player.regen -= stats.value;
+    console.log(`[Leftovers] Removed. Decreased Regen by ${stats.value}. New Regen: ${ctx.player.regen}`);
+  }
 }

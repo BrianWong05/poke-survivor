@@ -5,39 +5,47 @@ import type { CharacterContext } from '@/game/entities/characters/types';
 export class HpUp extends PassiveItem {
   id = 'hp-up';
   name = 'HpUp (HP增強劑)';
-  description = 'Increases Max Health.';
+  description = 'Increases Max Health by 5 per rank.';
   maxLevel = 5;
 
   getStats(level: number): ItemStats {
-    const baseValue = 20;
-    const increasePerLevel = 20;
-    
     return {
-      value: baseValue + (level - 1) * increasePerLevel,
-      increaseValue: increasePerLevel
+      value: level * 5,
+      increaseValue: 5
     };
   }
 
   onAcquire(ctx: CharacterContext): void {
-    // Level 1 logic
     const stats = this.getStats(1);
-    this.applyBuff(ctx, stats.value);
+    ctx.player.addMaxHP(stats.value);
+    ctx.player.heal(stats.value);
   }
 
   onUpgrade(ctx: CharacterContext): void {
-    const stats = this.getStats(this.level);
-    // Apply incremental increase
-    this.applyBuff(ctx, stats.increaseValue);
+    const newItemLevel = this.level;
+    const oldStats = this.getStats(newItemLevel - 1);
+    const newStats = this.getStats(newItemLevel);
+    
+    // Calculate the difference strictly based on Item Level
+    const gain = newStats.value - oldStats.value;
+    
+    
+    ctx.player.addMaxHP(gain);
+    ctx.player.heal(gain);
   }
 
-  private applyBuff(ctx: CharacterContext, amount: number): void {
-    // Increase MaxHP
-    ctx.player.maxHP += amount;
+  onRemove(ctx: CharacterContext): void {
+    const stats = this.getStats(this.level);
     
-    // Heal the amount gained so percentage remains similar (or just free heal)
-    // Spec says: "Heal the amount we just gained so the bar stays full"
-    ctx.player.heal(amount);
+    // Revert MaxHP
+    ctx.player.addMaxHP(-stats.value);
     
-    console.log(`[HpUp] Increased MaxHP by ${amount}. New MaxHP: ${ctx.player.maxHP}`);
+    // Clamp current HP if it exceeds new MaxHP
+    if (ctx.player.health > ctx.player.maxHP) {
+      ctx.player.health = ctx.player.maxHP;
+      ctx.player.scene.events.emit('health-change', ctx.player.health);
+    }
+
+    console.log(`[HpUp] Removed. Decreased MaxHP by ${stats.value}.`);
   }
 }

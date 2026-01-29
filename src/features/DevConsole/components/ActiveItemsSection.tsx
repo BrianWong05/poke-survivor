@@ -5,10 +5,14 @@ import { type ActiveItem } from '../types';
 
 interface ActiveItemsSectionProps {
     activeItems: ActiveItem[];
+    onRemove: (id: string) => void;
+    onSetLevel: (id: string, level: number) => void;
 }
 
 export const ActiveItemsSection: React.FC<ActiveItemsSectionProps> = ({ 
-    activeItems 
+    activeItems,
+    onRemove,
+    onSetLevel
 }) => {
     return (
         <Section title="Active Items">
@@ -21,8 +25,27 @@ export const ActiveItemsSection: React.FC<ActiveItemsSectionProps> = ({
                             <span style={{ fontWeight: 'bold' }}>{item.name}</span>
                         </div>
                         <div style={styles.levelControls}>
+                            <button 
+                                onClick={() => onSetLevel(item.id, item.level - 1)}
+                                style={styles.levelBtn}
+                            >
+                                -
+                            </button>
                             <span style={styles.levelDisplay}>Lvl {item.level}</span>
+                            <button 
+                                onClick={() => onSetLevel(item.id, item.level + 1)}
+                                style={styles.levelBtn}
+                            >
+                                +
+                            </button>
                         </div>
+                        <button 
+                            onClick={() => onRemove(item.id)}
+                            style={styles.removeBtn}
+                            title="Remove Item"
+                        >
+                            ×
+                        </button>
                     </div>
                 ))
             )}

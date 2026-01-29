@@ -48,4 +48,10 @@ export class Iron extends PassiveItem {
     ctx.player.defense += amount;
     console.log(`[Iron] Increased Defense by ${amount}. New Defense: ${ctx.player.defense}`);
   }
+
+  onRemove(ctx: CharacterContext): void {
+    const stats = this.getStats(this.level);
+    ctx.player.defense -= stats.value;
+    console.log(`[Iron] Removed. Decreased Defense by ${stats.value}. New Defense: ${ctx.player.defense}`);
+  }
 }

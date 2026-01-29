@@ -251,6 +251,12 @@ export class MainScene extends Phaser.Scene {
       this.callbacks.onHPUpdate(hp);
     });
 
+    this.events.on('max-hp-change', (maxHP: number) => {
+        if (this.callbacks.onMaxHPChange) {
+            this.callbacks.onMaxHPChange(maxHP);
+        }
+    });
+
     this.events.on('player:heal', (amount: number) => {
       this.combatManager.healPlayer(amount);
     });
@@ -447,6 +453,8 @@ export class MainScene extends Phaser.Scene {
   public debugHeal(): void { this.debugSystem.debugHeal(); }
   public debugKillAll(): void { this.debugSystem.debugKillAll(); }
   public debugAddItem(id: string): void { this.debugSystem.debugAddItem(id); }
+  public debugSetItemLevel(id: string, level: number): void { this.debugSystem.debugSetItemLevel(id, level); }
+  public debugRemoveItem(id: string): void { this.debugSystem.debugRemoveItem(id); }
   public debugAddWeapon(config: WeaponConfig): void { this.debugSystem.debugAddWeapon(config, this.gameOver); }
   public debugSetWeaponLevel(id: string, level: number): void { this.debugSystem.debugSetWeaponLevel(id, level); }
   public debugRemoveWeapon(id: string): void { this.debugSystem.debugRemoveWeapon(id); }

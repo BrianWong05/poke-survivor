@@ -1,0 +1,6 @@
+- [x] Modify `src/game/entities/items/passive/HpUp.ts` to use strict item level scaling. <!-- id: 0 -->
+      - `getStats(level)` returns `level * 5`.
+      - `onAcquire` adds `getStats(1)`.
+      - `onLevelUp` adds difference between current and previous level.
+- [x] Verify strictly using `Item Level` for calculations (no Player Level). <!-- id: 1 -->
+- [x] Manual Check: Add HpUp via DevConsole and confirm +5 HP per rank. <!-- id: 2 -->

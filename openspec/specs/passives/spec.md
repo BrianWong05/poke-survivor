@@ -4,18 +4,19 @@
 TBD - created by archiving change implement-passive-items. Update Purpose after archive.
 ## Requirements
 ### Requirement: HpUp Item
-The `HpUp` item MUST increase the player's Maximum Health and current Health when acquired or upgraded.
+The `HpUp` item MUST calculate its bonus strictly based on the item's level.
+- **Formula**: `Bonus = ItemLevel * 5`
+- **Constraint**: Must NOT use Player Level.
 
-#### Scenario: Acquiring HpUp
-Given the player has 100/100 HP
-When the player acquires `HpUp` Level 1 (+20 MaxHP)
-Then the player's MaxHP should become 120
-And the player's Health should become 120 (Healed by increase amount)
+#### Scenario: Level 1 Acquisition
+- Given the player acquires HpUp (Level 1)
+- Then `maxHP` increases by 5
+- And the player is healed by 5
 
-#### Scenario: Upgrading HpUp
-Given the player has `HpUp` Level 1 and 120 MaxHP
-When the player upgrades `HpUp` to Level 2 (+20 MaxHP)
-Then the player's MaxHP should become 140
+#### Scenario: Level Up to 2
+- Given the player upgrades HpUp to Level 2
+- Then `maxHP` increases by another 5 (Total +10)
+- And the player is healed by 5
 
 ### Requirement: Leftovers Item
 The `Leftovers` item MUST increase the player's Health Regeneration rate.

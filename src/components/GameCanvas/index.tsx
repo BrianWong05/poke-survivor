@@ -44,6 +44,7 @@ export const GameCanvas = ({
       onGameOver,
       onQuit,
       onLevelUpdate,
+      onMaxHPChange,
     };
 
     // Create Phaser game
