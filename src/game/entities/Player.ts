@@ -200,14 +200,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (this.isInvulnerable) return;
 
     // 2. Apply Damage (mitigated by defense)
-    const mitigatedDamage = Math.max(1, amount - this.defense);
-    this.health -= mitigatedDamage;
+    // Formula: Effective HP multiplier
+    // damage = amount * (1 / (1 + def * 0.1))
+    const mitigationFactor = 1 / (1 + (this.defense * 0.1));
+    const finalDamage = amount * mitigationFactor;
+    
+    // Apply float damage to health
+    this.health -= finalDamage;
     if (this.health < 0) this.health = 0;
     
-    // Emit health change event for UI
-    this.scene.events.emit('hp-update', this.health);
+    // Emit health change event for UI (Rounded up for clean display)
+    this.scene.events.emit('hp-update', Math.ceil(this.health));
 
-    console.log(`[Player] Took ${amount} damage (Def: ${this.defense}, Final: ${mitigatedDamage}). HP: ${this.health}`);
+    console.log(`[Player] Took ${finalDamage.toFixed(2)} damage (Raw: ${amount}, Def: ${this.defense}, Factor: ${mitigationFactor.toFixed(2)}). HP: ${this.health.toFixed(2)}`);
 
     // 3. Trigger Short Immunity
     this.isInvulnerable = true;

@@ -5,53 +5,41 @@ import type { CharacterContext } from '@/game/entities/characters/types';
 export class Iron extends PassiveItem {
   id = 'iron';
   name = 'Iron (防禦增強劑)';
-  description = 'Reduces incoming damage.';
+  description = 'Reduces incoming damage by 1 per rank.';
   maxLevel = 5;
+  texture = 'item_iron';
+  tint = 0xC0C0C0;
 
   getStats(level: number): ItemStats {
+    // Linear scaling: +1 Defense per level
     // Lvl 1: 1 Defense
-    // Lvl 2: 1 Def
-    // Lvl 3: 2 Def (Increase every 2 levels)
-    // Formula: ceil(level / 2) ? 
-    // Spec: "+1 Defense every 2 levels" -> 
-    // Lvl 1: 1
-    // Lvl 2: 1 (+0)
-    // Lvl 3: 2 (+1)
-    // Lvl 4: 2 (+0)
-    // Lvl 5: 3 (+1)
-    
-    const value = Math.ceil(level / 2); // 1, 1, 2, 2, 3
-    
-    // Calculate increase from previous level
-    const prevValue = level > 1 ? Math.ceil((level - 1) / 2) : 0;
-    const increase = value - prevValue;
-
+    // Lvl 2: 2 Defense
+    // ...
+    // Lvl 5: 5 Defense
     return {
-      value: value,
-      increaseValue: increase
+      value: level,
+      increaseValue: 1
     };
   }
 
   onAcquire(ctx: CharacterContext): void {
     const stats = this.getStats(1);
-    this.applyBuff(ctx, stats.value);
+    ctx.player.defense += stats.value;
+    console.log(`[Iron] Acquired. Defense +${stats.value}. Total: ${ctx.player.defense}`);
   }
 
   onUpgrade(ctx: CharacterContext): void {
-    const stats = this.getStats(this.level);
-    if (stats.increaseValue > 0) {
-      this.applyBuff(ctx, stats.increaseValue);
-    }
-  }
-
-  private applyBuff(ctx: CharacterContext, amount: number): void {
-    ctx.player.defense += amount;
-    console.log(`[Iron] Increased Defense by ${amount}. New Defense: ${ctx.player.defense}`);
+    const oldStats = this.getStats(this.level - 1);
+    const newStats = this.getStats(this.level);
+    const gain = newStats.value - oldStats.value;
+    
+    ctx.player.defense += gain;
+    console.log(`[Iron] Upgraded to Lvl ${this.level}. Defense +${gain}. Total: ${ctx.player.defense}`);
   }
 
   onRemove(ctx: CharacterContext): void {
     const stats = this.getStats(this.level);
     ctx.player.defense -= stats.value;
-    console.log(`[Iron] Removed. Decreased Defense by ${stats.value}. New Defense: ${ctx.player.defense}`);
+    console.log(`[Iron] Removed. Defense -${stats.value}. Total: ${ctx.player.defense}`);
   }
 }

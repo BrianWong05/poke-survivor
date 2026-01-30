@@ -1,0 +1,8 @@
+- [x] Implement `Iron` class in `src/game/entities/items/passive/Iron.ts` @[/src/game/entities/items/passive/Iron.ts]
+    - [x] Set name to "Iron (防禦增強劑)"
+    - [x] Set description to "Reduces incoming damage by 1 per rank."
+    - [x] Implement `getStats` with linear scaling (`value = level`)
+    - [x] Implement `onAcquire` to apply initial stats
+    - [x] Implement `onUpgrade` to apply stat increase
+    - [x] Add `texture` and `tint` properties to the `Iron` class
+- [x] Register `Iron` in `src/game/entities/items/registry.ts` if not already correctly configured @[/src/game/entities/items/registry.ts]

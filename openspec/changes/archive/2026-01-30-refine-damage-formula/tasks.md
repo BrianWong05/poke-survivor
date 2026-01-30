@@ -1,0 +1,6 @@
+- [x] Update `Player.takeDamage` method in `src/game/entities/Player.ts` @[/src/game/entities/Player.ts]
+    - [x] Calculate `mitigationFactor = 1 / (1 + (this.defense * 0.1))`
+    - [x] Calculate `finalDamage = amount * mitigationFactor`
+    - [x] Apply damage to `this.health` as float (no flooring of health property).
+    - [x] Emit `hp-update` event with `Math.ceil(this.health)` for UI.
+- [x] Verify logic by simulating a hit with Defense 10 and Amount 1. Expected: ~0.5 damage.
