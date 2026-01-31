@@ -1,6 +1,6 @@
 import React from 'react';
-import { Section } from '../Shared/Section';
-import { Button } from '../Shared/Button';
+import { Section } from '@/features/DevConsole/components/Shared/Section';
+import { Button } from '@/features/DevConsole/components/Shared/Button';
 
 interface CheatSectionProps {
     handleCheat: (action: string) => void;

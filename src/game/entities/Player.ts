@@ -1,5 +1,5 @@
-import type { Item } from './items/Item';
-import { FloatingHpBar } from '../ui/FloatingHpBar';
+import type { Item } from '@/game/entities/items/Item';
+import { FloatingHpBar } from '@/game/ui/FloatingHpBar';
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
   // Collection zone for XP gems (Magnet)

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { type ButtonProps } from '../../types';
-import { styles } from '../../styles';
-import { isBright, lighten } from '../../utils';
+import { type ButtonProps } from '@/features/DevConsole/types';
+import { styles } from '@/features/DevConsole/styles';
+import { isBright, lighten } from '@/features/DevConsole/utils';
 
 export const Button: React.FC<ButtonProps> = ({ children, outline, color, style, ...props }) => {
     const [hover, setHover] = useState(false);

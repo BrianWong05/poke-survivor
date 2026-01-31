@@ -1,7 +1,7 @@
-import { Item } from './Item';
-import { HpUp } from './passive/HpUp';
-import { Leftovers } from './passive/Leftovers';
-import { Iron } from './passive/Iron';
+import { Item } from '@/game/entities/items/Item';
+import { HpUp } from '@/game/entities/items/passive/HpUp';
+import { Leftovers } from '@/game/entities/items/passive/Leftovers';
+import { Iron } from '@/game/entities/items/passive/Iron';
 
 export function createItem(id: string): Item | null {
   switch (id) {

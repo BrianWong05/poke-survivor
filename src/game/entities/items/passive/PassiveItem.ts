@@ -1,4 +1,4 @@
-import { Item } from '../Item';
+import { Item } from '@/game/entities/items/Item';
 
 export abstract class PassiveItem extends Item {
   // Common passive logic could go here if needed.

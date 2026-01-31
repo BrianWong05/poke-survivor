@@ -1,5 +1,5 @@
-import { PassiveItem } from './PassiveItem';
-import type { ItemStats } from '../Item';
+import { PassiveItem } from '@/game/entities/items/passive/PassiveItem';
+import type { ItemStats } from '@/game/entities/items/Item';
 import type { CharacterContext } from '@/game/entities/characters/types';
 
 export class HpUp extends PassiveItem {

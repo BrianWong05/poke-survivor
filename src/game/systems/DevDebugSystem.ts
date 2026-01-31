@@ -36,6 +36,8 @@ export class DevDebugSystem {
 
   // We need to keep a reference to fireTimer if we are debugging the main weapon
   private mainWeaponFireTimerRef?: { get: () => Phaser.Time.TimerEvent, set: (t: Phaser.Time.TimerEvent) => void };
+  
+  private isGameOver: () => boolean;
 
   constructor(
       scene: Phaser.Scene,
@@ -45,7 +47,8 @@ export class DevDebugSystem {
       combatManager: CombatManager,
       uiManager: UIManager,
       enemiesGroup: Phaser.Physics.Arcade.Group,
-      legacyEnemiesGroup: Phaser.Physics.Arcade.Group
+      legacyEnemiesGroup: Phaser.Physics.Arcade.Group,
+      isGameOver: () => boolean
   ) {
     this.scene = scene;
     this.player = player;
@@ -55,6 +58,7 @@ export class DevDebugSystem {
     this.uiManager = uiManager;
     this.enemiesGroup = enemiesGroup;
     this.legacyEnemiesGroup = legacyEnemiesGroup;
+    this.isGameOver = isGameOver;
   }
 
   // Set this up if we want to manipulate the main weapon timer
@@ -64,10 +68,10 @@ export class DevDebugSystem {
 
   public debugLevelUp(
     isLevelUpPending: boolean, 
-    onLevelUp: () => void, 
-    onComplete?: () => void,
-    onWeaponUpgrade?: () => void,
-    onNewWeapon?: (config: import('@/game/entities/characters/types').WeaponConfig) => void
+    _onLevelUp?: () => void, 
+    _onComplete?: () => void,
+    _onWeaponUpgrade?: () => void,
+    _onNewWeapon?: (config: import('@/game/entities/characters/types').WeaponConfig) => void
   ): void {
     if (!this.experienceManager) return;
     
@@ -77,31 +81,11 @@ export class DevDebugSystem {
     
     // Trigger sequence if actually leveled up
     if (leveled && !isLevelUpPending) {
-      onLevelUp(); // Should set pending flag and call processLevelUp
-      
-      this.scene.cameras.main.flash(500, 255, 255, 255, false, (_camera: any, progress: number) => {
-        if (progress === 1) {
-          if (!this.scene.sys || !this.scene.sys.isActive()) return;
-          
-          // Pause the entire MainScene (freezes physics, timers, tweens, update loop)
-          this.scene.scene.pause('MainScene');
-          
-          // Launch the LevelUpScene for item selection
-          this.scene.scene.launch('LevelUpScene', {
-            player: this.player,
-            characterState: this.characterState,
-            activeWeaponIds: this.getActiveWeaponIds(),
-            onComplete: () => {
-              // Resume MainScene
-              this.scene.scene.resume('MainScene');
-              // Reset the pending state in MainScene
-              if (onComplete) onComplete();
-            },
-            onWeaponUpgrade: onWeaponUpgrade,
-            onNewWeapon: onNewWeapon
-          });
-        }
-      });
+         // Cast scene to MainScene to access startLevelUpSequence
+         const mainScene = this.scene as import('@/game/scenes/MainScene').MainScene;
+         if (mainScene.startLevelUpSequence) {
+             mainScene.startLevelUpSequence();
+         }
     }
   }
 
@@ -139,6 +123,10 @@ export class DevDebugSystem {
     console.log(`[DevConsole] Invincible mode: ${enabled}`);
   }
 
+  public debugSetPaused(paused: boolean): void {
+      this.uiManager.setPaused(paused, false);
+  }
+
   public getDebugItems(): { id: string, name: string, level: number }[] {
       if (!this.player) return [];
       return this.player.items.map(item => ({
@@ -170,7 +158,7 @@ export class DevDebugSystem {
       this.player.removeItem(itemId);
   }
 
-  public debugAddWeapon(weaponConfig: WeaponConfig, isGameOver: boolean): void {
+  public debugAddWeapon(weaponConfig: WeaponConfig, _isGameOverUnused: boolean): void {
     if (!this.player) return;
 
     const id = `debug-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -183,7 +171,8 @@ export class DevDebugSystem {
 
     // Helper to fire
     const fireWeapon = (weapon: WeaponConfig, level: number) => {
-         if (isGameOver) return;
+         // Use internal isGameOver
+         if (this.isGameOver && this.isGameOver()) return;
          if (this.player.getData('canControl') === false) return;
          
          const ctx = {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { styles } from '../../styles';
+import { styles } from '@/features/DevConsole/styles';
 
 interface HeaderProps {
     isPaused: boolean;

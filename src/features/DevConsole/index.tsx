@@ -1,12 +1,12 @@
 import React, { useRef } from 'react';
-import { useDevConsole } from './useDevConsole';
-import { styles } from './styles';
-import { Header } from './components/Header';
-import { CheatSection } from './components/CheatSection';
-import { ActiveMovesSection } from './components/ActiveMovesSection';
-import { MovesRegistrySection } from './components/MovesRegistrySection';
-import { ActiveItemsSection } from './components/ActiveItemsSection';
-import { ItemsRegistrySection } from './components/ItemsRegistrySection';
+import { useDevConsole } from '@/features/DevConsole/useDevConsole';
+import { styles } from '@/features/DevConsole/styles';
+import { Header } from '@/features/DevConsole/components/Header';
+import { CheatSection } from '@/features/DevConsole/components/CheatSection';
+import { ActiveMovesSection } from '@/features/DevConsole/components/ActiveMovesSection';
+import { MovesRegistrySection } from '@/features/DevConsole/components/MovesRegistrySection';
+import { ActiveItemsSection } from '@/features/DevConsole/components/ActiveItemsSection';
+import { ItemsRegistrySection } from '@/features/DevConsole/components/ItemsRegistrySection';
 
 export const DevConsole: React.FC = () => {
     // Internal Production Gate (Runtime Safety)

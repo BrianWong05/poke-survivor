@@ -1,9 +1,9 @@
 import React from 'react';
-import { Section } from '../Shared/Section';
-import { Button } from '../Shared/Button';
-import { styles } from '../../styles';
-import { AVAILABLE_MOVES } from '../../constants';
-// import { DevMove } from '../../types'; // Not used directly in JSX, but type is used in constants
+import { Section } from '@/features/DevConsole/components/Shared/Section';
+import { Button } from '@/features/DevConsole/components/Shared/Button';
+import { styles } from '@/features/DevConsole/styles';
+import { AVAILABLE_MOVES } from '@/features/DevConsole/constants';
+// import { DevMove } from '@/features/DevConsole/types'; // Not used directly in JSX, but type is used in constants
 
 interface MovesRegistrySectionProps {
     searchQuery: string;

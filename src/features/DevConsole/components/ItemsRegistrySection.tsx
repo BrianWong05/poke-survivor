@@ -1,7 +1,7 @@
 import React from 'react';
-import { Section } from './Shared/Section';
-import { Button } from './Shared/Button';
-import { styles } from '../styles';
+import { Section } from '@/features/DevConsole/components/Shared/Section';
+import { Button } from '@/features/DevConsole/components/Shared/Button';
+import { styles } from '@/features/DevConsole/styles';
 import { AVAILABLE_ITEMS } from '@/game/entities/items/registry';
 
 interface ItemsRegistrySectionProps {

@@ -49,7 +49,7 @@ export class MainScene extends Phaser.Scene {
   private inputManager!: InputManager;
   private combatManager!: CombatManager;
   private uiManager!: UIManager;
-  private debugSystem!: DevDebugSystem;
+  public debugSystem!: DevDebugSystem;
   private experienceManager!: ExperienceManager;
   private enemySpawner!: EnemySpawner;
   private lootManager!: LootManager;
@@ -137,15 +137,15 @@ export class MainScene extends Phaser.Scene {
         this.combatManager,
         this.uiManager,
         this.enemySpawner.getEnemyGroup() as Phaser.Physics.Arcade.Group,
-        this.enemies
+        this.enemies,
+        () => this.gameOver
     );
 
     // Input Manager
     this.inputManager = new InputManager(this);
     this.inputManager.setup(() => this.uiManager.togglePause(() => {
         // Handle visual pause state logic if needed
-        this.combatManager.healPlayer(0); // Dummy update or just leave it to UIManager
-        // Actually UIManager handles the heavy lifting of pausing physics/anims
+        this.combatManager.healPlayer(0); 
     }));
 
     // 5. Setup Collisions
@@ -157,11 +157,11 @@ export class MainScene extends Phaser.Scene {
      
     // XP Collection Collision
     this.physics.add.overlap(
-      this.player.collectionZone,
-      this.xpGems,
-      this.handleXPCollection.bind(this) as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback,
-      undefined,
-      this
+        this.player.collectionZone,
+        this.xpGems,
+        this.handleXPCollection.bind(this) as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback,
+        undefined,
+        this
     );
 
     // 6. Event Listeners
@@ -350,9 +350,7 @@ export class MainScene extends Phaser.Scene {
     candy.setActive(false);
 
     const xpValue = (candy.getData('xpValue') as number) || 1;
-    // We could import LootItemType but let's just stick to generic for now or assume int check
-    // Actually we need to check if it's rare candy
-    const isRareCandy = candy.getData('lootType') === 'rare-candy'; // Assuming string match or enum match if imported
+    const isRareCandy = candy.getData('lootType') === 'rare-candy'; 
 
     let canLevelUp = false;
     if (isRareCandy) {
@@ -366,21 +364,29 @@ export class MainScene extends Phaser.Scene {
     this.uiManager.updateLevelUI();
 
     if (canLevelUp && !this.isLevelUpPending) {
+        this.startLevelUpSequence();
+    }
+  }
+
+  /**
+   * Centralized Level Up Sequence
+   * Handles visual effects, pausing, scene launching, and recursive checks
+   */
+  public startLevelUpSequence(): void {
+      if (this.isLevelUpPending) return;
+      
       this.isLevelUpPending = true;
       this.uiManager.setLevelUpPending(true);
-      
-      this.experienceManager.processLevelUp();
       
       this.cameras.main.flash(500, 255, 255, 255, false, (_camera: Phaser.Cameras.Scene2D.Camera, progress: number) => {
         if (progress === 1) {
           if (!this.sys || !this.sys.isActive()) return;
 
-           // Launch Level Up Selection Scene (weapons + items in pool)
            // Get list of active debug weapon IDs
            const activeWeaponIds = this.debugSystem.getActiveWeaponIds ? 
              this.debugSystem.getActiveWeaponIds() : [];
            
-           // Pause the entire MainScene (freezes physics, timers, tweens, update loop)
+           // Pause the entire MainScene
            this.scene.pause('MainScene');
               
            this.scene.launch('LevelUpScene', {
@@ -393,23 +399,10 @@ export class MainScene extends Phaser.Scene {
                
                // On Resume - check for more pending levels
                if (this.experienceManager.processLevelUp()) {
-                 // Pause again for next level up
-                 this.scene.pause('MainScene');
-                 
-                 // More levels pending - relaunch the scene
-                 this.scene.launch('LevelUpScene', {
-                   player: this.player,
-                   characterState: this.characterState,
-                   activeWeaponIds: this.debugSystem.getActiveWeaponIds ? 
-                     this.debugSystem.getActiveWeaponIds() : [],
-                   onComplete: () => {
-                     this.scene.resume('MainScene');
-                     this.isLevelUpPending = false;
-                     this.uiManager.setLevelUpPending(false);
-                   },
-                   onWeaponUpgrade: () => this.handleWeaponLevelUp(),
-                   onNewWeapon: (config: import('@/game/entities/characters/types').WeaponConfig) => this.handleNewWeapon(config)
-                 });
+                 // Reset flag momentarily to allow re-entry
+                 this.isLevelUpPending = false; 
+                 // Recursively start next sequence immediately
+                 this.startLevelUpSequence();
                } else {
                  this.isLevelUpPending = false;
                  this.uiManager.setLevelUpPending(false);
@@ -420,9 +413,8 @@ export class MainScene extends Phaser.Scene {
            });
         }
       });
-    }
   }
-  
+
   /**
    * Handle weapon level up when player selects weapon upgrade
    */
@@ -457,7 +449,7 @@ export class MainScene extends Phaser.Scene {
   /**
    * Handle acquiring a new weapon when player selects it from level-up pool
    */
-  private handleNewWeapon(config: import('@/game/entities/characters/types').WeaponConfig): void {
+  private handleNewWeapon(config: WeaponConfig): void {
     // Add the new weapon via DevDebugSystem (same system used by DevConsole)
     this.debugSystem.debugAddWeapon(config, this.gameOver);
     console.log(`[MainScene] Acquired new weapon: ${config.name}`);
@@ -489,43 +481,8 @@ export class MainScene extends Phaser.Scene {
       this.inputManager.setJoystickVector(x, y);
   }
 
-  // Proxy Debug Methods
-  public debugLevelUp(): void { 
-    this.debugSystem.debugLevelUp(
-      this.isLevelUpPending, 
-      () => {
-        this.isLevelUpPending = true;
-        this.uiManager.setLevelUpPending(true);
-        this.experienceManager.processLevelUp();
-      }, 
-      () => {
-        // Called when LevelUpScene closes
-        this.isLevelUpPending = false;
-        this.uiManager.setLevelUpPending(false);
-      },
-      () => {
-        // Called when weapon upgrade is selected
-        this.handleWeaponLevelUp();
-      },
-      (config) => {
-        // Called when new weapon is acquired
-        this.handleNewWeapon(config);
-      }
-    ); 
-  }
-  public debugHeal(): void { this.debugSystem.debugHeal(); }
-  public debugKillAll(): void { this.debugSystem.debugKillAll(); }
-  public debugAddItem(id: string): void { this.debugSystem.debugAddItem(id); }
-  public debugSetItemLevel(id: string, level: number): void { this.debugSystem.debugSetItemLevel(id, level); }
-  public debugRemoveItem(id: string): void { this.debugSystem.debugRemoveItem(id); }
-  public debugAddWeapon(config: WeaponConfig): void { this.debugSystem.debugAddWeapon(config, this.gameOver); }
-  public debugSetWeaponLevel(id: string, level: number): void { this.debugSystem.debugSetWeaponLevel(id, level); }
-  public debugRemoveWeapon(id: string): void { this.debugSystem.debugRemoveWeapon(id); }
+  // Proxy Debug Methods removed - usage moved to debugSystem directly
 
-  public getDebugWeapons() { return this.debugSystem.getDebugWeapons(); }
-  public getDebugItems() { return this.debugSystem.getDebugItems(); }
-  public debugSetPaused(paused: boolean): void { this.uiManager.setPaused(paused, false); }
-  public debugSetInvincible(enabled: boolean): void { this.debugSystem.debugSetInvincible(enabled); }
 
   update(_time: number, delta: number): void {
     // We access internal isPaused via UIManager implicitly by checking scene pause state? 

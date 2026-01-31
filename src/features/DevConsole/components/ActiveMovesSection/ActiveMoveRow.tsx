@@ -1,6 +1,6 @@
 import React from 'react';
-import { styles } from '../../styles';
-import { type ActiveWeapon } from '../../types';
+import { styles } from '@/features/DevConsole/styles';
+import { type ActiveWeapon } from '@/features/DevConsole/types';
 
 interface ActiveMoveRowProps {
     weapon: ActiveWeapon;

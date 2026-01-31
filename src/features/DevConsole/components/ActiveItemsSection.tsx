@@ -1,7 +1,7 @@
 import React from 'react';
-import { Section } from './Shared/Section';
-import { styles } from '../styles';
-import { type ActiveItem } from '../types';
+import { Section } from '@/features/DevConsole/components/Shared/Section';
+import { styles } from '@/features/DevConsole/styles';
+import { type ActiveItem } from '@/features/DevConsole/types';
 
 interface ActiveItemsSectionProps {
     activeItems: ActiveItem[];

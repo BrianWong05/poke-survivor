@@ -12,8 +12,6 @@ export class CombatManager {
   private characterConfig: CharacterConfig;
   private characterState: CharacterState;
   private lootManager: LootManager;
-  private callbacks: GameCallbacks;
-  
   // Game state flag reference (needs to be passed or accessed)
   private isGameOver: () => boolean;
   private triggerGameOver: () => void;
@@ -24,7 +22,7 @@ export class CombatManager {
       config: CharacterConfig, 
       state: CharacterState,
       lootManager: LootManager,
-      callbacks: GameCallbacks,
+      _callbacks: GameCallbacks,
       isGameOver: () => boolean,
       triggerGameOver: () => void
   ) {
@@ -33,7 +31,6 @@ export class CombatManager {
     this.characterConfig = config;
     this.characterState = state;
     this.lootManager = lootManager;
-    this.callbacks = callbacks;
     this.isGameOver = isGameOver;
     this.triggerGameOver = triggerGameOver;
   }

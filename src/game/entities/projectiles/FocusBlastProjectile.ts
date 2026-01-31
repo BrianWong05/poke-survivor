@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { Explosion } from './Explosion';
+import { Explosion } from '@/game/entities/projectiles/Explosion';
 
 export class FocusBlastProjectile extends Phaser.Physics.Arcade.Sprite {
   // Stats
