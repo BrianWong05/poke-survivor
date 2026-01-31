@@ -381,14 +381,23 @@ export class MainScene extends Phaser.Scene {
            // Get list of active debug weapon IDs
            const activeWeaponIds = this.debugSystem.getActiveWeaponIds ? 
              this.debugSystem.getActiveWeaponIds() : [];
-             
+           
+           // Pause the entire MainScene (freezes physics, timers, tweens, update loop)
+           this.scene.pause('MainScene');
+              
            this.scene.launch('LevelUpScene', {
              player: this.player,
              characterState: this.characterState,
              activeWeaponIds,
              onComplete: () => {
+               // Resume MainScene
+               this.scene.resume('MainScene');
+               
                // On Resume - check for more pending levels
                if (this.experienceManager.processLevelUp()) {
+                 // Pause again for next level up
+                 this.scene.pause('MainScene');
+                 
                  // More levels pending - relaunch the scene
                  this.scene.launch('LevelUpScene', {
                    player: this.player,
@@ -396,6 +405,7 @@ export class MainScene extends Phaser.Scene {
                    activeWeaponIds: this.debugSystem.getActiveWeaponIds ? 
                      this.debugSystem.getActiveWeaponIds() : [],
                    onComplete: () => {
+                     this.scene.resume('MainScene');
                      this.isLevelUpPending = false;
                      this.uiManager.setLevelUpPending(false);
                    },

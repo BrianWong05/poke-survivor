@@ -83,12 +83,17 @@ export class DevDebugSystem {
         if (progress === 1) {
           if (!this.scene.sys || !this.scene.sys.isActive()) return;
           
+          // Pause the entire MainScene (freezes physics, timers, tweens, update loop)
+          this.scene.scene.pause('MainScene');
+          
           // Launch the LevelUpScene for item selection
           this.scene.scene.launch('LevelUpScene', {
             player: this.player,
             characterState: this.characterState,
             activeWeaponIds: this.getActiveWeaponIds(),
             onComplete: () => {
+              // Resume MainScene
+              this.scene.scene.resume('MainScene');
               // Reset the pending state in MainScene
               if (onComplete) onComplete();
             },
