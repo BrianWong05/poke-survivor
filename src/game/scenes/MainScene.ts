@@ -327,7 +327,7 @@ export class MainScene extends Phaser.Scene {
       player: this.player,
       stats: this.characterConfig.stats,
       currentHP: this.characterState.currentHP,
-      level: this.characterState.level,
+      level: this.characterState.weaponLevel,  // Use weaponLevel for weapon power
       xp: this.characterState.xp,
     };
   }
@@ -377,45 +377,64 @@ export class MainScene extends Phaser.Scene {
         if (progress === 1) {
           if (!this.sys || !this.sys.isActive()) return;
 
-          // Evolution Check (Manual logic here or move to System? Logic is game specific)
-          const evolutionLevel = this.characterConfig.weapon.evolutionLevel ?? 5;
-          if (!this.characterState.isEvolved && this.characterState.level >= evolutionLevel && this.characterConfig.weapon.evolution) {
-            this.characterState.activeWeapon = this.characterConfig.weapon.evolution;
-            this.characterState.isEvolved = true;
-            
-            this.fireTimer.remove();
-            this.fireTimer = this.time.addEvent({
-              delay: this.characterState.activeWeapon.cooldownMs,
-              callback: () => this.fireWeapon(),
-              callbackScope: this,
-              loop: true,
-            });
-          }
-           this.uiManager.showLevelUpMenu(() => {
-                // On Resume
-                if (this.experienceManager.processLevelUp()) {
-                    // Recursive call handled by UIManager if we passed it in, but here we just re-trigger
-                    // This is slightly tricky without recursion in UIManager.
-                    // Let's keep it simple: if more levels, just show menu again immediately?
-                    // Actually UIManager showLevelUpMenu finishes, then we check.
-                    // If we want recursive menu, we should call showLevelUpMenu again.
-                    // But UIManager's showLevelUpMenu uses onComplete callback.
-                    // So we can do:
-                    // this.uiManager.showLevelUpMenu(this.processNextLevelUp);
-                    // But for now, simple single level up flow or we miss subsequent ones visually.
-                    // Let's assume single step for now to save complexity.
-                    this.isLevelUpPending = false;
-                    this.uiManager.setLevelUpPending(false);
-                    this.scene.resume();
-                } else {
-                    this.isLevelUpPending = false;
-                    this.uiManager.setLevelUpPending(false);
-                    this.scene.resume();
-                }
+           // Launch Level Up Selection Scene (weapons + items in pool)
+           this.scene.launch('LevelUpScene', {
+             player: this.player,
+             characterState: this.characterState,
+             onComplete: () => {
+               // On Resume - check for more pending levels
+               if (this.experienceManager.processLevelUp()) {
+                 // More levels pending - relaunch the scene
+                 this.scene.launch('LevelUpScene', {
+                   player: this.player,
+                   characterState: this.characterState,
+                   onComplete: () => {
+                     this.isLevelUpPending = false;
+                     this.uiManager.setLevelUpPending(false);
+                   },
+                   onWeaponUpgrade: () => this.handleWeaponLevelUp()
+                 });
+               } else {
+                 this.isLevelUpPending = false;
+                 this.uiManager.setLevelUpPending(false);
+               }
+             },
+             onWeaponUpgrade: () => this.handleWeaponLevelUp()
            });
         }
       });
     }
+  }
+  
+  /**
+   * Handle weapon level up when player selects weapon upgrade
+   */
+  private handleWeaponLevelUp(): void {
+    // Increment weapon level (this is what drives weapon power)
+    this.characterState.weaponLevel++;
+    
+    // Check for evolution
+    const evolutionLevel = this.characterConfig.weapon.evolutionLevel ?? 5;
+    if (!this.characterState.isEvolved && 
+        this.characterState.weaponLevel >= evolutionLevel && 
+        this.characterConfig.weapon.evolution) {
+      
+      this.characterState.activeWeapon = this.characterConfig.weapon.evolution;
+      this.characterState.isEvolved = true;
+      
+      // Restart fire timer with new weapon cooldown
+      this.fireTimer.remove();
+      this.fireTimer = this.time.addEvent({
+        delay: this.characterState.activeWeapon.cooldownMs,
+        callback: () => this.fireWeapon(),
+        callbackScope: this,
+        loop: true,
+      });
+      
+      console.log(`[MainScene] Weapon evolved to ${this.characterState.activeWeapon.name}!`);
+    }
+    
+    console.log(`[MainScene] Weapon leveled up to Lv.${this.characterState.weaponLevel}`);
   }
 
   private cullExcessCandies(): void {
@@ -445,11 +464,25 @@ export class MainScene extends Phaser.Scene {
   }
 
   // Proxy Debug Methods
-  public debugLevelUp(): void { this.debugSystem.debugLevelUp(this.isLevelUpPending, () => {
-    this.isLevelUpPending = true;
-    this.uiManager.setLevelUpPending(true);
-    this.experienceManager.processLevelUp();
-  }); }
+  public debugLevelUp(): void { 
+    this.debugSystem.debugLevelUp(
+      this.isLevelUpPending, 
+      () => {
+        this.isLevelUpPending = true;
+        this.uiManager.setLevelUpPending(true);
+        this.experienceManager.processLevelUp();
+      }, 
+      () => {
+        // Called when LevelUpScene closes
+        this.isLevelUpPending = false;
+        this.uiManager.setLevelUpPending(false);
+      },
+      () => {
+        // Called when weapon upgrade is selected
+        this.handleWeaponLevelUp();
+      }
+    ); 
+  }
   public debugHeal(): void { this.debugSystem.debugHeal(); }
   public debugKillAll(): void { this.debugSystem.debugKillAll(); }
   public debugAddItem(id: string): void { this.debugSystem.debugAddItem(id); }

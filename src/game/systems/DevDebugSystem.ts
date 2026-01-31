@@ -62,7 +62,12 @@ export class DevDebugSystem {
       this.mainWeaponFireTimerRef = { get, set };
   }
 
-  public debugLevelUp(isLevelUpPending: boolean, onLevelUp: () => void): void {
+  public debugLevelUp(
+    isLevelUpPending: boolean, 
+    onLevelUp: () => void, 
+    onComplete?: () => void,
+    onWeaponUpgrade?: () => void
+  ): void {
     if (!this.experienceManager) return;
     
     // Add level
@@ -76,13 +81,17 @@ export class DevDebugSystem {
       this.scene.cameras.main.flash(500, 255, 255, 255, false, (_camera: any, progress: number) => {
         if (progress === 1) {
           if (!this.scene.sys || !this.scene.sys.isActive()) return;
-          // We need a callback to show menu or rely on scene logic
-          // But trying to decouple:
-          // The UIManager handles showing menu.
-          // The scene handles flow control (resume).
-          // For now, let's assume this method is just the trigger.
-          // BUT - the original code showed the menu directly from here.
-          // We can call UIManager.showLevelUpMenu here if we assume the Scene handles the "onComplete"
+          
+          // Launch the LevelUpScene for item selection
+          this.scene.scene.launch('LevelUpScene', {
+            player: this.player,
+            characterState: this.characterState,
+            onComplete: () => {
+              // Reset the pending state in MainScene
+              if (onComplete) onComplete();
+            },
+            onWeaponUpgrade: onWeaponUpgrade
+          });
         }
       });
     }
@@ -309,7 +318,7 @@ export class DevDebugSystem {
           list.unshift({
               id: 'main_weapon',
               name: `${this.characterState.activeWeapon.name} (Main)`,
-              level: this.characterState.level
+              level: this.characterState.weaponLevel  // Use weaponLevel, not XP level
           });
       }
       return list;

@@ -100,7 +100,8 @@ export interface CharacterConfig {
 export interface CharacterState {
   config: CharacterConfig;
   currentHP: number;
-  level: number;
+  level: number;           // Player XP level (experience)
+  weaponLevel: number;     // Weapon power level (upgraded via selection)
   xp: number;
   xpToNextLevel: number;
   isEvolved: boolean;
@@ -125,6 +126,7 @@ export function createCharacterState(config: CharacterConfig): CharacterState {
     config,
     currentHP: config.stats.maxHP,
     level: 1,
+    weaponLevel: 1,        // Weapon starts at level 1
     xp: 0,
     xpToNextLevel: xpToLevel(1),
     isEvolved: false,

@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { Preloader } from '@/game/scenes/Preloader';
 import { MainScene } from '@/game/scenes/MainScene';
+import { LevelUpScene } from '@/game/scenes/LevelUpScene';
 
 export interface GameCallbacks {
   onScoreUpdate: (score: number) => void;
@@ -31,7 +32,7 @@ export const createGameConfig = (
     mode: Phaser.Scale.RESIZE,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
-  scene: [Preloader, MainScene],
+  scene: [Preloader, MainScene, LevelUpScene],
   callbacks: {
     preBoot: (game) => {
       // Store callbacks in game registry for scene access
