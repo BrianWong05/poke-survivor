@@ -1,4 +1,5 @@
 import type { Item } from './items/Item';
+import { FloatingHpBar } from '../ui/FloatingHpBar';
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
   // Collection zone for XP gems (Magnet)
@@ -19,6 +20,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   public isInvulnerable: boolean = false;
   
   private regenTimer: number = 0;
+  private hpBar: FloatingHpBar;
   
   // Invulnerability duration in ms
   private readonly INVULNERABILITY_DURATION = 100;
@@ -52,6 +54,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.defense = 0;
     
     this.items = [];
+
+    // Initialize UI
+    this.hpBar = new FloatingHpBar(scene, this);
+    this.hpBar.draw(this.health, this.maxHP);
   }
 
   /**
@@ -151,6 +157,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   public setHealth(current: number, max: number): void {
     this.health = current;
     this.maxHP = max;
+    this.hpBar.draw(this.health, this.maxHP);
   }
 
   /**
@@ -160,6 +167,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   public addMaxHP(amount: number): void {
       this.maxHP += amount;
       this.scene.events.emit('max-hp-change', this.maxHP);
+      this.hpBar.draw(this.health, this.maxHP);
   }
 
   /**
@@ -173,6 +181,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (this.health > this.maxHP) this.health = this.maxHP;
 
     this.scene.events.emit('hp-update', this.health);
+    this.hpBar.draw(this.health, this.maxHP);
     
     // Visual feedback
     // If showValue is true: show "+{amount}"
@@ -215,6 +224,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     
     // Emit health change event for UI (Rounded up for clean display)
     this.scene.events.emit('hp-update', Math.ceil(this.health));
+    this.hpBar.draw(this.health, this.maxHP);
 
     console.log(`[Player] Took ${finalDamage.toFixed(2)} damage (Raw: ${amount}, Def: ${this.defense}, Factor: ${mitigationFactor.toFixed(2)}). HP: ${this.health.toFixed(2)}`);
 
@@ -249,6 +259,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   preUpdate(time: number, delta: number): void {
     super.preUpdate(time, delta);
 
+    // Sync UI
+    if (this.hpBar) {
+      this.hpBar.update();
+    }
+
     // Regen Logic (Tick every 1s)
     if (this.regen > 0 && time > this.regenTimer + 1000) {
         this.heal(this.regen, false);
@@ -260,4 +275,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.collectionZone.setPosition(this.x, this.y);
     }
   }
+
+  destroy(fromScene?: boolean): void {
+    if (this.hpBar) {
+      this.hpBar.destroy();
+    }
+    if (this.collectionZone) {
+      this.collectionZone.destroy();
+    }
+    super.destroy(fromScene);
+  }
 }
+

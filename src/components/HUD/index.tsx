@@ -2,8 +2,6 @@ import './styles.css';
 
 interface HUDProps {
   score: number;
-  hp: number;
-  maxHP: number;
   level: number;
   xp: number;
   xpToNext: number;
@@ -13,31 +11,17 @@ interface HUDProps {
 
 export const HUD = ({
   score,
-  hp,
-  maxHP,
   level,
   xp,
   xpToNext,
   isGameOver,
   onRestart,
 }: HUDProps) => {
-  const hpPercent = Math.max(0, (hp / maxHP) * 100);
   const xpPercent = Math.max(0, (xp / xpToNext) * 100);
 
   return (
     <div className="hud-overlay">
       <div className="hud-top">
-        <div className="hp-container">
-          <div className="hp-label">HP</div>
-          <div className="hp-bar-bg">
-            <div
-              className="hp-bar-fill"
-              style={{ width: `${hpPercent}%` }}
-            />
-          </div>
-          <div className="hp-text">{hp}/{maxHP}</div>
-        </div>
-
         <div className="level-container">
           <div className="level-label">LVL {level}</div>
           <div className="xp-bar-bg">
@@ -74,3 +58,4 @@ export const HUD = ({
     </div>
   );
 };
+

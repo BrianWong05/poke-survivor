@@ -5,11 +5,9 @@ import { LevelUpScene } from '@/game/scenes/LevelUpScene';
 
 export interface GameCallbacks {
   onScoreUpdate: (score: number) => void;
-  onHPUpdate: (hp: number) => void;
   onGameOver: () => void;
   onQuit: () => void;
   onLevelUpdate?: (level: number, xp: number, xpToNext: number) => void;
-  onMaxHPChange?: (maxHP: number) => void;
 }
 
 export const createGameConfig = (

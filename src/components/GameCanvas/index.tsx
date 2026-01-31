@@ -4,27 +4,22 @@ import nipplejs from 'nipplejs';
 import type { JoystickManager } from 'nipplejs';
 import { createGameConfig, type GameCallbacks } from '@/game/config';
 import { MainScene } from '@/game/scenes/MainScene';
-import { getCharacter } from '@/game/entities/characters/registry';
 import './styles.css';
 
 interface GameCanvasProps {
   selectedCharacter: string;
   onScoreUpdate: (score: number) => void;
-  onHPUpdate: (hp: number) => void;
   onLevelUpdate: (level: number, xp: number, xpToNext: number) => void;
   onGameOver: () => void;
   onQuit: () => void;
-  onMaxHPChange: (maxHP: number) => void;
 }
 
 export const GameCanvas = ({
   selectedCharacter,
   onScoreUpdate,
-  onHPUpdate,
   onLevelUpdate,
   onGameOver,
   onQuit,
-  onMaxHPChange,
 }: GameCanvasProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const joystickRef = useRef<HTMLDivElement>(null);
@@ -34,17 +29,11 @@ export const GameCanvas = ({
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Get character config for max HP
-    const characterConfig = getCharacter(selectedCharacter);
-    onMaxHPChange(characterConfig.stats.maxHP);
-
     const callbacks: GameCallbacks = {
       onScoreUpdate,
-      onHPUpdate,
       onGameOver,
       onQuit,
       onLevelUpdate,
-      onMaxHPChange,
     };
 
     // Create Phaser game
@@ -95,7 +84,7 @@ export const GameCanvas = ({
         gameRef.current = null;
       }
     };
-  }, [selectedCharacter, onScoreUpdate, onHPUpdate, onGameOver, onQuit, onLevelUpdate, onMaxHPChange]);
+  }, [selectedCharacter, onScoreUpdate, onGameOver, onQuit, onLevelUpdate]);
 
   return (
     <div className="game-container">

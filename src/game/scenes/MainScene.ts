@@ -169,7 +169,6 @@ export class MainScene extends Phaser.Scene {
 
     // Initial UI Sync
     this.callbacks.onScoreUpdate(this.score);
-    this.callbacks.onHPUpdate(this.characterState.currentHP);
     this.uiManager.updateLevelUI();
     
     // Wire up debug fire timer ref
@@ -248,13 +247,10 @@ export class MainScene extends Phaser.Scene {
 
     this.events.on('hp-update', (hp: number) => {
       this.characterState.currentHP = hp;
-      this.callbacks.onHPUpdate(hp);
     });
 
-    this.events.on('max-hp-change', (maxHP: number) => {
-        if (this.callbacks.onMaxHPChange) {
-            this.callbacks.onMaxHPChange(maxHP);
-        }
+    this.events.on('max-hp-change', () => {
+        // Just internal update if needed, but characterState.currentHP is usually used
     });
 
     this.events.on('player:heal', (amount: number) => {

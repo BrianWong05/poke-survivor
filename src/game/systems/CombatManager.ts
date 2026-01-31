@@ -105,12 +105,7 @@ export class CombatManager {
 
   public healPlayer(amount: number): void {
     if (this.isGameOver()) return;
-    
-    this.characterState.currentHP = Math.min(
-      this.characterState.currentHP + amount,
-      this.characterConfig.stats.maxHP
-    );
-    this.callbacks.onHPUpdate(this.characterState.currentHP);
+    this.player.heal(amount);
   }
 
   public applyAOEDamage(x: number, y: number, radius: number, damage: number, enemies: Phaser.Physics.Arcade.Group): void {
@@ -266,10 +261,6 @@ export class CombatManager {
 
     // Delegate damage to Player (Handles invincibility and HP)
     this.player.takeDamage(damage);
-
-    // Sync local state (Source of Truth is now Player, but we keep this for compatibility)
-    this.characterState.currentHP = this.player.health;
-    this.callbacks.onHPUpdate(this.characterState.currentHP);
 
     if (this.characterState.currentHP <= 0) {
       this.triggerGameOver();

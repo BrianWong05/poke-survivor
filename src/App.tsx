@@ -6,8 +6,6 @@ import { DevConsole } from '@/features/DevConsole';
 
 function App() {
   const [score, setScore] = useState(0);
-  const [hp, setHP] = useState(100);
-  const [maxHP, setMaxHP] = useState(100);
   const [level, setLevel] = useState(1);
   const [xp, setXP] = useState(0);
   const [xpToNext, setXPToNext] = useState(100);
@@ -17,10 +15,6 @@ function App() {
 
   const handleScoreUpdate = useCallback((newScore: number) => {
     setScore(newScore);
-  }, []);
-
-  const handleHPUpdate = useCallback((newHP: number) => {
-    setHP(newHP);
   }, []);
 
   const handleLevelUpdate = useCallback((newLevel: number, newXP: number, newXPToNext: number) => {
@@ -47,8 +41,6 @@ function App() {
     // Go back to character select
     setSelectedCharacter(null);
     setScore(0);
-    setHP(100);
-    setMaxHP(100);
     setLevel(1);
     setXP(0);
     setXPToNext(100);
@@ -67,16 +59,12 @@ function App() {
         key={gameKey}
         selectedCharacter={selectedCharacter}
         onScoreUpdate={handleScoreUpdate}
-        onHPUpdate={handleHPUpdate}
         onLevelUpdate={handleLevelUpdate}
         onGameOver={handleGameOver}
         onQuit={handleRestart}
-        onMaxHPChange={setMaxHP}
       />
       <HUD
         score={score}
-        hp={hp}
-        maxHP={maxHP}
         level={level}
         xp={xp}
         xpToNext={xpToNext}
