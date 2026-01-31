@@ -10,6 +10,7 @@ interface GameCanvasProps {
   selectedCharacter: string;
   onScoreUpdate: (score: number) => void;
   onLevelUpdate: (level: number, xp: number, xpToNext: number) => void;
+  onTimeUpdate: (time: number) => void;
   onGameOver: () => void;
   onQuit: () => void;
 }
@@ -18,6 +19,7 @@ export const GameCanvas = ({
   selectedCharacter,
   onScoreUpdate,
   onLevelUpdate,
+  onTimeUpdate,
   onGameOver,
   onQuit,
 }: GameCanvasProps) => {
@@ -34,6 +36,7 @@ export const GameCanvas = ({
       onGameOver,
       onQuit,
       onLevelUpdate,
+      onTimeUpdate,
     };
 
     // Create Phaser game
@@ -84,7 +87,7 @@ export const GameCanvas = ({
         gameRef.current = null;
       }
     };
-  }, [selectedCharacter, onScoreUpdate, onGameOver, onQuit, onLevelUpdate]);
+  }, [selectedCharacter, onScoreUpdate, onGameOver, onQuit, onLevelUpdate, onTimeUpdate]);
 
   return (
     <div className="game-container">

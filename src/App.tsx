@@ -9,6 +9,7 @@ function App() {
   const [level, setLevel] = useState(1);
   const [xp, setXP] = useState(0);
   const [xpToNext, setXPToNext] = useState(100);
+  const [time, setTime] = useState(0);
   const [isGameOver, setIsGameOver] = useState(false);
   const [gameKey, setGameKey] = useState(0);
   const [selectedCharacter, setSelectedCharacter] = useState<string | null>(null);
@@ -23,6 +24,10 @@ function App() {
     setXPToNext(newXPToNext);
   }, []);
 
+  const handleTimeUpdate = useCallback((newTime: number) => {
+    setTime(newTime);
+  }, []);
+
   const handleGameOver = useCallback(() => {
     setIsGameOver(true);
   }, []);
@@ -34,6 +39,7 @@ function App() {
     setLevel(1);
     setXP(0);
     setXPToNext(100);
+    setTime(0);
     setIsGameOver(false);
   }, []);
 
@@ -44,6 +50,7 @@ function App() {
     setLevel(1);
     setXP(0);
     setXPToNext(100);
+    setTime(0);
     setIsGameOver(false);
     setGameKey(prev => prev + 1);
   }, []);
@@ -60,6 +67,7 @@ function App() {
         selectedCharacter={selectedCharacter}
         onScoreUpdate={handleScoreUpdate}
         onLevelUpdate={handleLevelUpdate}
+        onTimeUpdate={handleTimeUpdate}
         onGameOver={handleGameOver}
         onQuit={handleRestart}
       />
@@ -68,6 +76,7 @@ function App() {
         level={level}
         xp={xp}
         xpToNext={xpToNext}
+        time={time}
         isGameOver={isGameOver}
         onRestart={handleRestart}
       />

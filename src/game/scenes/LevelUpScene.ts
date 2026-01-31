@@ -66,7 +66,7 @@ export class LevelUpScene extends Phaser.Scene {
     overlay.setDepth(0);
     
     // 2. Title
-    const title = this.add.text(width / 2, 60, 'LEVEL UP!', {
+    const title = this.add.text(width / 2, 120, 'LEVEL UP!', {
       fontSize: '48px',
       color: '#ffd700',
       fontStyle: 'bold',
@@ -85,7 +85,7 @@ export class LevelUpScene extends Phaser.Scene {
     });
     
     // 3. Subtitle
-    this.add.text(width / 2, 110, 'Choose an upgrade', {
+    this.add.text(width / 2, 170, 'Choose an upgrade', {
       fontSize: '20px',
       color: '#ffffff',
       fontStyle: 'italic'
@@ -135,7 +135,7 @@ export class LevelUpScene extends Phaser.Scene {
     const totalCards = this.options.length;
     const totalWidth = totalCards * this.CARD_WIDTH + (totalCards - 1) * this.CARD_SPACING;
     const startX = (width - totalWidth) / 2 + this.CARD_WIDTH / 2;
-    const centerY = height / 2 + 10;
+    const centerY = height / 2 + 40;
     
     this.options.forEach((option, index) => {
       const x = startX + index * (this.CARD_WIDTH + this.CARD_SPACING);
@@ -277,7 +277,7 @@ export class LevelUpScene extends Phaser.Scene {
   
   private createFooterButtons(): void {
     const { width, height } = this.scale;
-    const buttonY = height - 60;
+    const buttonY = height - 50;
     
     // Reroll button
     this.createButton(width / 2 - 100, buttonY, 'Reroll', 0x9b59b6, () => {

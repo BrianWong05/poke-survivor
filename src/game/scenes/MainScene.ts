@@ -62,6 +62,8 @@ export class MainScene extends Phaser.Scene {
 
   // Game Loop State
   private score = 0;
+  private survivalTime = 0;
+  private lastTimeUpdate = 0;
   private fireTimer!: Phaser.Time.TimerEvent;
   private gameOver = false;
   private isLevelUpPending = false;
@@ -530,7 +532,15 @@ export class MainScene extends Phaser.Scene {
     // Actually UIManager manages a local isPaused flag but toggles Scene pause.
     // If scene is paused, update() shouldn't run usually (if scene.pause() is called).
     // But we manually check flags too.
-    if (this.gameOver) return;
+    if (this.gameOver || this.time.paused) return;
+
+    this.survivalTime += delta;
+    if (this.survivalTime - this.lastTimeUpdate >= 1000) {
+      this.lastTimeUpdate = this.survivalTime;
+      if (this.callbacks.onTimeUpdate) {
+        this.callbacks.onTimeUpdate(this.survivalTime);
+      }
+    }
 
     this.cullFrameCounter++;
     if (this.cullFrameCounter >= 60) {

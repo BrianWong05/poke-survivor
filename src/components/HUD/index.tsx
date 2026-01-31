@@ -5,6 +5,7 @@ interface HUDProps {
   level: number;
   xp: number;
   xpToNext: number;
+  time: number;
   isGameOver: boolean;
   onRestart: () => void;
 }
@@ -14,10 +15,18 @@ export const HUD = ({
   level,
   xp,
   xpToNext,
+  time,
   isGameOver,
   onRestart,
 }: HUDProps) => {
   const xpPercent = Math.max(0, (xp / xpToNext) * 100);
+
+  const formatTime = (ms: number) => {
+    const totalSeconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
 
   return (
     <div className="hud-overlay">
@@ -31,6 +40,19 @@ export const HUD = ({
             />
           </div>
           <div className="xp-text">{xp}/{xpToNext} XP</div>
+        </div>
+
+        <div className="time-container" style={{ 
+          position: 'absolute', 
+          top: '20px', 
+          left: '50%', 
+          transform: 'translateX(-50%)',
+          color: '#ffffff',
+          fontSize: '32px',
+          fontWeight: 'bold',
+          textShadow: '2px 2px 0 #000'
+        }}>
+          {formatTime(time)}
         </div>
 
         <div className="score-container">
