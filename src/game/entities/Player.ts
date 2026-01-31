@@ -1,5 +1,6 @@
 import type { Item } from '@/game/entities/items/Item';
 import { FloatingHpBar } from '@/game/ui/FloatingHpBar';
+import { PlayerInventory } from './components/PlayerInventory';
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
   // Collection zone for XP gems (Magnet)
@@ -9,9 +10,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   public moveSpeedMultiplier = 1.0;
   public projectileSizeModifier = 1.0;
 
-  // Inventory
-  public items: Item[] = [];
-
+  // Inventory Component
+  public inventory: PlayerInventory;
+  
+  // Public getter for backward compatibility (DevDebugSystem etc.)
+  public get items(): Item[] {
+      return this.inventory.items;
+  }
+  // Setter to allow array assignment if necessary (though discouraged), 
+  // or better, we just rely on inventory.items mutation.
+  // Ideally we don't need a setter if no one assigns player.items = [].
+  // Checking original code: `this.items = []` in constructor.
+  
   // Stats
   public health: number = 100;
   public maxHP: number = 100;
@@ -27,6 +37,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   constructor(scene: Phaser.Scene, x: number, y: number, texture: string, frame?: string | number) {
     super(scene, x, y, texture, frame);
+
+    // Initialize Inventory
+    this.inventory = new PlayerInventory(this);
 
     // Add to scene and physics
     scene.add.existing(this);
@@ -53,7 +66,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.regen = 0;
     this.defense = 0;
     
-    this.items = [];
+    // inventory init in constructor above
 
     // Initialize UI
     this.hpBar = new FloatingHpBar(scene, this);
@@ -62,93 +75,26 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   /**
    * Add an item to the player's inventory.
-   * Handles acquiring new items or leveling up existing ones.
+   * Delegates to PlayerInventory.
    */
   public addItem(item: Item): void {
-    const existingItem = this.items.find(i => i.id === item.id);
-    
-    const ctx = {
-        scene: this.scene,
-        player: this,
-        stats: { maxHP: this.maxHP, speed: 0, baseDamage: 0 }, // Stub stats if needed, or fetch real ones
-        currentHP: this.health,
-        level: 0, // Player level not strictly needed for item logic usually, or pass it if available
-        xp: 0
-    };
-
-    if (existingItem) {
-        // Upgrade existing
-        existingItem.levelUp(ctx);
-    } else {
-        // Add new
-        this.items.push(item);
-        item.levelUp(ctx);
-        console.log(`[Player] Acquired item: ${item.name}`);
-    }
+      this.inventory.addItem(item);
   }
 
   /**
    * Remove an item from the player's inventory by ID.
-   * Reverts effects via item.onRemove().
+   * Delegates to PlayerInventory.
    */
   public removeItem(itemId: string): void {
-    const index = this.items.findIndex(i => i.id === itemId);
-    if (index === -1) return;
-
-    const item = this.items[index];
-    
-    const ctx = {
-        scene: this.scene,
-        player: this,
-        stats: { maxHP: this.maxHP, speed: 0, baseDamage: 0 },
-        currentHP: this.health,
-        level: 0,
-        xp: 0
-    };
-
-    item.onRemove(ctx);
-    this.items.splice(index, 1);
-    console.log(`[Player] Removed item: ${item.name}`);
+      this.inventory.removeItem(itemId);
   }
 
   /**
    * Set the level of an item in the inventory.
-   * Resets the item and re-applies upgrades to reach the target level.
+   * Delegates to PlayerInventory.
    */
   public setItemLevel(itemId: string, targetLevel: number): void {
-      console.log(`[Player] setItemLevel: setting ${itemId} to ${targetLevel}`);
-      const item = this.items.find(i => i.id === itemId);
-      if (!item) {
-          console.warn(`[Player] setItemLevel: item ${itemId} not found`);
-          return;
-      }
-
-      if (targetLevel < 1) targetLevel = 1;
-      if (targetLevel > item.maxLevel) targetLevel = item.maxLevel;
-
-      if (targetLevel === item.level) return;
-
-      const ctx = {
-          scene: this.scene,
-          player: this,
-          stats: { maxHP: this.maxHP, speed: 0, baseDamage: 0 },
-          currentHP: this.health,
-          level: 0,
-          xp: 0
-      };
-
-      // 1. Remove current effects completely
-      item.onRemove(ctx);
-
-      // 2. Reset level
-      item.level = 0;
-
-      // 3. Level up to target
-      while (item.level < targetLevel) {
-          item.levelUp(ctx);
-      }
-      
-      console.log(`[Player] Set item ${item.name} to Level ${targetLevel}`);
+      this.inventory.setItemLevel(itemId, targetLevel);
   }
 
   /**

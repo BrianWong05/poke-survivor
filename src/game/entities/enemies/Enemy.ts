@@ -1,11 +1,12 @@
 import Phaser from 'phaser';
 import { type EnemyStats, type EnemyType, EnemyTier } from '@/game/entities/enemies/EnemyConfig';
-import { getDirectionFromVelocity, type DirectionName } from '@/game/scenes/Preloader';
 import { DexManager } from '@/systems/DexManager';
+import { EnemyMovement } from './components/EnemyMovement';
+import { EnemyVisuals } from './components/EnemyVisuals';
 
 /**
  * Base Enemy class extending Phaser.Physics.Arcade.Sprite.
- * Handles HP, damage, movement toward target, and death behavior.
+ * Handles HP, damage, and coordinates Movement and Visuals components.
  */
 export class Enemy extends Phaser.Physics.Arcade.Sprite {
   /** Current hit points */
@@ -26,17 +27,11 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   /** Whether this enemy is a boss (immune to instakill) */
   public isBoss: boolean = false;
 
-  /** Current movement direction */
-  private currentDirection: DirectionName = 'down';
-
   /** Whether this enemy is currently dying (prevents multiple death triggers) */
   public isDying: boolean = false;
 
   /** Timestamp of the last time this enemy took hazard damage */
   public lastHazardHitTime: number = 0;
-
-  /** Whether the enemy is currently being knocked back (stunned) */
-  public isKnockedBack: boolean = false;
 
   /** Unique instance ID for hit tracking safety */
   public readonly instanceId: string;
@@ -44,10 +39,18 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   /** Damage dealt on contact */
   public damage: number = 1;
 
+  // Components
+  public movement: EnemyMovement;
+  public visuals: EnemyVisuals;
+
   constructor(scene: Phaser.Scene, x: number, y: number, texture: string) {
     super(scene, x, y, texture);
     
     this.instanceId = Phaser.Utils.String.UUID();
+
+    // Components
+    this.movement = new EnemyMovement(this);
+    this.visuals = new EnemyVisuals(this);
 
     // Add to scene and enable physics
     scene.add.existing(this);
@@ -77,7 +80,6 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.target = target;
     this.enemyType = enemyType;
     this.isBoss = stats.tier === EnemyTier.BOSS;
-    this.currentDirection = 'down';
     this.isDying = false;
 
     // Check if main texture exists, otherwise use fallback
@@ -103,49 +105,23 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
     // Assign unique ID for this lifecycle (hit tracking)
     this.setData('uid', Phaser.Utils.String.UUID());
+    
+    // Init Components
+    this.movement.init(this.speed);
+    this.visuals.init();
   }
 
   /**
    * Called every frame before physics update.
-   * Handles movement toward target and sprite flipping.
    */
   preUpdate(time: number, delta: number): void {
     super.preUpdate(time, delta);
 
     if (!this.active || this.isDying || !this.target) return;
 
-    // Move toward target
-    this.moveTowardTarget();
-
-    // Update visuals (animation or fallback flip)
-    this.updateVisuals();
-  }
-
-  /**
-   * Default movement behavior: move directly toward target.
-   * Override in subclasses for custom AI.
-   */
-  protected moveTowardTarget(): void {
-    if (!this.target || !this.scene) return;
-
-    // Check for knockback/stun
-    if (this.isKnockedBack) return; // <--- STOP moving if stunned
-
-    this.scene.physics.moveToObject(this, this.target, this.speed);
-  }
-
-  /**
-   * Update sprite flip based on movement direction.
-   */
-  protected updateFlip(): void {
-    if (!this.body) return;
-
-    const velocity = (this.body as Phaser.Physics.Arcade.Body).velocity;
-    if (velocity.x < 0) {
-      this.setFlipX(true);
-    } else if (velocity.x > 0) {
-      this.setFlipX(false);
-    }
+    // Delegate to components
+    this.movement.update(delta);
+    this.visuals.update();
   }
 
   /**
@@ -157,7 +133,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     
     // Handle Critical Hits
     if (isCrit) {
-      this.showCritText();
+      this.visuals.showCritText();
       
       if (this.isBoss) {
         amount *= 2; // Bosses take double damage
@@ -169,114 +145,38 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.hp -= amount;
     
     // Flash white on hit
-    this.flashHit();
+    this.visuals.flashHit(this.movement.isParalyzed);
     
-    // Impact "Pop" (Squash and Stretch)
-    const currentScale = 1.5;
-    this.scene.tweens.add({
-      targets: this,
-      scaleX: currentScale * 0.8, // Squish width
-      scaleY: currentScale * 1.2, // Stretch height
-      duration: 50,
-      yoyo: true,
-      ease: 'Power2'
-    });
+    // Impact "Pop"
+    this.visuals.playDonutSquash();
 
     if (this.hp <= 0) {
       this.die();
     }
   }
 
-  /** Whether the enemy is paralyzed */
-  public isParalyzed: boolean = false;
+  // --- Delegation Methods ---
 
-  /** Stored speed before paralysis */
-  private originalSpeed: number = 0;
+  public applyKnockback(force: Phaser.Math.Vector2, duration: number): void {
+      this.movement.applyKnockback(force, duration);
+  }
 
-  /**
-   * Apply paralysis status effect.
-   * Stops movement and tints yellow.
-   */
   public paralyze(duration: number): void {
-    if (!this.active || this.isDying) return;
-
-    // If not already paralyzed, store speed
-    if (!this.isParalyzed) {
-      this.originalSpeed = this.speed;
-      this.isParalyzed = true;
-      this.speed = 0;
-      this.setTint(0xFFFF00);
-      
-      // Stop physics velocity immediately
-      if (this.body) {
-        (this.body as Phaser.Physics.Arcade.Body).setVelocity(0, 0);
-      }
-    }
-
-    // Refresh duration if already paralyzed (optional, or just stack? simpler to just set timer)
-    // For simplicity, we'll just set a timer to clear it. 
-    // If multiple paralyze hits happen, the latest one wins the timer roughly 
-    // (requires tracking the timer event to reset it properly, but for MVP simple delayedCall is okay-ish 
-    // effectively extending it but multiple delayedCalls might race to clear it early).
-    // Better: use a property to track "paralyzedUntil".
-    
-    // However, to keep it simple as requested:
-    // We will just simply add a delayed call. If multiple overlap, the first one to finish will clear it.
-    // Extend duration if already paralyzed
-    const now = this.scene.time.now;
-    const currentExpiry = this.getData('paralyzedUntil') || 0;
-    const newEndTime = Math.max(currentExpiry, now + duration);
-    
-    this.setData('paralyzedUntil', newEndTime);
-
-    // If we were not already effectively paralyzed (or timer expired), start the "update check" or just rely on a delayed call that checks the time.
-    this.scene.time.delayedCall(duration, () => {
-      if (!this.active || this.isDying) return;
-      
-      // Check if we should still be paralyzed
-      if (this.scene.time.now >= this.getData('paralyzedUntil')) {
-        this.cureParalysis();
-      }
-    });
+      this.visuals.flashHit(true); // Visual feedback immediately
+      this.movement.paralyze(duration);
   }
-
-  protected cureParalysis(): void {
-    if (!this.isParalyzed) return;
-    
-    this.isParalyzed = false;
-    this.speed = this.originalSpeed;
-    this.clearTint();
-    // Re-check direction or movement will happen in next preUpdate
+  
+  public handleParalysisCured(): void {
+      this.visuals.flashHit(false); // Restore tint
   }
-
-  /**
-   * Override updateVisuals to stop animation when paralyzed if desired, 
-   * or current logic (moveTowardTarget checks velocity) works.
-   * But moveTowardTarget uses `this.scene.physics.moveToObject(this, this.target, this.speed);`
-   * Since speed is 0, velocity will be 0.
-   */
-
-  /**
-   * Flash white tint for 100ms to indicate damage.
-   */
-  /**
-   * Flash visually to indicate damage.
-   * Uses Alpha toggle to avoid WebGL tint rendering issues.
-   */
-  protected flashHit(): void {
-    this.setTintFill(0xffffff);
-    // this.setAlpha(0.5); // Reverted alpha debug
-
-    this.scene.time.delayedCall(100, () => {
-      if (this.active && !this.isDying) {
-        // this.setAlpha(1);
-        if (this.isParalyzed) {
-           this.setTint(0xFFFF00);
-        } else {
-           this.clearTint();
-        }
-      }
-    });
+  
+  // Expose isKnockedBack for systems checking it (like MainScene?)
+  public get isKnockedBack(): boolean {
+      return this.movement.isKnockedBack;
+  }
+  
+  public get isParalyzed(): boolean {
+      return this.movement.isParalyzed;
   }
 
   /**
@@ -301,16 +201,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       DexManager.getInstance().markUnlocked(this.enemyType);
     }
 
-    // Play fade-out tween
-    this.scene.tweens.add({
-      targets: this,
-      alpha: 0,
-      duration: 200,
-      ease: 'Power2',
-      onComplete: () => {
-        this.returnToPool();
-      },
-    });
+    // Play fade-out tween and return to pool
+    this.visuals.playDeathTween(() => this.returnToPool());
   }
 
   /**
@@ -337,77 +229,5 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     if (!this.active) return;
     this.hp = 0;
     this.die();
-  }
-  /**
-   * Update visual state: try 8-way animation, fallback to flip.
-   */
-  protected updateVisuals(): void {
-    if (!this.body) return;
-
-    const velocity = (this.body as Phaser.Physics.Arcade.Body).velocity;
-    const isMoving = velocity.x !== 0 || velocity.y !== 0;
-
-    if (isMoving) {
-      // Try 8-way animation
-      const newDirection = getDirectionFromVelocity(velocity.x, velocity.y);
-      const animKey = `${this.texture.key}-${newDirection}`;
-
-      if (this.scene.anims.exists(animKey)) {
-        // Only update if direction changed or not playing
-        if (newDirection !== this.currentDirection || !this.anims.isPlaying) {
-          this.currentDirection = newDirection;
-          this.play(animKey, true);
-        }
-        this.setFlipX(false); // Ensure no legacy flip
-        return;
-      }
-    }
-
-    // Fallback: legacy flip
-    this.updateFlip();
-  }
-  /**
-   * Show "CRIT!" floating text.
-   */
-  private showCritText(): void {
-    const text = this.scene.add.text(this.x, this.y - 30, 'CRIT!', {
-      fontSize: '24px',
-      color: '#ff0000',
-      stroke: '#000000',
-      strokeThickness: 4,
-      fontStyle: 'bold'
-    });
-    text.setOrigin(0.5, 0.5);
-    text.setDepth(20); // Above everything
-
-    // Float up and fade out
-    this.scene.tweens.add({
-      targets: text,
-      y: text.y - 50,
-      alpha: 0,
-      duration: 800,
-      ease: 'Power2',
-      onComplete: () => text.destroy()
-    });
-  }
-  /**
-   * Apply knockback force and stun the enemy for a duration.
-   */
-  public applyKnockback(force: Phaser.Math.Vector2, duration: number): void {
-    if (!this.active || this.isDying || this.isBoss) return;
-
-    this.isKnockedBack = true;
-    console.log('Knockback applied to', this);
-
-    // Apply velocity
-    if (this.body) {
-      (this.body as Phaser.Physics.Arcade.Body).setVelocity(force.x, force.y);
-    }
-
-    // Reset after duration
-    this.scene.time.delayedCall(duration, () => {
-      if (!this.active) return;
-      this.isKnockedBack = false;
-    });
   }
 }
