@@ -5,39 +5,41 @@ import type { CharacterContext } from '@/game/entities/characters/types';
 export class Leftovers extends PassiveItem {
   id = 'leftovers';
   name = 'Leftovers (剩飯)';
-  description = 'Restores HP over time.';
+  description = 'Restores 0.5 HP per second per rank.';
   maxLevel = 5;
+  texture = 'item_leftovers';
+  tint = 0x00FF00;
 
   getStats(level: number): ItemStats {
-    // Lvl 1: 1 HP/sec
-    // Lvl 2: 1.5 or 2? Spec says "+0.5 or +1". Let's go with +1 for simplicity and impact.
-    const baseValue = 1;
-    const increasePerLevel = 1;
-
+    // Linear scaling: +0.5 HP/sec per level
+    // Lvl 1: 0.5 HP
+    // Lvl 2: 1.0 HP
+    // ...
+    // Lvl 5: 2.5 HP
     return {
-      value: baseValue + (level - 1) * increasePerLevel,
-      increaseValue: increasePerLevel
+      value: level * 0.5,
+      increaseValue: 0.5
     };
   }
 
   onAcquire(ctx: CharacterContext): void {
     const stats = this.getStats(1);
-    this.applyBuff(ctx, stats.value);
+    ctx.player.regen += stats.value;
+    console.log(`[Leftovers] Acquired. Regen +${stats.value}. Total: ${ctx.player.regen}`);
   }
 
   onUpgrade(ctx: CharacterContext): void {
-    const stats = this.getStats(this.level);
-    this.applyBuff(ctx, stats.increaseValue);
-  }
-
-  private applyBuff(ctx: CharacterContext, amount: number): void {
-    ctx.player.regen += amount;
-    console.log(`[Leftovers] Increased Regen by ${amount}. New Regen: ${ctx.player.regen}`);
+    const oldStats = this.getStats(this.level - 1);
+    const newStats = this.getStats(this.level);
+    const gain = newStats.value - oldStats.value;
+    
+    ctx.player.regen += gain;
+    console.log(`[Leftovers] Upgraded to Lvl ${this.level}. Regen +${gain}. Total: ${ctx.player.regen}`);
   }
 
   onRemove(ctx: CharacterContext): void {
     const stats = this.getStats(this.level);
     ctx.player.regen -= stats.value;
-    console.log(`[Leftovers] Removed. Decreased Regen by ${stats.value}. New Regen: ${ctx.player.regen}`);
+    console.log(`[Leftovers] Removed. Regen -${stats.value}. Total: ${ctx.player.regen}`);
   }
 }

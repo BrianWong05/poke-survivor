@@ -166,7 +166,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    * Heal the player by a specific amount.
    * Caps at maxHP and emits 'hp-update'.
    */
-  public heal(amount: number): void {
+  public heal(amount: number, showValue: boolean = true): void {
     if (this.health >= this.maxHP) return;
 
     this.health += amount;
@@ -174,13 +174,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     this.scene.events.emit('hp-update', this.health);
     
-    // Visual feedback for healing (Green text)
-    const popup = this.scene.add.text(this.x, this.y - 20, `+${Math.floor(amount)}`, {
+    // Visual feedback
+    // If showValue is true: show "+{amount}"
+    // If showValue is false: show "+" (Healing Cross)
+    const text = showValue ? `+${Math.floor(amount)}` : '+';
+    
+    const popup = this.scene.add.text(this.x, this.y - 20, text, {
         fontSize: '16px',
         color: '#00ff00',
         stroke: '#000000',
         strokeThickness: 2
-    }).setOrigin(0.5);
+    }).setOrigin(0.5).setDepth(200);
 
     this.scene.tweens.add({
         targets: popup,
@@ -247,7 +251,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     // Regen Logic (Tick every 1s)
     if (this.regen > 0 && time > this.regenTimer + 1000) {
-        this.heal(this.regen);
+        this.heal(this.regen, false);
         this.regenTimer = time;
     }
     
