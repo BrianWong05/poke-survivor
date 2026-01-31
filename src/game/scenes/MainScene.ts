@@ -378,9 +378,14 @@ export class MainScene extends Phaser.Scene {
           if (!this.sys || !this.sys.isActive()) return;
 
            // Launch Level Up Selection Scene (weapons + items in pool)
+           // Get list of active debug weapon IDs
+           const activeWeaponIds = this.debugSystem.getActiveWeaponIds ? 
+             this.debugSystem.getActiveWeaponIds() : [];
+             
            this.scene.launch('LevelUpScene', {
              player: this.player,
              characterState: this.characterState,
+             activeWeaponIds,
              onComplete: () => {
                // On Resume - check for more pending levels
                if (this.experienceManager.processLevelUp()) {
@@ -388,18 +393,22 @@ export class MainScene extends Phaser.Scene {
                  this.scene.launch('LevelUpScene', {
                    player: this.player,
                    characterState: this.characterState,
+                   activeWeaponIds: this.debugSystem.getActiveWeaponIds ? 
+                     this.debugSystem.getActiveWeaponIds() : [],
                    onComplete: () => {
                      this.isLevelUpPending = false;
                      this.uiManager.setLevelUpPending(false);
                    },
-                   onWeaponUpgrade: () => this.handleWeaponLevelUp()
+                   onWeaponUpgrade: () => this.handleWeaponLevelUp(),
+                   onNewWeapon: (config: import('@/game/entities/characters/types').WeaponConfig) => this.handleNewWeapon(config)
                  });
                } else {
                  this.isLevelUpPending = false;
                  this.uiManager.setLevelUpPending(false);
                }
              },
-             onWeaponUpgrade: () => this.handleWeaponLevelUp()
+             onWeaponUpgrade: () => this.handleWeaponLevelUp(),
+             onNewWeapon: (config: import('@/game/entities/characters/types').WeaponConfig) => this.handleNewWeapon(config)
            });
         }
       });
@@ -435,6 +444,15 @@ export class MainScene extends Phaser.Scene {
     }
     
     console.log(`[MainScene] Weapon leveled up to Lv.${this.characterState.weaponLevel}`);
+  }
+
+  /**
+   * Handle acquiring a new weapon when player selects it from level-up pool
+   */
+  private handleNewWeapon(config: import('@/game/entities/characters/types').WeaponConfig): void {
+    // Add the new weapon via DevDebugSystem (same system used by DevConsole)
+    this.debugSystem.debugAddWeapon(config, this.gameOver);
+    console.log(`[MainScene] Acquired new weapon: ${config.name}`);
   }
 
   private cullExcessCandies(): void {
@@ -480,6 +498,10 @@ export class MainScene extends Phaser.Scene {
       () => {
         // Called when weapon upgrade is selected
         this.handleWeaponLevelUp();
+      },
+      (config) => {
+        // Called when new weapon is acquired
+        this.handleNewWeapon(config);
       }
     ); 
   }

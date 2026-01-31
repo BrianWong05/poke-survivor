@@ -7,20 +7,24 @@
 import Phaser from 'phaser';
 import { Player } from '@/game/entities/Player';
 import { LevelUpManager, type LevelUpOption } from '@/game/systems/LevelUpManager';
-import type { CharacterState } from '@/game/entities/characters/types';
+import type { CharacterState, WeaponConfig } from '@/game/entities/characters/types';
 
 interface LevelUpSceneData {
   player: Player;
   characterState: CharacterState | null;
+  activeWeaponIds?: string[];  // IDs of weapons player already has (excluding main)
   onComplete: () => void;
   onWeaponUpgrade?: () => void;
+  onNewWeapon?: (config: WeaponConfig) => void;
 }
 
 export class LevelUpScene extends Phaser.Scene {
   private player!: Player;
   private characterState: CharacterState | null = null;
+  private activeWeaponIds: string[] = [];
   private onComplete!: () => void;
   private onWeaponUpgrade?: () => void;
+  private onNewWeapon?: (config: WeaponConfig) => void;
   private options: LevelUpOption[] = [];
   private cardContainer!: Phaser.GameObjects.Container;
   
@@ -34,6 +38,7 @@ export class LevelUpScene extends Phaser.Scene {
   private readonly NEW_BADGE_COLOR = 0x27ae60;
   private readonly UPGRADE_BADGE_COLOR = 0x3498db;
   private readonly WEAPON_BADGE_COLOR = 0xe67e22;
+  private readonly NEW_WEAPON_BADGE_COLOR = 0x9b59b6;  // Purple for new weapons
   
   constructor() {
     super({ key: 'LevelUpScene' });
@@ -42,8 +47,10 @@ export class LevelUpScene extends Phaser.Scene {
   init(data: LevelUpSceneData): void {
     this.player = data.player;
     this.characterState = data.characterState;
+    this.activeWeaponIds = data.activeWeaponIds || [];
     this.onComplete = data.onComplete;
     this.onWeaponUpgrade = data.onWeaponUpgrade;
+    this.onNewWeapon = data.onNewWeapon;
   }
   
   create(): void {
@@ -108,7 +115,12 @@ export class LevelUpScene extends Phaser.Scene {
     this.cardContainer.removeAll(true);
     
     // Get new options (now includes weapons)
-    this.options = LevelUpManager.getOptions(this.player, this.characterState, 4);
+    this.options = LevelUpManager.getOptions(
+      this.player, 
+      this.characterState, 
+      4, 
+      this.activeWeaponIds
+    );
     
     if (this.options.length === 0) {
       this.showNoOptionsMessage();
@@ -146,6 +158,8 @@ export class LevelUpScene extends Phaser.Scene {
       badgeColor = this.NEW_BADGE_COLOR;
     } else if (option.type === 'UPGRADE_WEAPON') {
       badgeColor = this.WEAPON_BADGE_COLOR;
+    } else if (option.type === 'NEW_WEAPON') {
+      badgeColor = this.NEW_WEAPON_BADGE_COLOR;
     }
     const badge = this.add.rectangle(0, -this.CARD_HEIGHT / 2 + 25, this.CARD_WIDTH - 20, 30, badgeColor, 1);
     badge.setStrokeStyle(2, 0xffffff);
@@ -232,13 +246,14 @@ export class LevelUpScene extends Phaser.Scene {
   }
   
   private selectCard(option: LevelUpOption): void {
-    // Apply the selection (pass characterState and onWeaponUpgrade callback)
+    // Apply the selection (pass characterState and callbacks)
     LevelUpManager.selectOption(
       this, 
       this.player, 
       this.characterState,
       option,
-      this.onWeaponUpgrade
+      this.onWeaponUpgrade,
+      this.onNewWeapon
     );
     
     // Close scene and callback

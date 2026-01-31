@@ -9,23 +9,26 @@ import { Player } from '@/game/entities/Player';
 import { Item } from '@/game/entities/items/Item';
 import { PassiveItem } from '@/game/entities/items/passive/PassiveItem';
 import { ITEM_REGISTRY, isPassiveItemClass, createItemInstance } from '@/game/data/ItemRegistry';
+import { weapons } from '@/game/entities/weapons';
 import type { CharacterContext, CharacterState, WeaponConfig } from '@/game/entities/characters/types';
 
 // Maximum slot limits
 const MAX_PASSIVE_SLOTS = 6;
+const MAX_WEAPON_SLOTS = 6;
 const MAX_WEAPON_LEVEL = 8;
 
 /**
  * Option structure returned by getOptions
  */
 export interface LevelUpOption {
-  type: 'NEW_ITEM' | 'UPGRADE_ITEM' | 'UPGRADE_WEAPON';
+  type: 'NEW_ITEM' | 'UPGRADE_ITEM' | 'UPGRADE_WEAPON' | 'NEW_WEAPON';
   // For items
   itemClass?: new () => Item;
   itemInstance?: Item;
   // For weapons
   weaponConfig?: WeaponConfig;
   weaponCurrentLevel?: number;
+  weaponId?: string;  // For new weapons
   // Display
   displayName: string;
   displayLevel: string;
@@ -40,13 +43,15 @@ export class LevelUpManager {
    * Get available level-up options for the player
    * @param player The player to get options for
    * @param characterState The character state (for weapon info)
+   * @param activeWeaponIds List of weapon IDs the player already has
    * @param count Number of options to return (default 4)
    * @returns Array of LevelUpOption
    */
   public static getOptions(
     player: Player, 
     characterState: CharacterState | null,
-    count: number = 4
+    count: number = 4,
+    activeWeaponIds: string[] = []
   ): LevelUpOption[] {
     const pool: LevelUpOption[] = [];
     
@@ -74,7 +79,33 @@ export class LevelUpManager {
       });
     }
     
-    // 2. Add upgradable existing items
+    // 2. Count current weapon slots (main + debug weapons)
+    const currentWeaponCount = 1 + activeWeaponIds.length; // 1 for main weapon
+    
+    // 3. Add new weapons from registry (if slots available)
+    if (currentWeaponCount < MAX_WEAPON_SLOTS) {
+      // Get main weapon ID to exclude
+      const mainWeaponId = characterState?.activeWeapon?.id || '';
+      
+      for (const weaponConfig of Object.values(weapons)) {
+        // Skip if player already has this weapon
+        if (weaponConfig.id === mainWeaponId || activeWeaponIds.includes(weaponConfig.id)) {
+          continue;
+        }
+        
+        pool.push({
+          type: 'NEW_WEAPON',
+          weaponConfig: weaponConfig,
+          weaponId: weaponConfig.id,
+          weaponCurrentLevel: 0,
+          displayName: weaponConfig.name,
+          displayLevel: 'New!',
+          description: weaponConfig.description || 'Learn a new weapon'
+        });
+      }
+    }
+    
+    // 4. Add upgradable existing items
     for (const item of player.items) {
       if (item.level < item.maxLevel) {
         pool.push({
@@ -88,10 +119,10 @@ export class LevelUpManager {
       }
     }
     
-    // 3. Count current slots by type
+    // 5. Count current slots by type
     const passiveCount = player.items.filter(item => item instanceof PassiveItem).length;
     
-    // 4. Add new items from registry
+    // 6. Add new items from registry
     for (const ItemClass of ITEM_REGISTRY) {
       // Check if player already has this item
       const tempInstance = createItemInstance(ItemClass);
@@ -116,13 +147,13 @@ export class LevelUpManager {
       }
     }
     
-    // 5. Shuffle pool using Fisher-Yates
+    // 7. Shuffle pool using Fisher-Yates
     for (let i = pool.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [pool[i], pool[j]] = [pool[j], pool[i]];
     }
     
-    // 6. Return requested count (or entire pool if smaller)
+    // 8. Return requested count (or entire pool if smaller)
     return pool.slice(0, Math.min(count, pool.length));
   }
   
@@ -133,13 +164,15 @@ export class LevelUpManager {
    * @param characterState The character state (for weapon upgrades)
    * @param option The selected LevelUpOption
    * @param onWeaponUpgrade Callback when weapon is upgraded
+   * @param onNewWeapon Callback when new weapon is acquired (passes weaponConfig)
    */
   public static selectOption(
     scene: Phaser.Scene, 
     player: Player, 
     characterState: CharacterState | null,
     option: LevelUpOption,
-    onWeaponUpgrade?: () => void
+    onWeaponUpgrade?: () => void,
+    onNewWeapon?: (config: WeaponConfig) => void
   ): void {
     const ctx: CharacterContext = {
       scene,
@@ -156,6 +189,12 @@ export class LevelUpManager {
       console.log(`[LevelUpManager] Chose weapon upgrade: ${option.displayName}`);
       if (onWeaponUpgrade) {
         onWeaponUpgrade();
+      }
+    } else if (option.type === 'NEW_WEAPON' && option.weaponConfig) {
+      // Acquire a new weapon
+      console.log(`[LevelUpManager] Acquired new weapon: ${option.displayName}`);
+      if (onNewWeapon) {
+        onNewWeapon(option.weaponConfig);
       }
     } else if (option.type === 'UPGRADE_ITEM' && option.itemInstance) {
       // Upgrade existing item

@@ -66,7 +66,8 @@ export class DevDebugSystem {
     isLevelUpPending: boolean, 
     onLevelUp: () => void, 
     onComplete?: () => void,
-    onWeaponUpgrade?: () => void
+    onWeaponUpgrade?: () => void,
+    onNewWeapon?: (config: import('@/game/entities/characters/types').WeaponConfig) => void
   ): void {
     if (!this.experienceManager) return;
     
@@ -86,11 +87,13 @@ export class DevDebugSystem {
           this.scene.scene.launch('LevelUpScene', {
             player: this.player,
             characterState: this.characterState,
+            activeWeaponIds: this.getActiveWeaponIds(),
             onComplete: () => {
               // Reset the pending state in MainScene
               if (onComplete) onComplete();
             },
-            onWeaponUpgrade: onWeaponUpgrade
+            onWeaponUpgrade: onWeaponUpgrade,
+            onNewWeapon: onNewWeapon
           });
         }
       });
@@ -322,5 +325,13 @@ export class DevDebugSystem {
           });
       }
       return list;
+  }
+
+  /**
+   * Get IDs of all active debug weapons (excluding main weapon)
+   * Used to exclude already-owned weapons from level-up pool
+   */
+  public getActiveWeaponIds(): string[] {
+    return Array.from(this.debugWeapons.values()).map(entry => entry.baseConfig.id);
   }
 }
