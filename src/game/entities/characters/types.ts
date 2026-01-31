@@ -112,7 +112,7 @@ export interface CharacterState {
 
 /**
  * Calculate XP required to reach the next level.
- * Formula: 10 + (Level * 12) (via ExperienceManager)
+ * Formula: 10 + (Level-1)*10 (via ExperienceManager)
  */
 export function xpToLevel(level: number): number {
   return ExperienceManager.getNextLevelXpCap(level);

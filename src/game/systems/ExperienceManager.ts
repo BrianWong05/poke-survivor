@@ -58,11 +58,13 @@ export class ExperienceManager {
 
   /**
    * Calculate XP required to reach the next level.
-   * Formula: 10 + (Level * 12)
-   * Example: Lvl 1: 22, Lvl 2: 34, Lvl 10: 130
+   * Formula: 10 + (Level-1)*10
+   * Ensures the first level up costs exactly the base amount (10)
    */
   public getNextLevelXpCap(level: number): number {
-    return 10 + (level * 12);
+    // Formula: 10 + (Level-1)*10
+    // Ensures the first level up costs exactly the base amount (10)
+    return 10 + ((level - 1) * 10);
   }
 
   /**
@@ -70,7 +72,9 @@ export class ExperienceManager {
    * Keeping instance method as primary.
    */
   public static getNextLevelXpCap(level: number): number {
-    return 10 + (level * 12);
+    // Formula: 10 + (Level-1)*10
+    // Ensures the first level up costs exactly the base amount (10)
+    return 10 + ((level - 1) * 10);
   }
 
   /**
