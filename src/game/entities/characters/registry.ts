@@ -4,6 +4,7 @@ import type { CharacterConfig } from '@/game/entities/characters/types';
 import { charmanderConfig } from '@/game/entities/characters/charmander';
 import { gastlyConfig } from '@/game/entities/characters/gastly';
 import { pikachuConfig } from '@/game/entities/characters/pikachu';
+import { raichuConfig } from '@/game/entities/characters/raichu';
 import { rioluConfig } from '@/game/entities/characters/riolu';
 import { snorlaxConfig } from '@/game/entities/characters/snorlax';
 import { squirtleConfig } from '@/game/entities/characters/squirtle';
@@ -15,6 +16,7 @@ export const characterRegistry: Map<string, CharacterConfig> = new Map([
   ['charmander', charmanderConfig],
   ['gastly', gastlyConfig],
   ['pikachu', pikachuConfig],
+  ['raichu', raichuConfig],
   ['riolu', rioluConfig],
   ['snorlax', snorlaxConfig],
   ['squirtle', squirtleConfig],

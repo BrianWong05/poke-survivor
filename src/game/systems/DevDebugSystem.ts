@@ -79,6 +79,11 @@ export class DevDebugSystem {
     const leveled = this.experienceManager.addInstantLevel();
     this.uiManager.updateLevelUI();
     
+    // Check for Automatic Evolution
+    if (leveled && this.player) {
+         this.player.checkAndApplyEvolution(this.experienceManager.currentLevel);
+    }
+
     // Trigger sequence if actually leveled up
     if (leveled && !isLevelUpPending) {
          // Cast scene to MainScene to access startLevelUpSequence

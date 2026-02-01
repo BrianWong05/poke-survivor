@@ -244,7 +244,9 @@ export class MainScene extends Phaser.Scene {
     });
 
     this.events.on('damage-enemy', (enemy: Phaser.Physics.Arcade.Sprite, damage: number) => {
-      this.combatManager.damageEnemy(enemy, damage);
+      // Apply player might modifier
+      const finalDamage = damage * this.player.might;
+      this.combatManager.damageEnemy(enemy, finalDamage);
     });
 
     this.events.on('hp-update', (hp: number) => {
@@ -353,18 +355,29 @@ export class MainScene extends Phaser.Scene {
     const isRareCandy = candy.getData('lootType') === 'rare-candy'; 
 
     let canLevelUp = false;
+    
+    // Rare Candy just gives Instant Level now
     if (isRareCandy) {
-      canLevelUp = this.experienceManager.addInstantLevel();
+        canLevelUp = this.experienceManager.addInstantLevel();
     } else {
-      canLevelUp = this.experienceManager.addXP(xpValue);
+        canLevelUp = this.experienceManager.addXP(xpValue);
     }
     
     this.score += xpValue;
     this.callbacks.onScoreUpdate(this.score);
     this.uiManager.updateLevelUI();
 
-    if (canLevelUp && !this.isLevelUpPending) {
-        this.startLevelUpSequence();
+    // Check for Automatic Evolution on Level Up
+    if (canLevelUp) {
+         // Try to evolve immediately upon reaching criteria
+         const evolved = this.player.checkAndApplyEvolution(this.experienceManager.currentLevel);
+         if (evolved) {
+             console.log('[MainScene] Auto-evolution triggered!');
+         }
+         
+         if (!this.isLevelUpPending) {
+             this.startLevelUpSequence();
+         }
     }
   }
 
@@ -540,7 +553,8 @@ export class MainScene extends Phaser.Scene {
     if (canControl) {
         const inputVector = this.inputManager.getMovementVector();
         const speedMultiplier = this.player.moveSpeedMultiplier;
-        const speed = this.characterConfig.stats.speed * speedMultiplier;
+        // Use player.characterConfig to ensure evolved stats are used
+        const speed = this.player.characterConfig.stats.speed * speedMultiplier;
         finalVelocity = { x: inputVector.x * speed, y: inputVector.y * speed };
         this.player.setVelocity(finalVelocity.x, finalVelocity.y);
     }
@@ -564,7 +578,7 @@ export class MainScene extends Phaser.Scene {
           this.player.setData('facingDirection', direction); // Sync explicit direction too
         }
       }
-      this.player.play(`${this.characterConfig.spriteKey}-${animState}-${this.currentDirection}`, true);
+      this.player.play(`${this.player.characterConfig.spriteKey}-${animState}-${this.currentDirection}`, true);
     }
 
     // Enemy AI

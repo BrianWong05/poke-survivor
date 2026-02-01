@@ -16,9 +16,15 @@ export const pikachuConfig: CharacterConfig = {
     maxHP: 80,
     speed: 250,
     baseDamage: 15,
+    might: 1.0,
+    defense: 0,
   },
   passive: staticPassive,
   weapon: new ThunderShock(),
   ultimate: gigantamaxThunder,
   spriteKey: 'pikachu',
+  evolution: {
+    targetFormId: 'raichu',
+    level: 20,
+  },
 };

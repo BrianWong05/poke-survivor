@@ -16,6 +16,20 @@ export class TextureManager {
     playerGraphics.generateTexture('player', 32, 32);
     playerGraphics.destroy();
 
+    // Pikachu: Yellow circle (32px)
+    const pikachuGraphics = this.scene.make.graphics({ x: 0, y: 0 });
+    pikachuGraphics.fillStyle(0xFFFF00, 1);
+    pikachuGraphics.fillCircle(16, 16, 16);
+    pikachuGraphics.generateTexture('pikachu', 32, 32);
+    pikachuGraphics.destroy();
+
+    // Raichu: Orange circle (40px) - Bigger
+    const raichuGraphics = this.scene.make.graphics({ x: 0, y: 0 });
+    raichuGraphics.fillStyle(0xFFAA00, 1);
+    raichuGraphics.fillCircle(20, 20, 20);
+    raichuGraphics.generateTexture('raichu', 40, 40);
+    raichuGraphics.destroy();
+
     // Enemy: Red square (24px) - generic fallback
     const enemyGraphics = this.scene.make.graphics({ x: 0, y: 0 });
     enemyGraphics.fillStyle(0xff4a4a, 1);

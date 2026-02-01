@@ -11,10 +11,22 @@ export type DamageType = 'normal' | 'fire' | 'ice' | 'electric' | 'ghost' | 'fig
 /**
  * Base stats for a character.
  */
+export interface CharacterEvolution {
+  targetFormId: string;
+  level: number;
+}
+
+/**
+ * Base stats for a character.
+ */
 export interface CharacterStats {
   maxHP: number;
   speed: number;
   baseDamage: number;
+  /** Damage multiplier (default 1.0) */
+  might?: number;
+  /** Damage reduction divisor (default 0) */
+  defense?: number;
 }
 
 /**
@@ -92,6 +104,10 @@ export interface CharacterConfig {
   ultimate: UltimateConfig;
   /** Sprite texture key (from manifest) */
   spriteKey: string;
+  /** Evolution configuration */
+  evolution?: CharacterEvolution;
+  /** If true, hidden from character selection screen (e.g. evolved forms) */
+  hidden?: boolean;
 }
 
 /**

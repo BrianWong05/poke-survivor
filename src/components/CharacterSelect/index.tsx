@@ -14,7 +14,7 @@ export function CharacterSelect({ onSelect }: CharacterSelectProps) {
   const { t } = useTranslation();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showDex, setShowDex] = useState(false);
-  const characters = getAllCharacters();
+  const characters = getAllCharacters().filter(c => !c.hidden);
 
   const handleSelect = (character: CharacterConfig) => {
     setSelectedId(character.id);

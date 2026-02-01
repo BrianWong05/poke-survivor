@@ -1,6 +1,8 @@
 import type { Item } from '@/game/entities/items/Item';
 import { FloatingHpBar } from '@/game/ui/FloatingHpBar';
 import { PlayerInventory } from './components/PlayerInventory';
+import { getCharacter } from '@/game/entities/characters/registry';
+import type { CharacterConfig } from '@/game/entities/characters/types';
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
   // Collection zone for XP gems (Magnet)
@@ -27,6 +29,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   public maxHP: number = 100;
   public regen: number = 0;
   public defense: number = 0;
+  public might: number = 1.0;
+  public evolutionStage: number = 0;
+  public formId: string = 'pikachu';
   public isInvulnerable: boolean = false;
   
   private regenTimer: number = 0;
@@ -35,8 +40,25 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   // Invulnerability duration in ms
   private readonly INVULNERABILITY_DURATION = 100;
 
+  // Configuration
+  public characterConfig: CharacterConfig;
+
   constructor(scene: Phaser.Scene, x: number, y: number, texture: string, frame?: string | number) {
     super(scene, x, y, texture, frame);
+
+    // Initial Config Load (using texture key as ID for now, or fallback)
+    // NOTE: This assumes texture key matches character ID. 
+    // If not, we should probably pass ID to constructor or inferred.
+    // Given usage in MainScene: new Player(this, centerX, centerY, spriteKey)
+    // And spriteKey is 'pikachu' or 'raichu'...
+    try {
+        this.characterConfig = getCharacter(texture);
+    } catch (e) {
+        console.warn(`[Player] Could not load config for ${texture}, checking registry keys...`);
+        // Fallback or re-throw? 
+        // For safety, let's grab 'pikachu' if specific fails, or error out.
+        this.characterConfig = getCharacter('pikachu');
+    }
 
     // Initialize Inventory
     this.inventory = new PlayerInventory(this);
@@ -231,5 +253,140 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
     super.destroy(fromScene);
   }
+  /**
+   * Check if player meets evolution criteria and apply it.
+   * @param level Current player level
+   * @returns true if evolution occurred, false otherwise.
+   */
+  public checkAndApplyEvolution(level: number): boolean {
+      // Step 1: Check Config Logic
+      const evolution = this.characterConfig.evolution;
+      
+      // If no evolution configured
+      if (!evolution) {
+          // Limit Break: Only at specific milestones (Level 20, 40)
+          if (level === 20 || level === 40) {
+              this.applyLimitBreak();
+              return true; // Return true to indicate boost applied
+          }
+          return false;
+      }
+
+      // If evolution configured but level not met
+      if (level < evolution.level) {
+          return false;
+      }
+
+      // Step 2: Retrieve New Form
+      const newFormId = evolution.targetFormId;
+      let newConfig;
+      
+      try {
+        newConfig = getCharacter(newFormId);
+      } catch (e) {
+        console.warn(`[Evolution] Target form '${newFormId}' not found in registry.`);
+        return false;
+      }
+
+      // Step 3: Apply Evolution
+      console.log(`[Evolution] Evolving from ${this.formId} to ${newFormId}!`);
+      
+      // Update References
+      this.characterConfig = newConfig;
+      this.formId = newConfig.id;
+      
+      // Update Visuals
+      this.setTexture(newConfig.spriteKey); 
+      this.play(`${newConfig.spriteKey}-idle-down`);
+      
+      // Update Stats
+      this.maxHP = newConfig.stats.maxHP;
+      // Speed is handled by MainScene reading characterConfig
+      this.might = newConfig.stats.might || 1.0;
+      this.defense = newConfig.stats.defense || 0;
+      
+      this.healFull();
+      
+      // Visual Feedback (Tween)
+      if (this.scene) {
+          const originalScale = this.scaleX; // Should be 2 usually
+          this.scene.tweens.add({
+              targets: this,
+              scaleX: originalScale * 1.5,
+              scaleY: originalScale * 1.5,
+              yoyo: true,
+              duration: 300,
+              repeat: 1,
+              onComplete: () => {
+                  this.setScale(originalScale); 
+              }
+          });
+          
+           // Flash effect configuration
+           this.scene.tweens.add({
+               targets: this,
+               alpha: 0,
+               duration: 100,
+               yoyo: true,
+               repeat: 3
+           });
+      }
+
+      // Step 4: Cleanup
+      this.evolutionStage++;
+      return true;
+  }
+
+  /**
+   * Fully heal the player.
+   */
+  public healFull(): void {
+      this.health = this.maxHP;
+      this.hpBar.draw(this.health, this.maxHP);
+      this.scene.events.emit('hp-update', this.health);
+  }
+
+    // Limit Break: Small incremental boost for fully evolved characters
+    private applyLimitBreak(): void {
+        const hpBoost = 5;
+        const mightBoost = 0.05; // +5% Might
+        const defenseBoost = 0.5;
+
+        // Apply
+        this.maxHP += hpBoost;
+        this.heal(hpBoost); 
+        this.might += mightBoost;
+        this.defense += defenseBoost;
+
+        // Visual Feedback
+        if (this.scene) {
+             const floatingText = this.scene.add.text(this.x, this.y - 40, "LIMIT BREAK!", {
+                 fontSize: '16px',
+                 color: '#FFD700',
+                 stroke: '#000000',
+                 strokeThickness: 3
+             }).setOrigin(0.5);
+             
+             this.scene.tweens.add({
+                 targets: floatingText,
+                 y: this.y - 80,
+                 alpha: 0,
+                 duration: 1000,
+                 onComplete: () => floatingText.destroy()
+             });
+
+             // Small white flash
+             this.scene.tweens.add({
+                targets: this,
+                tint: 0xFFFFFF,
+                duration: 100,
+                yoyo: true,
+                onComplete: () => this.clearTint()
+            });
+        }
+        
+        console.log(`[LimitBreak] Applied boost: +${hpBoost}HP, +${mightBoost} Might`);
+    }
 }
+
 
