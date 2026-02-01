@@ -21,4 +21,8 @@ export const squirtleConfig: CharacterConfig = {
   weapon: weapons.waterPulse,
   ultimate: shellSmash,
   spriteKey: 'squirtle',
+  evolution: {
+    targetFormId: 'wartortle',
+    level: 20,
+  },
 };

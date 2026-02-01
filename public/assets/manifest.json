@@ -342,5 +342,49 @@
         "directions": 8
       }
     ]
+  },
+  {
+    "id": "8",
+    "name": "wartortle",
+    "animations": [
+      {
+        "key": "walk",
+        "path": "assets/sprites/8-walk.png",
+        "frameWidth": 32,
+        "frameHeight": 40,
+        "frameCount": 4,
+        "directions": 8
+      },
+      {
+        "key": "idle",
+        "path": "assets/sprites/8-idle.png",
+        "frameWidth": 24,
+        "frameHeight": 40,
+        "frameCount": 4,
+        "directions": 8
+      }
+    ]
+  },
+  {
+    "id": "9",
+    "name": "blastoise",
+    "animations": [
+      {
+        "key": "walk",
+        "path": "assets/sprites/9-walk.png",
+        "frameWidth": 32,
+        "frameHeight": 40,
+        "frameCount": 4,
+        "directions": 8
+      },
+      {
+        "key": "idle",
+        "path": "assets/sprites/9-idle.png",
+        "frameWidth": 40,
+        "frameHeight": 40,
+        "frameCount": 8,
+        "directions": 8
+      }
+    ]
   }
 ]
