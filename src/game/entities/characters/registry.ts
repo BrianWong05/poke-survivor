@@ -1,44 +1,29 @@
 import type { CharacterConfig } from '@/game/entities/characters/types';
 
-// Character configs will be imported here
-import { charmanderConfig } from '@/game/entities/characters/charmander';
-import { gastlyConfig } from '@/game/entities/characters/gastly';
-import { pikachuConfig } from '@/game/entities/characters/pikachu';
-import { raichuConfig } from '@/game/entities/characters/raichu';
-import { rioluConfig } from '@/game/entities/characters/riolu';
-import { snorlaxConfig } from '@/game/entities/characters/snorlax';
-import { squirtleConfig } from '@/game/entities/characters/squirtle';
-
-import { charmeleonConfig } from '@/game/entities/characters/charmeleon';
-import { charizardConfig } from '@/game/entities/characters/charizard';
-
-import { haunterConfig } from '@/game/entities/characters/haunter';
-import { gengarConfig } from '@/game/entities/characters/gengar';
-
-import { lucarioConfig } from '@/game/entities/characters/lucario';
-
-import { wartortleConfig } from '@/game/entities/characters/wartortle';
-import { blastoiseConfig } from '@/game/entities/characters/blastoise';
-
 /**
- * Registry of all available characters.
+ * Auto-import all character configuration files in this directory.
+ * We look for any export ending in 'Config' (e.g., pikachuConfig).
  */
-export const characterRegistry: Map<string, CharacterConfig> = new Map([
-  ['charmander', charmanderConfig],
-  ['charmeleon', charmeleonConfig],
-  ['charizard', charizardConfig],
-  ['gastly', gastlyConfig],
-  ['haunter', haunterConfig],
-  ['gengar', gengarConfig],
-  ['lucario', lucarioConfig],
-  ['pikachu', pikachuConfig],
-  ['raichu', raichuConfig],
-  ['riolu', rioluConfig],
-  ['snorlax', snorlaxConfig],
-  ['squirtle', squirtleConfig],
-  ['wartortle', wartortleConfig],
-  ['blastoise', blastoiseConfig],
-]);
+const modules = import.meta.glob('./*.ts', { eager: true });
+
+export const characterRegistry: Map<string, CharacterConfig> = new Map();
+
+for (const path in modules) {
+  // Skip registry and types files
+  if (path.includes('registry.ts') || path.includes('types.ts')) continue;
+
+  const mod = modules[path] as any;
+  for (const key in mod) {
+    // We expect character configurations to be exported with a 'Config' suffix
+    if (key.endsWith('Config')) {
+      const config = mod[key] as CharacterConfig;
+      // Ensure it has an ID before adding to registry
+      if (config && config.id) {
+        characterRegistry.set(config.id, config);
+      }
+    }
+  }
+}
 
 /**
  * Get a character configuration by ID.
