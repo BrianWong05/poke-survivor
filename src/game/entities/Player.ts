@@ -348,13 +348,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     // Limit Break: Small incremental boost for fully evolved characters
     private applyLimitBreak(): void {
-        const hpBoost = 5;
-        const mightBoost = 0.05; // +5% Might
-        const defenseBoost = 0.5;
+        const hpBoost = 150;
+        const mightBoost = 0.75; // +75% Might
+        const defenseBoost = 3;
 
         // Apply
         this.maxHP += hpBoost;
-        this.heal(hpBoost); 
+        this.heal(this.maxHP); // Heal to full as per spec
         this.might += mightBoost;
         this.defense += defenseBoost;
 
@@ -385,7 +385,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             });
         }
         
-        console.log(`[LimitBreak] Applied boost: +${hpBoost}HP, +${mightBoost} Might`);
+        console.log(`[Level Break] Power Up! HP+${hpBoost}, Might+${(mightBoost * 100).toFixed(0)}%, Def+${defenseBoost}`);
     }
 }
 
