@@ -12,6 +12,9 @@ import { squirtleConfig } from '@/game/entities/characters/squirtle';
 import { charmeleonConfig } from '@/game/entities/characters/charmeleon';
 import { charizardConfig } from '@/game/entities/characters/charizard';
 
+import { haunterConfig } from '@/game/entities/characters/haunter';
+import { gengarConfig } from '@/game/entities/characters/gengar';
+
 /**
  * Registry of all available characters.
  */
@@ -20,6 +23,8 @@ export const characterRegistry: Map<string, CharacterConfig> = new Map([
   ['charmeleon', charmeleonConfig],
   ['charizard', charizardConfig],
   ['gastly', gastlyConfig],
+  ['haunter', haunterConfig],
+  ['gengar', gengarConfig],
   ['pikachu', pikachuConfig],
   ['raichu', raichuConfig],
   ['riolu', rioluConfig],

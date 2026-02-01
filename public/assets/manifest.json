@@ -298,5 +298,49 @@
         "directions": 8
       }
     ]
+  },
+  {
+    "id": "93",
+    "name": "haunter",
+    "animations": [
+      {
+        "key": "walk",
+        "path": "assets/sprites/93-walk.png",
+        "frameWidth": 32,
+        "frameHeight": 56,
+        "frameCount": 10,
+        "directions": 8
+      },
+      {
+        "key": "idle",
+        "path": "assets/sprites/93-idle.png",
+        "frameWidth": 32,
+        "frameHeight": 56,
+        "frameCount": 4,
+        "directions": 8
+      }
+    ]
+  },
+  {
+    "id": "94",
+    "name": "gengar",
+    "animations": [
+      {
+        "key": "walk",
+        "path": "assets/sprites/94-walk.png",
+        "frameWidth": 32,
+        "frameHeight": 40,
+        "frameCount": 4,
+        "directions": 8
+      },
+      {
+        "key": "idle",
+        "path": "assets/sprites/94-idle.png",
+        "frameWidth": 32,
+        "frameHeight": 40,
+        "frameCount": 8,
+        "directions": 8
+      }
+    ]
   }
 ]

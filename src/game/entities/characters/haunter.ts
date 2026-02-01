@@ -4,25 +4,26 @@ import { weapons } from '@/game/entities/weapons';
 import { destinyBond } from '@/game/entities/ultimates';
 
 /**
- * Gengar - Wall Hacker / Debuffer Archetype
- * High Speed, Low HP
+ * Haunter - Shadow Stalker
+ * High mobility, fragile
  */
-export const gastlyConfig: CharacterConfig = {
-  id: 'gastly',
-  name: 'gastly',
-  nameKey: 'pokemon_gastly_name',
-  archetypeKey: 'archetype_wall_hacker_debuffer',
+export const haunterConfig: CharacterConfig = {
+  id: 'haunter',
+  name: 'Haunter',
+  nameKey: 'pokemon_haunter_name',
+  archetypeKey: 'archetype_shadow_stalker',
   stats: {
-    maxHP: 70,
-    speed: 240,
-    baseDamage: 12,
+    maxHP: 140,
+    speed: 265,
+    baseDamage: 24,
   },
   passive: shadowTagPassive,
   weapon: weapons.lick,
   ultimate: destinyBond,
-  spriteKey: 'gastly',
+  spriteKey: 'haunter',
+  hidden: true,
   evolution: {
-    targetFormId: 'haunter',
-    level: 20,
+    targetFormId: 'gengar',
+    level: 40,
   },
 };
