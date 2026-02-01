@@ -398,7 +398,21 @@ def download_and_process_pokemon(pokemon_id: int) -> SpriteInfo | None:
 
 def generate_manifest(sprites: list[SpriteInfo]) -> None:
     """Generate manifest.json file."""
-    manifest = []
+    existing_manifest = []
+    
+    # Load existing manifest if it exists
+    if MANIFEST_OUTPUT_PATH.exists():
+        try:
+            with open(MANIFEST_OUTPUT_PATH, "r") as f:
+                existing_manifest = json.load(f)
+                print(f"  ✓ Loaded existing manifest with {len(existing_manifest)} entries")
+        except (json.JSONDecodeError, OSError) as e:
+            print(f"  ⚠️  Could not load existing manifest: {e}")
+            existing_manifest = []
+
+    # Create a map for easier updates (ID -> Index)
+    id_map = {entry["id"]: i for i, entry in enumerate(existing_manifest)}
+    
     for sprite in sprites:
         entry = {
             "id": sprite.id,
@@ -415,14 +429,23 @@ def generate_manifest(sprites: list[SpriteInfo]) -> None:
                 for anim in sprite.animations
             ]
         }
-        manifest.append(entry)
+        
+        # Update or Append
+        if sprite.id in id_map:
+            print(f"  ↻ Updating entry for #{sprite.id} ({sprite.name})")
+            existing_manifest[id_map[sprite.id]] = entry
+        else:
+            print(f"  + Appending entry for #{sprite.id} ({sprite.name})")
+            existing_manifest.append(entry)
+            # Update map just in case (though not strictly needed if IDs are unique in input)
+            id_map[sprite.id] = len(existing_manifest) - 1
     
     MANIFEST_OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     
     with open(MANIFEST_OUTPUT_PATH, "w") as f:
-        json.dump(manifest, f, indent=2)
+        json.dump(existing_manifest, f, indent=2)
     
-    print(f"\n📄 Generated manifest at {MANIFEST_OUTPUT_PATH}")
+    print(f"\n📄 Updated manifest at {MANIFEST_OUTPUT_PATH}")
 
 
 # =============================================================================

@@ -21,4 +21,8 @@ export const charmanderConfig: CharacterConfig = {
   weapon: weapons.ember,
   ultimate: seismicToss,
   spriteKey: 'charmander',
+  evolution: {
+    targetFormId: 'charmeleon',
+    level: 20,
+  },
 };

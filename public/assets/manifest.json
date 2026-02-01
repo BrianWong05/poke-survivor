@@ -254,5 +254,49 @@
         "directions": 1
       }
     ]
+  },
+  {
+    "id": "5",
+    "name": "charmeleon",
+    "animations": [
+      {
+        "key": "walk",
+        "path": "assets/sprites/5-walk.png",
+        "frameWidth": 24,
+        "frameHeight": 32,
+        "frameCount": 4,
+        "directions": 8
+      },
+      {
+        "key": "idle",
+        "path": "assets/sprites/5-idle.png",
+        "frameWidth": 32,
+        "frameHeight": 56,
+        "frameCount": 6,
+        "directions": 8
+      }
+    ]
+  },
+  {
+    "id": "6",
+    "name": "charizard",
+    "animations": [
+      {
+        "key": "walk",
+        "path": "assets/sprites/6-walk.png",
+        "frameWidth": 40,
+        "frameHeight": 48,
+        "frameCount": 4,
+        "directions": 8
+      },
+      {
+        "key": "idle",
+        "path": "assets/sprites/6-idle.png",
+        "frameWidth": 40,
+        "frameHeight": 48,
+        "frameCount": 4,
+        "directions": 8
+      }
+    ]
   }
 ]
