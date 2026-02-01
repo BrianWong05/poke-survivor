@@ -20,5 +20,9 @@ export const rioluConfig: CharacterConfig = {
   passive: innerFocusPassive,
   weapon: weapons.auraSphere,
   ultimate: boneRush,
-  spriteKey: 'pokemon_447',
+  spriteKey: 'riolu', // Updated to match standardized manifest name
+  evolution: {
+    targetFormId: 'lucario',
+    level: 20,
+  },
 };

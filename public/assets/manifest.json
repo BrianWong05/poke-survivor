@@ -221,7 +221,7 @@
   },
   {
     "id": "447",
-    "name": "pokemon_447",
+    "name": "riolu",
     "animations": [
       {
         "key": "walk",
@@ -383,6 +383,28 @@
         "frameWidth": 40,
         "frameHeight": 40,
         "frameCount": 8,
+        "directions": 8
+      }
+    ]
+  },
+  {
+    "id": "448",
+    "name": "pokemon_448",
+    "animations": [
+      {
+        "key": "walk",
+        "path": "assets/sprites/448-walk.png",
+        "frameWidth": 32,
+        "frameHeight": 48,
+        "frameCount": 4,
+        "directions": 8
+      },
+      {
+        "key": "idle",
+        "path": "assets/sprites/448-idle.png",
+        "frameWidth": 32,
+        "frameHeight": 56,
+        "frameCount": 6,
         "directions": 8
       }
     ]
