@@ -18,9 +18,9 @@
 
 ## 4. Weapon Standardization
 
-- [ ] 4.1 Refactor `ThunderShock.ts` to extend `Weapon`.
-- [ ] 4.2 Refactor `WaterPulse.ts` to extend `Weapon`.
-- [ ] 4.3 Refactor `BodySlam.ts` to extend `Weapon`.
-- [ ] 4.4 Refactor `ThunderWave.ts` to extend `Weapon`.
-- [ ] 4.5 Refactor `SludgeBomb.ts` to extend `Weapon`.
-- [ ] 4.6 Refactor `Thunderbolt.ts` to extend `Weapon`.
+- [x] 4.1 Refactor `ThunderShock.ts` to extend `Weapon`.
+- [x] 4.2 Refactor `WaterPulse.ts` to extend `Weapon`.
+- [x] 4.3 Refactor `BodySlam.ts` to extend `Weapon`.
+- [x] 4.4 Refactor `ThunderWave.ts` to extend `Weapon`.
+- [x] 4.5 Refactor `SludgeBomb.ts` to extend `Weapon`.
+- [x] 4.6 Refactor `Thunderbolt.ts` to extend `Weapon`.

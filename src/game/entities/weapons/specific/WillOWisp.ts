@@ -11,7 +11,7 @@ export class WillOWispShot extends Phaser.Physics.Arcade.Sprite {
     orbitSpeed: number; 
     radius: number;
     currentAngle: number;
-    damage: number = 0;
+    baseDamage: number = 0; // Damage before per-hit variance
     knockback: number = 0;
     
     private hitList: Map<Phaser.GameObjects.GameObject, number> = new Map();
@@ -34,11 +34,11 @@ export class WillOWispShot extends Phaser.Physics.Arcade.Sprite {
         this.setDepth(100); // Ensure main projectile is above trails
     }
 
-    setup(stats: { damage: number, knockback: number }) {
-        this.damage = stats.damage;
+    setup(stats: { baseDamage: number, knockback: number }) {
+        this.baseDamage = stats.baseDamage;
         this.knockback = stats.knockback;
         
-        this.setData('damage', this.damage);
+        this.setData('damage', this.baseDamage);
         this.setData('knockback', this.knockback);
         this.setData('pierceCount', 999); 
         this.setData('owner', this.owner);
@@ -100,8 +100,11 @@ export class WillOWispShot extends Phaser.Physics.Arcade.Sprite {
             }
 
             const e = enemy as Phaser.Physics.Arcade.Sprite;
+            // Apply per-hit variance (±15%)
+            const variance = 0.85 + (Math.random() * 0.30);
+            const finalDamage = Math.round(this.baseDamage * variance);
             // Emit isFinal=true
-            this.scene.events.emit('spawn-aoe-damage', e.x, e.y, 20, this.damage, true);
+            this.scene.events.emit('spawn-aoe-damage', e.x, e.y, 20, finalDamage, true);
         }
     }
 }
@@ -151,7 +154,10 @@ export class WillOWisp extends Weapon implements WeaponConfig {
             if (existing.length > 0) return; 
         }
 
-        const finalDamage = this.getCalculatedDamage(stats.damage, player);
+        // Calculate base damage WITHOUT variance (variance applied per-hit in onHit)
+        const playerBase = player.stats.baseDamage || 0;
+        const playerMight = player.might || 1;
+        const baseDamage = Math.round((stats.damage + playerBase) * playerMight);
 
         // Cleanup
         const existing = projectilesGroup.getChildren().filter(
@@ -167,7 +173,7 @@ export class WillOWisp extends Weapon implements WeaponConfig {
                 stats.radius, stats.speed, startAngle
             );
             projectilesGroup.add(projectile);
-            projectile.setup({ damage: finalDamage, knockback: stats.knockback });
+            projectile.setup({ baseDamage: baseDamage, knockback: stats.knockback });
             
             if (level < 8) {
                 scene.time.delayedCall(stats.duration, () => {

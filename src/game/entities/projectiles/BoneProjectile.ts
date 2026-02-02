@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 
 export class BoneProjectile extends Phaser.Physics.Arcade.Sprite {
   // Config
-  private damageAmount = 30; // Default, can be overridden
+  private baseDamageAmount = 30; // Default base, variance applied per-hit
   private knockbackForce = 500; 
 
   // Hit Cooldown Map
@@ -36,7 +36,7 @@ export class BoneProjectile extends Phaser.Physics.Arcade.Sprite {
   }
 
   setDamage(amount: number) {
-      this.damageAmount = amount;
+      this.baseDamageAmount = amount;
   }
 
   preUpdate(time: number, delta: number): void {
@@ -75,9 +75,11 @@ export class BoneProjectile extends Phaser.Physics.Arcade.Sprite {
     // Check cooldown
     if (this.hitCooldowns.has(enemy)) return;
 
-    // Apply Damage
+    // Apply Damage - per-hit variance (±15%)
+    const variance = 0.85 + (Math.random() * 0.30);
+    const finalDamage = Math.round(this.baseDamageAmount * variance);
     // Emit isFinal=true
-    this.scene.events.emit('damage-enemy', enemy, this.damageAmount, true);
+    this.scene.events.emit('damage-enemy', enemy, finalDamage, true);
 
     // Apply Knockback
     if (enemy.body) {
