@@ -145,12 +145,23 @@ export class AquaRing extends Weapon implements WeaponConfig {
         const projectilesGroup = scene.registry.get('projectilesGroup') as Phaser.Physics.Arcade.Group;
         if (!projectilesGroup) return;
 
-        // Level 8 Check
+        // Calculate total count (Base + Amount)
+        const totalCount = this.getFinalProjectileCount(stats.count, player);
+
+        // Level 8 Check (Infinite Duration)
         if (level >= 8) {
             const existing = projectilesGroup.getChildren().filter(
                 p => p.active && p.getData('weaponId') === 'aqua-ring' && p.getData('owner') === player
             );
-            if (existing.length > 0) return; 
+            
+            // If we have the correct number of projectiles, do nothing (maintain infinite)
+            // Note: Aqua Ring spawns 3 rings logic * count
+            if (existing.length === totalCount * 3) {
+                return;
+            }
+            
+            // If mismatch (stats changed), destroy existing to refresh
+            existing.forEach(p => p.destroy());
         }
 
         // Calculate base damage WITHOUT variance (variance applied per-hit in onHit)
@@ -159,10 +170,12 @@ export class AquaRing extends Weapon implements WeaponConfig {
         const baseDamage = Math.round((stats.damage + playerBase) * playerMight);
 
         // Cleanup existing (non-level 8 or refresh)
-        const existing = projectilesGroup.getChildren().filter(
-            p => p.active && p.getData('weaponId') === 'aqua-ring' && p.getData('owner') === player
-        );
-        existing.forEach(p => p.destroy());
+        if (level < 8) {
+            const existing = projectilesGroup.getChildren().filter(
+                p => p.active && p.getData('weaponId') === 'aqua-ring' && p.getData('owner') === player
+            );
+            existing.forEach(p => p.destroy());
+        }
 
         // Spawn 3 Rings with smaller scale
         const rings = [
@@ -172,10 +185,10 @@ export class AquaRing extends Weapon implements WeaponConfig {
         ];
 
         rings.forEach((ringConfig, ringIndex) => {
-            const step = 360 / stats.count;
-            const angleOffset = ringIndex * (360 / (stats.count * 3)); 
+            const step = 360 / totalCount;
+            const angleOffset = ringIndex * (360 / (totalCount * 3)); 
 
-            for (let i = 0; i < stats.count; i++) {
+            for (let i = 0; i < totalCount; i++) {
                 const startAngle = step * i + angleOffset;
                 const projectile = new AquaRingShot(
                     scene, player.x, player.y, player, 

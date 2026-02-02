@@ -76,12 +76,14 @@ export class Ember extends Weapon {
     // Calculate base angle
     const baseAngle = Phaser.Math.Angle.Between(player.x, player.y, nearestEnemy.x, nearestEnemy.y);
     
+    const finalCount = this.getFinalProjectileCount(stats.count, player); 
+    
     // Spread Logic
     const angleStep = Phaser.Math.DegToRad(15);
-    const totalSpread = (stats.count - 1) * angleStep;
+    const totalSpread = (finalCount - 1) * angleStep;
     const startAngle = baseAngle - (totalSpread / 2);
 
-    for (let i = 0; i < stats.count; i++) {
+    for (let i = 0; i < finalCount; i++) {
         const currentAngle = startAngle + (i * angleStep);
         
         // Create fireball

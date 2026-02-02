@@ -121,11 +121,18 @@ export class PetalDance extends Weapon implements WeaponConfig {
         const projectilesGroup = scene.registry.get('projectilesGroup') as Phaser.Physics.Arcade.Group;
         if (!projectilesGroup) return;
 
+        const totalCount = this.getFinalProjectileCount(stats.count, player);
+
         if (level >= 8) {
             const existing = projectilesGroup.getChildren().filter(
                 p => p.active && p.getData('weaponId') === 'petal-dance' && p.getData('owner') === player
             );
-            if (existing.length > 0) return; 
+            
+            // If correct count, return (infinite)
+            if (existing.length === totalCount) return; 
+            
+            // Else destroy to refresh
+            existing.forEach(p => p.destroy());
         }
 
         // Calculate base damage WITHOUT variance (variance applied per-hit in onHit)
@@ -133,13 +140,16 @@ export class PetalDance extends Weapon implements WeaponConfig {
         const playerMight = player.might || 1;
         const baseDamage = Math.round((stats.damage + playerBase) * playerMight);
 
-        const existing = projectilesGroup.getChildren().filter(
-            p => p.active && p.getData('weaponId') === 'petal-dance' && p.getData('owner') === player
-        );
-        existing.forEach(p => p.destroy());
+        // Destroy existing if not handled (Level < 8 or refresh triggered)
+        if (level < 8) {
+           const existing = projectilesGroup.getChildren().filter(
+               p => p.active && p.getData('weaponId') === 'petal-dance' && p.getData('owner') === player
+           );
+           existing.forEach(p => p.destroy());
+        }
 
-        const step = 360 / stats.count;
-        for (let i = 0; i < stats.count; i++) {
+        const step = 360 / totalCount;
+        for (let i = 0; i < totalCount; i++) {
             const startAngle = step * i;
             // Swarm Variance
             const variance = (Math.random() - 0.5) * 40; // +/- 20px radius variance

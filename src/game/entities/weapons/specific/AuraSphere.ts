@@ -11,24 +11,7 @@ function getProjectiles(scene: Phaser.Scene): Phaser.Physics.Arcade.Group | null
   return scene.registry.get('projectilesGroup') as Phaser.Physics.Arcade.Group | null;
 }
 
-function findNearestEnemy(
-  scene: Phaser.Scene,
-  player: Phaser.Physics.Arcade.Sprite
-): Phaser.Physics.Arcade.Sprite | null {
-  const enemies = getEnemies(scene);
-  if (!enemies) return null;
 
-  const activeEnemies = enemies.getChildren().filter(e => {
-    if ('isDying' in e) {
-      return !(e as any).isDying && e.active;
-    }
-    return e.active;
-  });
-
-  if (activeEnemies.length === 0) return null;
-
-  return scene.physics.closest(player, activeEnemies) as Phaser.Physics.Arcade.Sprite | null;
-}
 
 export class AuraSphere extends Weapon {
   id = 'aura-sphere';
@@ -74,69 +57,90 @@ export class AuraSphere extends Weapon {
     const projectilesGroup = getProjectiles(scene);
     if (!projectilesGroup) return;
 
-    // Targeting
-    // If we have a target, we aim at it. If not, we aim forward or random.
-    let target = findNearestEnemy(scene, player);
-    let baseAngle = 0;
+    const finalProjectileCount = this.getFinalProjectileCount(stats.count, player);
 
-    if (target) {
-        baseAngle = Phaser.Math.Angle.Between(player.x, player.y, target.x, target.y);
+    // Find multiple targets (up to count)
+    const enemies = getEnemies(scene);
+    let targets: Phaser.Physics.Arcade.Sprite[] = [];
+    
+    if (enemies) {
+        const activeEnemies = enemies.getChildren().filter(e => {
+            if ('isDying' in e) return !(e as any).isDying && e.active;
+            return e.active;
+        }) as Phaser.Physics.Arcade.Sprite[];
+
+        // Sort by distance
+        activeEnemies.sort((a, b) => {
+            const distA = Phaser.Math.Distance.Squared(player.x, player.y, a.x, a.y);
+            const distB = Phaser.Math.Distance.Squared(player.x, player.y, b.x, b.y);
+            return distA - distB;
+        });
+
+        // Take top N distinct targets
+        targets = activeEnemies.slice(0, finalProjectileCount);
+    }
+    
+    // Spread calculation: Standard 15 degrees (kept for variance even in burst)
+    const angleStep = Phaser.Math.DegToRad(15); 
+    const spreadTotal = (finalProjectileCount - 1) * angleStep;
+    
+    // Use first valid target for base angle, or fallback to random/nearest
+    // If we have distinct targets, baseAngle might be less relevant for "aiming", 
+    // but we still need an initial direction for the projectile spawn impulse.
+    // Let's keep the original baseAngle logic but derived from the PRIMARY target [0]
+    let baseAngle = 0;
+    if (targets.length > 0) {
+        baseAngle = Phaser.Math.Angle.Between(player.x, player.y, targets[0].x, targets[0].y);
     } else {
-        // Fallback: Player facing or random
-        // Assuming player has 'flipX' or similar, or just random forward arc
-        // For now, let's use player's last movement direction if available, else random.
-        // Or just Aim right (0) if nothing else. 
-        // Let's use random angle for "aura searching" flavor if no enemies nearby? 
-        // Or just 0.
-        // Actually, if no enemies are nearby, it doesn't matter much.
-        // Safe default: 0 (right) or random.
         baseAngle = (Math.random() * 360) * (Math.PI / 180);
     }
 
-    const count = stats.count;
-    // Spread calculation: 
-    // If count > 1, spread evenly around baseAngle.
-    // e.g. 2 shots: -10, +10 (total 20 spread? or centered?)
-    // Spec says: "If count > 1, apply a small spread (e.g., -10, +10 degrees)".
-    // Let's use 20 degrees total spread.
-    
-    // Calculate start angle
-    const spreadTotal = 20 * (Math.PI / 180); 
-    const step = count > 1 ? spreadTotal / (count - 1) : 0;
-    const startAngle = count > 1 ? baseAngle - (spreadTotal / 2) : baseAngle;
+    const startAngle = finalProjectileCount > 1 ? baseAngle - (spreadTotal / 2) : baseAngle;
 
-    for (let i = 0; i < count; i++) {
-        const projectile = new AuraSphereProjectile(scene, player.x, player.y);
-        projectilesGroup.add(projectile);
+    // Burst Fire Delay (ms)
+    const burstDelay = 100;
 
-        // Calculate final damage using base class formula
-        const finalDamage = this.getCalculatedDamage(stats.damage, player);
+    for (let i = 0; i < finalProjectileCount; i++) {
+        scene.time.delayedCall(i * burstDelay, () => {
+            const projectile = new AuraSphereProjectile(scene, player.x, player.y);
+            projectilesGroup.add(projectile);
 
-        // Apply Stats
-        projectile.setup({
-            damage: finalDamage,
-            speed: stats.speed,
-            turnRate: stats.turnRate,
-            pierce: stats.pierce
-        });
+            // Calculate final damage using base class formula
+            const finalDamage = this.getCalculatedDamage(stats.damage, player);
 
-        // Apply Inner Focus Modifier (Task 5 anticipation)
-        const sizeModifier = (player as any).projectileSizeModifier || 1.0;
-        projectile.setScale(projectile.scale * sizeModifier);
+            // Apply Stats
+            projectile.setup({
+                damage: finalDamage,
+                speed: stats.speed,
+                turnRate: stats.turnRate,
+                pierce: stats.pierce
+            });
 
-        // Set Target
-        projectile.setTarget(target);
+            // Apply Inner Focus Modifier
+            const sizeModifier = (player as any).projectileSizeModifier || 1.0;
+            projectile.setScale(projectile.scale * sizeModifier);
 
-        // Calculate angle for this shot
-        const angle = count > 1 ? startAngle + (step * i) : baseAngle;
+            // Set Target (Cyclic or Unique)
+            // If we have 2 spheres and 2 targets, match 1:1.
+            // If we have 2 spheres and 1 target, both hit target 1.
+            const myTarget = targets.length > 0 ? targets[i % targets.length] : null;
+            projectile.setTarget(myTarget);
 
-        // Apply Velocity
-        projectile.setVelocity(Math.cos(angle) * stats.speed, Math.sin(angle) * stats.speed);
-        projectile.setRotation(angle);
+            // Calculate angle for this shot
+            // We still use spread to give them different initial trajectories
+            // Note: If we have distinct targets, we might want to aim AT them initially?
+            // But preserving the "Spread Pattern" is often nicer visually (Shotgun style then home in).
+            // Let's stick to the spread pattern relative to the primary target.
+            const angle = finalProjectileCount > 1 ? startAngle + (angleStep * i) : baseAngle;
 
-        // Cleanup
-        scene.time.delayedCall(3000, () => { // Increased logic to 3s to allow homing
-            if (projectile.active) projectile.destroy();
+            // Apply Velocity
+            projectile.setVelocity(Math.cos(angle) * stats.speed, Math.sin(angle) * stats.speed);
+            projectile.setRotation(angle);
+
+            // Cleanup
+            scene.time.delayedCall(3000, () => { 
+                if (projectile.active) projectile.destroy();
+            });
         });
     }
   }

@@ -194,7 +194,10 @@ export class SludgeBomb extends Weapon {
             });
     }
 
-    for (let i = 0; i < stats.count; i++) {
+    // Calculate total count (Base + Amount)
+    const totalCount = this.getFinalProjectileCount(stats.count, player);
+
+    for (let i = 0; i < totalCount; i++) {
         let targetX: number;
         let targetY: number;
 

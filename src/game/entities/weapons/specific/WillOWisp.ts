@@ -151,8 +151,17 @@ export class WillOWisp extends Weapon implements WeaponConfig {
             const existing = projectilesGroup.getChildren().filter(
                 p => p.active && p.getData('weaponId') === 'will-o-wisp' && p.getData('owner') === player
             );
-            if (existing.length > 0) return; 
+            
+            // Refire if count changes (e.g. Loaded Dice Upgrade)
+            const currentTotal = this.getFinalProjectileCount(stats.count, player);
+            if (existing.length === currentTotal) return;
+            
+            // Else destroy to refresh
+            existing.forEach(p => p.destroy());
         }
+
+        // Calculate total count (Base + Amount)
+        const totalCount = this.getFinalProjectileCount(stats.count, player);
 
         // Calculate base damage WITHOUT variance (variance applied per-hit in onHit)
         const playerBase = player.stats.baseDamage || 0;
@@ -165,8 +174,8 @@ export class WillOWisp extends Weapon implements WeaponConfig {
         );
         existing.forEach(p => p.destroy());
 
-        const step = 360 / stats.count;
-        for (let i = 0; i < stats.count; i++) {
+        const step = 360 / totalCount;
+        for (let i = 0; i < totalCount; i++) {
             const startAngle = step * i;
             const projectile = new WillOWispShot(
                 scene, player.x, player.y, player, 

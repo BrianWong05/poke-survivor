@@ -121,11 +121,19 @@ export class StealthRock extends Weapon implements WeaponConfig {
         const projectilesGroup = scene.registry.get('projectilesGroup') as Phaser.Physics.Arcade.Group;
         if (!projectilesGroup) return;
 
+        // Calculate total count (Base + Amount)
+        const totalCount = this.getFinalProjectileCount(stats.count, player);
+
         if (level >= 8) {
             const existing = projectilesGroup.getChildren().filter(
                 p => p.active && p.getData('weaponId') === 'stealth-rock' && p.getData('owner') === player
             );
-            if (existing.length > 0) return; 
+            
+            // Return if count matches (Infinite Duration)
+            if (existing.length === totalCount) return;
+            
+            // Else refresh
+            existing.forEach(p => p.destroy());
         }
 
         // Calculate base damage WITHOUT variance (variance applied per-hit in onHit)
@@ -138,8 +146,8 @@ export class StealthRock extends Weapon implements WeaponConfig {
         );
         existing.forEach(p => p.destroy());
 
-        const step = 360 / stats.count;
-        for (let i = 0; i < stats.count; i++) {
+        const step = 360 / totalCount;
+        for (let i = 0; i < totalCount; i++) {
             const startAngle = step * i;
             const projectile = new StealthRockShot(
                 scene, player.x, player.y, player, 

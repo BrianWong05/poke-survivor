@@ -146,24 +146,25 @@ export class Psywave extends Weapon implements WeaponConfig {
         const projectilesGroup = scene.registry.get('projectilesGroup') as Phaser.Physics.Arcade.Group;
         if (!projectilesGroup) return;
 
+        const totalCount = this.getFinalProjectileCount(stats.count, player);
+
         // Level 8 Check: If Infinite and already active, do nothing
         if (level >= 8) {
             const existing = projectilesGroup.getChildren().filter(
                 p => p.active && p.getData('weaponId') === 'psywave' && p.getData('owner') === player
             );
-            if (existing.length >= stats.count) {
+            if (existing.length === totalCount) {
                  // Already active (or close enough), don't respawn to avoid glitches/stacking
                  return;
             }
-            // If some are missing (destroyed somehow), we might want to respawn all?
-            // For simplicity: Clear and Respawn if count is wrong, or just let standard logic handle it
-            // Let's implement Strict Cleanup below regardless, so if we ARE firing, we reset safely.
-            // BUT: If Level 8, we only fire ONCE (or rarely).  
-            // The firing loop in CombatManager probably calls `fire` every `cooldownMs`.
-            // So if we return here, we just skip "refiring".
-            // Correct approach: Return if satisfied.
-             if (existing.length > 0) return; 
+            // If count mismatch, let it fall through to cleanup and respawn
         }
+
+        // Cleanup existing (Refresh)
+        const existing = projectilesGroup.getChildren().filter(
+            p => p.active && p.getData('weaponId') === 'psywave' && p.getData('owner') === player
+        );
+        existing.forEach(p => p.destroy());
 
         // Calculate base damage WITHOUT variance (variance applied per-hit in onHit)
         const playerBase = player.stats.baseDamage || 0;
@@ -171,9 +172,9 @@ export class Psywave extends Weapon implements WeaponConfig {
         const baseDamage = Math.round((stats.damage + playerBase) * playerMight);
 
         // Calculation
-        const step = 360 / stats.count;
+        const step = 360 / totalCount;
         
-        for (let i = 0; i < stats.count; i++) {
+        for (let i = 0; i < totalCount; i++) {
             const startAngle = step * i;
             
             const projectile = new PsywaveShot(

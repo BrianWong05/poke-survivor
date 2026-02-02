@@ -29,6 +29,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   public maxHP: number = 100;
   public regen: number = 0;
   public defense: number = 0;
+  public amount: number = 0; // Projectile Amount Modifier
   public might: number = 1.0;
   public evolutionStage: number = 0;
   public formId: string = 'pikachu';
@@ -370,6 +371,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       if (muscleBandLevel > 0) {
           // Apply 0.10 per level
           this.might += (muscleBandLevel * 0.10);
+      }
+
+      // Loaded Dice (Amount)
+      this.amount = 0; // Reset
+      const diceLevel = this.inventory.getItemLevel('loaded_dice');
+      if (diceLevel > 0) {
+          this.amount += diceLevel; // +1 per level
       }
 
       // Handle other items if necessary (e.g. Iron, HpUp could also be recalculated here)

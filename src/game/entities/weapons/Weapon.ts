@@ -44,5 +44,15 @@ export abstract class Weapon implements WeaponConfig {
     return finalDamage;
   }
 
+  /**
+   * Calculates the total projectile count based on weapon stats and player modifiers.
+   * @param baseCount The weapon's base projectile count
+   * @param player The player instance
+   */
+  protected getFinalProjectileCount(baseCount: number, player: Player): number {
+      const extra = player.amount || 0;
+      return baseCount + extra;
+  }
+
   abstract fire(ctx: CharacterContext): void;
 }

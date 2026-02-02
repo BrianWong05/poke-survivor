@@ -255,14 +255,15 @@ export class ThunderWave extends Weapon {
         existing.forEach(p => p.destroy());
 
         // Spawn Mechanics
-        const armStep = 360 / stats.armCount;
+        const totalArms = this.getFinalProjectileCount(stats.armCount, player);
+        const armStep = 360 / totalArms;
         const nodeSpacing = 20;
         const nodesPerArm = Math.floor(stats.radius / nodeSpacing);
 
         // Pre-calculate final damage once per spawn
         const finalDamage = this.getCalculatedDamage(stats.damage, player);
 
-        for (let arm = 0; arm < stats.armCount; arm++) {
+        for (let arm = 0; arm < totalArms; arm++) {
             const armBaseAngle = arm * armStep;
             
             for (let i = 1; i <= nodesPerArm; i++) {
