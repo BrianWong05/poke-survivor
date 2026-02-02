@@ -55,7 +55,7 @@ export interface EnemyStats {
 export const ENEMY_STATS: Record<EnemyType, EnemyStats> = {
   [EnemyType.RATTATA]: {
     speed: 100,
-    maxHP: 10,
+    maxHP: 30,
     damage: 1,
     textureKey: 'rattata-walk',
     placeholderSize: 24,
@@ -64,7 +64,7 @@ export const ENEMY_STATS: Record<EnemyType, EnemyStats> = {
   },
   [EnemyType.GEODUDE]: {
     speed: 40,
-    maxHP: 50,
+    maxHP: 150,
     damage: 1,
     mass: 100,
     textureKey: 'geodude-walk',
@@ -74,7 +74,7 @@ export const ENEMY_STATS: Record<EnemyType, EnemyStats> = {
   },
   [EnemyType.ZUBAT]: {
     speed: 140,
-    maxHP: 5,
+    maxHP: 15,
     damage: 1,
     textureKey: 'zubat-walk',
     placeholderSize: 20,
