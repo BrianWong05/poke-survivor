@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import type { WeaponConfig, CharacterContext } from '@/game/entities/characters/types';
+import { Weapon } from '@/game/entities/weapons/Weapon';
 
 /**
  * Petal Dance Shot (花瓣舞)
@@ -73,12 +74,13 @@ export class PetalDanceShot extends Phaser.Physics.Arcade.Sprite {
         if (this.canHit(enemy, now)) {
             this.hitList.set(enemy, now);
             const e = enemy as Phaser.Physics.Arcade.Sprite;
-            this.scene.events.emit('spawn-aoe-damage', e.x, e.y, 15, this.damage);
+            // Emit isFinal=true
+            this.scene.events.emit('spawn-aoe-damage', e.x, e.y, 15, this.damage, true);
         }
     }
 }
 
-export class PetalDance implements WeaponConfig {
+export class PetalDance extends Weapon implements WeaponConfig {
     id = 'petal-dance';
     name = 'Petal Dance (花瓣舞)';
     description = 'A grinder of spinning petals.';
@@ -123,6 +125,8 @@ export class PetalDance implements WeaponConfig {
             if (existing.length > 0) return; 
         }
 
+        const finalDamage = this.getCalculatedDamage(stats.damage, player);
+
         const existing = projectilesGroup.getChildren().filter(
             p => p.active && p.getData('weaponId') === 'petal-dance' && p.getData('owner') === player
         );
@@ -138,7 +142,7 @@ export class PetalDance implements WeaponConfig {
                 stats.radius + variance, stats.speed + (variance * 2), startAngle // Inner petals spin faster? or just variance
             );
             projectilesGroup.add(projectile);
-            projectile.setup({ damage: stats.damage, knockback: stats.knockback });
+            projectile.setup({ damage: finalDamage, knockback: stats.knockback });
             
             if (level < 8) {
                 scene.time.delayedCall(stats.duration, () => {

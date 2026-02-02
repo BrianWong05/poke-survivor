@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import type { WeaponConfig, CharacterContext } from '@/game/entities/characters/types';
+import type { CharacterContext } from '@/game/entities/characters/types';
+import { Weapon } from '@/game/entities/weapons/Weapon';
 
 interface ThunderboltStats {
   damage: number;
@@ -9,7 +10,7 @@ interface ThunderboltStats {
   stunChance: number;
 }
 
-export class Thunderbolt implements WeaponConfig {
+export class Thunderbolt extends Weapon {
   id = 'thunderbolt';
   name = 'Thunderbolt (十萬伏特)';
   description = 'Strikes random enemies with lightning from the sky.';
@@ -37,7 +38,7 @@ export class Thunderbolt implements WeaponConfig {
   }
 
   fire(ctx: CharacterContext): void {
-    const { scene, level } = ctx;
+    const { scene, player, level } = ctx;
     const stats = this.getStats(level);
     this.cooldownMs = stats.cooldown;
 
@@ -86,8 +87,11 @@ export class Thunderbolt implements WeaponConfig {
          this.spawnStrike(scene, target.x, target.y, stats.area);
       
          if (target.enemy) {
+            // Calculate final damage (variance per strike)
+            const finalDamage = this.getCalculatedDamage(stats.damage, player);
+
             // Instant Damage
-            scene.events.emit('damage-enemy', target.enemy, stats.damage);
+            scene.events.emit('damage-enemy', target.enemy, finalDamage, true);
             
             // Stun
             if (Math.random() < stats.stunChance) {

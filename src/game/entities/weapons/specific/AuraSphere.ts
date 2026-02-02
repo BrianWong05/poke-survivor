@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
-import type { WeaponConfig, CharacterContext } from '@/game/entities/characters/types';
+import { Weapon } from '@/game/entities/weapons/Weapon';
+import type { CharacterContext } from '@/game/entities/characters/types'; // WeaponConfig is implemented by Weapon
 import { AuraSphereProjectile } from '@/game/entities/projectiles/AuraSphereProjectile';
- 
 
 function getEnemies(scene: Phaser.Scene): Phaser.Physics.Arcade.Group | null {
   return scene.registry.get('enemiesGroup') as Phaser.Physics.Arcade.Group | null;
@@ -30,7 +30,7 @@ function findNearestEnemy(
   return scene.physics.closest(player, activeEnemies) as Phaser.Physics.Arcade.Sprite | null;
 }
 
-export class AuraSphere implements WeaponConfig {
+export class AuraSphere extends Weapon {
   id = 'aura-sphere';
   name = 'Aura Sphere (波導彈)';
   description = 'Releases an aura power that chases enemies.';
@@ -109,9 +109,12 @@ export class AuraSphere implements WeaponConfig {
         const projectile = new AuraSphereProjectile(scene, player.x, player.y);
         projectilesGroup.add(projectile);
 
+        // Calculate final damage using base class formula
+        const finalDamage = this.getCalculatedDamage(stats.damage, player);
+
         // Apply Stats
         projectile.setup({
-            damage: stats.damage,
+            damage: finalDamage,
             speed: stats.speed,
             turnRate: stats.turnRate,
             pierce: stats.pierce

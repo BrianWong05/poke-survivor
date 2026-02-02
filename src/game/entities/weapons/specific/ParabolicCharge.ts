@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import type { WeaponConfig, CharacterContext } from '@/game/entities/characters/types';
+import { Weapon } from '@/game/entities/weapons/Weapon';
 
 /**
  * Parabolic Charge Shot (拋物面充電)
@@ -121,12 +122,13 @@ export class ParabolicChargeShot extends Phaser.Physics.Arcade.Sprite {
             }
 
             const e = enemy as Phaser.Physics.Arcade.Sprite;
-            this.scene.events.emit('spawn-aoe-damage', e.x, e.y, 20, this.damage);
+            // Emit isFinal=true
+            this.scene.events.emit('spawn-aoe-damage', e.x, e.y, 20, this.damage, true);
         }
     }
 }
 
-export class ParabolicCharge implements WeaponConfig {
+export class ParabolicCharge extends Weapon implements WeaponConfig {
     id = 'parabolic-charge';
     name = 'Parabolic Charge (拋物面充電)';
     description = 'Electric field that heals you.';
@@ -175,12 +177,14 @@ export class ParabolicCharge implements WeaponConfig {
              existing.forEach(p => p.destroy());
         }
 
+        const finalDamage = this.getCalculatedDamage(stats.damage, player);
+
         const projectile = new ParabolicChargeShot(
             scene, player.x, player.y, player, 
             stats.radius, stats.speed, 0
         );
         projectilesGroup.add(projectile);
-        projectile.setup({ damage: stats.damage, knockback: stats.knockback, scale: stats.scale });
+        projectile.setup({ damage: finalDamage, knockback: stats.knockback, scale: stats.scale });
         
         if (level < 8) {
             scene.time.delayedCall(stats.duration, () => {

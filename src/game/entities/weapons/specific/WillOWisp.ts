@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import type { WeaponConfig, CharacterContext } from '@/game/entities/characters/types';
+import { Weapon } from '@/game/entities/weapons/Weapon';
 
 /**
  * Will-O-Wisp Shot (鬼火)
@@ -99,12 +100,13 @@ export class WillOWispShot extends Phaser.Physics.Arcade.Sprite {
             }
 
             const e = enemy as Phaser.Physics.Arcade.Sprite;
-            this.scene.events.emit('spawn-aoe-damage', e.x, e.y, 20, this.damage);
+            // Emit isFinal=true
+            this.scene.events.emit('spawn-aoe-damage', e.x, e.y, 20, this.damage, true);
         }
     }
 }
 
-export class WillOWisp implements WeaponConfig {
+export class WillOWisp extends Weapon implements WeaponConfig {
     id = 'will-o-wisp';
     name = 'Will-O-Wisp (鬼火)';
     description = 'Ghostly flames that burn enemies.';
@@ -149,6 +151,8 @@ export class WillOWisp implements WeaponConfig {
             if (existing.length > 0) return; 
         }
 
+        const finalDamage = this.getCalculatedDamage(stats.damage, player);
+
         // Cleanup
         const existing = projectilesGroup.getChildren().filter(
             p => p.active && p.getData('weaponId') === 'will-o-wisp' && p.getData('owner') === player
@@ -163,7 +167,7 @@ export class WillOWisp implements WeaponConfig {
                 stats.radius, stats.speed, startAngle
             );
             projectilesGroup.add(projectile);
-            projectile.setup({ damage: stats.damage, knockback: stats.knockback });
+            projectile.setup({ damage: finalDamage, knockback: stats.knockback });
             
             if (level < 8) {
                 scene.time.delayedCall(stats.duration, () => {

@@ -40,6 +40,20 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   // Configuration
   public characterConfig: CharacterConfig;
 
+  /**
+   * Expose unified stats object for damage calculations.
+   * Merges mutable player state with static config.
+   */
+  public get stats(): CharacterConfig['stats'] {
+      return {
+          ...this.characterConfig.stats,
+          maxHP: this.maxHP,
+          // Use current mutable stats over config defaults
+          might: this.might,
+          defense: this.defense,
+      };
+  }
+
   constructor(scene: Phaser.Scene, x: number, y: number, texture: string, frame?: string | number) {
     super(scene, x, y, texture, frame);
 

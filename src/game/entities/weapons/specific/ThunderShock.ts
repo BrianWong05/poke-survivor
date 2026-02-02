@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import type { WeaponConfig, CharacterContext } from '@/game/entities/characters/types';
+import type { CharacterContext } from '@/game/entities/characters/types';
+import { Weapon } from '@/game/entities/weapons/Weapon';
 // LightningBolt no longer used
 // import { LightningBolt } from '@/game/entities/projectiles/LightningBolt';
 
@@ -122,7 +123,7 @@ function drawLightning(scene: Phaser.Scene, start: { x: number, y: number }, end
   });
 }
 
-export class ThunderShock implements WeaponConfig {
+export class ThunderShock extends Weapon {
   id = 'thunder-shock';
   name = 'Thunder Shock (電擊)';
   description = 'Chains electricity between enemies';
@@ -174,7 +175,6 @@ export class ThunderShock implements WeaponConfig {
     // If no target found in range of player, try global search? 
     // "Find Closest Enemy to player" usually implies global, but maybe within range?
     // Requirement says "Jump Range 150px" which usually applies to bounces.
-    // Initial target range wasn't specified, assuming screen/global or a reasonable range.
     // Let's stick to initial being global or large range, subsequent being jumpRange.
     if (!currentTarget) {
        currentTarget = findNearestEnemy(scene, player); // Global search first hit
@@ -197,8 +197,11 @@ export class ThunderShock implements WeaponConfig {
         // Visual
         drawLightning(scene, source, target);
         
+        // Calculate finalized damage (including variance and player stats)
+        const finalDamage = this.getCalculatedDamage(stats.damage, player);
+
         // Damage
-        scene.events.emit('damage-enemy', target, stats.damage);
+        scene.events.emit('damage-enemy', target, finalDamage, true);
     };
 
     // Hit the first one

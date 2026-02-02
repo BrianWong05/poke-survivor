@@ -1,7 +1,8 @@
-import type { WeaponConfig, CharacterContext } from '@/game/entities/characters/types';
+import type { CharacterContext } from '@/game/entities/characters/types';
+import { Weapon } from '@/game/entities/weapons/Weapon';
 import { LickHitbox } from '@/game/entities/weapons/hitboxes/LickHitbox';
 
-export class Lick implements WeaponConfig {
+export class Lick extends Weapon {
     id = 'lick';
     name = 'Lick (舌舔)';
     description = 'Licks enemies in front of you. Causes paralysis at high levels.';
@@ -55,34 +56,12 @@ export class Lick implements WeaponConfig {
         const facingRight = horizontalFacing !== 'left'; 
         const directionScalar = facingRight ? 1 : -1;
 
-        // Spawn Front Lick
-        // Offset X: 50 * direction
-        // Origin of LickHitbox is (0, 0.5) [Left Center].
-        // If facing Right: Position at PlayerX + Offset. Texture draws to right. Correct.
-        // If facing Left: Position at PlayerX - Offset? 
-        // If we spawn at X-50, and texture draws Right... it will overlap player? 
-        // usage of setFlipX on hitbox?
-        // LickHitbox is a sprite.
-        // If facing Left, we should setFlipX(true)? 
-        // If Origin is (0, 0.5):
-        // Normal (Right): [Origin]======>
-        // Flipped (Left): <======[Origin]
-        // So if facing Left, we position at PlayerX, and Flip?
-        // Or position at PlayerX - (Width + Offset)?
-        // Flipping is usually easier for sprites.
-        
+        // Calculate final damage (snapshot for this lick)
+        const finalDamage = this.getCalculatedDamage(stats.damage, player);
+
         const spawnLick = (dirScalar: number) => {
              const isRight = dirScalar > 0;
-             // X Offset. If Right, starts slightly in front (e.g. 10px).
-             // If Left, starts slightly in front (e.g. -10px).
-             // The prompt said "attached to the player (offset X by 50px)".
-             // Let's stick to that.
-             
-             // If we flip the sprite, the origin behavior changes in visual terms but pivot stays?
-             // Phaser Sprite Flip: Texture is flipped. Origin 0,0.5 means pivot is at Left-Center of ORIGINAL texture.
-             // If flipped, pivot is now Right-Center of visual? 
-             // Usually: Flipped sprite with origin 0,0 draws from 0,0 to -width,height.
-             // Let's assume standard behavior.
+             // X Offset
              
              const hitbox = new LickHitbox(
                  scene,
@@ -90,42 +69,16 @@ export class Lick implements WeaponConfig {
                  player.y - 5, // Slightly up for mouth height?
                  width,
                  height,
-                 stats.damage,
+                 finalDamage,
                  stats.duration,
                  stats.paralysisChance
              );
              
              if (!isRight) {
                  hitbox.setFlipX(true);
-                 // If flipped with origin (0, 0.5), it might draw backwards? 
-                 // We should verify. For a colored rect generated texture, flipX might not change pixels (uniform pink).
-                 // But it changes the "direction" if we had a tongue tip.
-                 // Also for Physics Body: setFlipX doesn't rotate physics body!
-                 // Handled in LickHitbox? LickHitbox sets body size.
-                 // If generic rect, we might need to adjust body offset if flipped.
-                 // HOWEVER, LickHitbox constructor sets body size.
-                 // If we flip, we might need to manually shift the body X?
-                 // Simple solution for rectangle: 
-                 // If Left, set X to PlayerX - Width - Offset. Don't flip physics.
-                 // Visual flip only affects texture.
-                 // Let's rely on standard positioning without flip for physics consistency if texture is uniform.
-                 // But "Pink Rectangle" is uniform.
-                 // So:
-                 // Front Right: X = PlayerX + 20.
-                 // Front Left: X = PlayerX - 20 - Width. (To extend left)
-             }
-             
-             // Adjust position for valid direction
-             if (!isRight) {
-                 // Reposition strictly based on Width to extend Left
-                 hitbox.x = player.x - 20 - width; // Start 20px left, extend Width further left?
-                 // Wait, hitbox origin is 0,0.5 (Left of box).
-                 // So Box spans [x, x+w].
-                 // We want Box to span [Player - 20 - w, Player - 20].
-                 // So set x = Player - 20 - w.
+                 // Adjust position for valid direction
                  hitbox.x = player.x - 20;
                  hitbox.setOrigin(1, 0.5); // Anchor Right Center for left shot?
-                 // changing origin updates body position usually.
              }
              
              // Add to group for collision
@@ -142,7 +95,7 @@ export class Lick implements WeaponConfig {
     }
 }
 
-export class DreamEater implements WeaponConfig {
+export class DreamEater extends Weapon {
     id = 'dream-eater';
     name = 'Dream Eater';
     description = 'Devours dreams of sleeping enemies. Heals HP.';
@@ -176,6 +129,9 @@ export class DreamEater implements WeaponConfig {
         const facingRight = horizontalFacing !== 'left'; 
         const directionScalar = facingRight ? 1 : -1;
 
+        // Calculate final damage
+        const finalDamage = this.getCalculatedDamage(stats.damage, player);
+
         const spawnLick = (dirScalar: number) => {
              const isRight = dirScalar > 0;
              const hitbox = new LickHitbox(
@@ -184,7 +140,7 @@ export class DreamEater implements WeaponConfig {
                  player.y - 5,
                  width,
                  height,
-                 stats.damage,
+                 finalDamage,
                  stats.duration,
                  stats.paralysisChance
              );

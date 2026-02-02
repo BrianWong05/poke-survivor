@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import type { WeaponConfig, CharacterContext } from '@/game/entities/characters/types';
 import { FocusBlastProjectile } from '@/game/entities/projectiles/FocusBlastProjectile';
+import { Weapon } from '@/game/entities/weapons/Weapon';
 
 function getEnemies(scene: Phaser.Scene): Phaser.Physics.Arcade.Group | null {
   return scene.registry.get('enemiesGroup') as Phaser.Physics.Arcade.Group | null;
@@ -29,14 +30,19 @@ function findNearestEnemy(
   return scene.physics.closest(player, activeEnemies) as Phaser.Physics.Arcade.Sprite | null;
 }
 
-export class FocusBlast implements WeaponConfig {
+export class FocusBlast extends Weapon implements WeaponConfig {
   id = 'focus-blast';
   name = 'Focus Blast (真氣彈)';
   description = 'Powerful blast that explodes on impact. High critical chance.';
   cooldownMs = 2000; // Slower fire rate
 
+  // Base stats (stub for now, ideally stats table)
+  getStats(_level: number) {
+      return { damage: 30 };
+  }
+
   fire(ctx: CharacterContext): void {
-    const { scene, player } = ctx;
+    const { scene, player, level } = ctx;
 
     // Focus Blast requires aiming but for auto-battler usually aims at nearest?
     // Spec says: "No Homing (Requires aiming)".
@@ -51,9 +57,13 @@ export class FocusBlast implements WeaponConfig {
     const projectilesGroup = getProjectiles(scene);
     if (!projectilesGroup) return;
 
+    // Calculate Damage
+    const stats = this.getStats(level || 1);
+    const finalDamage = this.getCalculatedDamage(stats.damage, player);
+
     const projectile = new FocusBlastProjectile(scene, player.x, player.y);
-    // Set Damage
-    projectile.damageAmount = 30;
+    // Set Damage - Use final damage
+    projectile.damageAmount = finalDamage;
 
     projectilesGroup.add(projectile);
 

@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import type { WeaponConfig, CharacterContext } from '@/game/entities/characters/types';
+import { Weapon } from '@/game/entities/weapons/Weapon';
 
 /**
  * Aqua Ring Shot (水流環)
@@ -97,12 +98,13 @@ export class AquaRingShot extends Phaser.Physics.Arcade.Sprite {
                 e.setVelocity(kbVectorX, kbVectorY);
             }
             // Deal damage
-            this.scene.events.emit('spawn-aoe-damage', e.x, e.y, 20, this.damage);
+            // Emit isFinal=true because damage is already calculated in fire()
+            this.scene.events.emit('spawn-aoe-damage', e.x, e.y, 20, this.damage, true);
         }
     }
 }
 
-export class AquaRing implements WeaponConfig {
+export class AquaRing extends Weapon implements WeaponConfig {
     id = 'aqua-ring';
     name = 'Aqua Ring (水流環)';
     description = 'Protective water ring. Gently pushes enemies.';
@@ -149,6 +151,8 @@ export class AquaRing implements WeaponConfig {
             if (existing.length > 0) return; 
         }
 
+        const finalDamage = this.getCalculatedDamage(stats.damage, player);
+
         // Cleanup existing (non-level 8 or refresh)
         const existing = projectilesGroup.getChildren().filter(
             p => p.active && p.getData('weaponId') === 'aqua-ring' && p.getData('owner') === player
@@ -176,7 +180,7 @@ export class AquaRing implements WeaponConfig {
                 );
                 
                 projectilesGroup.add(projectile);
-                projectile.setup({ damage: stats.damage, knockback: stats.knockback });
+                projectile.setup({ damage: finalDamage, knockback: stats.knockback });
                 
                 // Base 0.6 scaled by ring config
                 projectile.setScale(0.6 * ringConfig.scale); 

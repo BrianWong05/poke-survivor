@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import type { WeaponConfig, CharacterContext } from '@/game/entities/characters/types'; // Assuming this import path based on SludgeBomb
 import { SwiftShot } from '@/game/entities/projectiles/SwiftShot';
+import { Weapon } from '@/game/entities/weapons/Weapon';
 
 interface SwiftStats {
   damage: number;
@@ -11,7 +12,7 @@ interface SwiftStats {
   knockback: number;
 }
 
-export class Swift implements WeaponConfig {
+export class Swift extends Weapon implements WeaponConfig {
   id = 'swift';
   name = 'Swift (高速星星)';
   description = 'Fires a high-speed volley of stars in a parallel wall.';
@@ -81,6 +82,8 @@ export class Swift implements WeaponConfig {
         angleRad = Phaser.Math.DegToRad(angleDeg);
     }
 
+    const finalDamage = this.getCalculatedDamage(stats.damage, player);
+
     // Calculate Velocity Vector for Projectiles
     const velocity = new Phaser.Math.Vector2();
     scene.physics.velocityFromRotation(angleRad, stats.speed, velocity);
@@ -136,7 +139,7 @@ export class Swift implements WeaponConfig {
              projectilesGroup.add(projectile);
              
              projectile.setup({
-                 damage: stats.damage,
+                 damage: finalDamage,
                  speed: stats.speed,
                  pierce: stats.pierce,
                  velocity: velocity

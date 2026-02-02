@@ -86,7 +86,8 @@ export class SwiftShot extends Phaser.Physics.Arcade.Sprite {
     if (this.hitEnemies.includes(enemy)) return;
     
     // Apply damage
-    this.scene.events.emit('damage-enemy', enemy, this.damageAmount);
+    // Emit isFinal=true
+    this.scene.events.emit('damage-enemy', enemy, this.damageAmount, true);
     
     this.hitEnemies.push(enemy);
 

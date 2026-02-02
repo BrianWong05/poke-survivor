@@ -1,5 +1,4 @@
 import Phaser from 'phaser';
-import { Enemy } from '@/game/entities/enemies/Enemy';
 
 export class Explosion extends Phaser.Physics.Arcade.Sprite {
   public damageAmount = 0; // Set by spawner
@@ -58,24 +57,6 @@ export class Explosion extends Phaser.Physics.Arcade.Sprite {
   onHit(enemy: Phaser.Physics.Arcade.Sprite): void {
     if (this.hitEnemies.includes(enemy)) return;
     
-    // Check if it's an Enemy instance to use takeDamage with isCrit
-    if (enemy instanceof Enemy) {
-        enemy.takeDamage(this.damageAmount, this.isCrit);
-    } else {
-        // Fallback for generic objects
-        // Use event or manual HP modification?
-        // Existing system uses 'damage-enemy' event usually, but we want to pass isCrit flag.
-        // If we use event, we might need to update the event handler to accept isCrit.
-        // For now, direct method call on Enemy class is safest given our previous edits.
-        
-        // But if the collision manager calls this, it might expect us to use the event?
-        // Let's modify the event logic? No, let's try casting first.
-        // Enemy.ts extends Arcade.Sprite. 
-        // If 'takeDamage' exists, call it.
-        if ('takeDamage' in enemy) {
-            (enemy as any).takeDamage(this.damageAmount, this.isCrit);
-        }
-    }
 
     this.hitEnemies.push(enemy);
   }

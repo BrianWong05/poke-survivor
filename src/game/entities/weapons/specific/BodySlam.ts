@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
-import type { WeaponConfig, CharacterContext } from '@/game/entities/characters/types';
+import type { CharacterContext } from '@/game/entities/characters/types';
+import { Weapon } from '@/game/entities/weapons/Weapon';
 
-export class BodySlam implements WeaponConfig {
+export class BodySlam extends Weapon {
     id = 'body-slam';
     name = 'Body Slam (泰山壓頂)';
     description = 'Slam the ground to create a shockwave (AOE).';
@@ -93,12 +94,16 @@ export class BodySlam implements WeaponConfig {
                 const distSq = Phaser.Math.Distance.Squared(player.x, player.y, enemy.x, enemy.y);
                 
                 if (distSq <= rangeSq) {
+                    
+                    // Calculate finalized damage (including variance and player stats)
+                    const finalDamage = this.getCalculatedDamage(stats.damage, player);
+
                     // Apply Damage
                     if ('takeDamage' in enemy && typeof (enemy as any).takeDamage === 'function') {
-                        (enemy as any).takeDamage(stats.damage);
+                        (enemy as any).takeDamage(finalDamage);
                     } else {
                         // Fallback event
-                        scene.events.emit('damage-enemy', enemy, stats.damage);
+                        scene.events.emit('damage-enemy', enemy, finalDamage, true);
                     }
 
                     // Apply Massive Knockback (Away from player)

@@ -60,7 +60,7 @@ export class Fireball extends Phaser.Physics.Arcade.Sprite {
     if (this.hitEnemies.includes(enemy)) return;
 
     // Apply damage
-    this.scene.events.emit('damage-enemy', enemy, this.damageAmount);
+    this.scene.events.emit('damage-enemy', enemy, this.damageAmount, true);
 
     // Track hit
     this.hitEnemies.push(enemy);

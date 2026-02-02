@@ -3,6 +3,7 @@ import { type EnemyStats, type EnemyType, EnemyTier } from '@/game/entities/enem
 import { DexManager } from '@/systems/DexManager';
 import { EnemyMovement } from './components/EnemyMovement';
 import { EnemyVisuals } from './components/EnemyVisuals';
+import { FloatingDamage } from '@/game/ui/FloatingDamage';
 
 /**
  * Base Enemy class extending Phaser.Physics.Arcade.Sprite.
@@ -142,11 +143,19 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       if (this.isBoss) {
         amount *= 2; // Bosses take double damage
       } else {
-        amount = this.hp; // Instakill non-bosses
+        // Instakill non-bosses: Deal at least HP damage, but preserve 'amount' if higher (overkill)
+        // This ensures floating text shows the big damage number (e.g. 20) even if HP is low (10)
+        amount = Math.max(amount, this.hp);
       }
     }
 
     this.hp -= amount;
+
+    // DEBUG: Trace Damage
+    console.log(`[Enemy] TakeDamage: ${amount} (HP: ${this.hp}/${this.maxHP})`);
+
+    // VISUAL: Spawn damage text
+    new FloatingDamage(this.scene, this.x, this.y, amount);
     
     // Flash white on hit
     this.visuals.flashHit(this.movement.isParalyzed);

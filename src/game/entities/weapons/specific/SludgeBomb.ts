@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import type { WeaponConfig, CharacterContext } from '@/game/entities/characters/types';
+import type { CharacterContext } from '@/game/entities/characters/types';
+import { Weapon } from '@/game/entities/weapons/Weapon';
 
 interface SludgeStats {
   damage: number;
@@ -128,14 +129,14 @@ class SludgeZone extends Phaser.GameObjects.Container {
          if ('takeDamage' in enemy && typeof (enemy as any).takeDamage === 'function') {
             (enemy as any).takeDamage(this.damage);
          } else {
-            this.scene.events.emit('damage-enemy', enemy, this.damage);
+            this.scene.events.emit('damage-enemy', enemy, this.damage, true);
          }
       }
     });
   }
 }
 
-export class SludgeBomb implements WeaponConfig {
+export class SludgeBomb extends Weapon {
   id = 'sludge-bomb';
   name = 'Sludge Bomb (污泥炸彈)';
   description = 'Lob a sludge bomb that creates a damaging puddle.';
@@ -170,7 +171,11 @@ export class SludgeBomb implements WeaponConfig {
 
   fire(ctx: CharacterContext): void {
     const { scene, player, level } = ctx;
-    const stats = this.getStats(level);
+    const baseStats = this.getStats(level);
+
+    // Calculate final damage once per volley/spawn
+    const finalDamage = this.getCalculatedDamage(baseStats.damage, player);
+    const stats = { ...baseStats, damage: finalDamage };
     
     // Distinct Targeting Logic: 
     // 1. Get all enemies

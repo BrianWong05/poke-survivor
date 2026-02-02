@@ -169,7 +169,7 @@ export class AuraSphereProjectile extends Phaser.Physics.Arcade.Sprite {
     if (this.hitEnemies.includes(enemy)) return;
     
     // Apply damage
-    this.scene.events.emit('damage-enemy', enemy, this.damageAmount);
+    this.scene.events.emit('damage-enemy', enemy, this.damageAmount, true);
     
     this.hitEnemies.push(enemy);
 

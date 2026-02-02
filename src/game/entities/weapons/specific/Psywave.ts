@@ -1,9 +1,10 @@
 import Phaser from 'phaser';
 import type { WeaponConfig, CharacterContext } from '@/game/entities/characters/types';
+import { Weapon } from '@/game/entities/weapons/Weapon';
 
 /**
  * PsywaveShot (精神波)
- * Projectile that orbits the player.
+ * Projectile that orbits the user.
  */
 export class PsywaveShot extends Phaser.Physics.Arcade.Sprite {
     owner: Phaser.Physics.Arcade.Sprite;
@@ -94,14 +95,15 @@ export class PsywaveShot extends Phaser.Physics.Arcade.Sprite {
             // Use small radius to target this enemy specifically
             if ('x' in enemy && 'y' in enemy) {
                 const e = enemy as Phaser.Physics.Arcade.Sprite;
-                this.scene.events.emit('spawn-aoe-damage', e.x, e.y, 20, this.damage);
+                // Emit isFinal=true
+                this.scene.events.emit('spawn-aoe-damage', e.x, e.y, 20, this.damage, true);
             }
         }
     }
 }
 
 
-export class Psywave implements WeaponConfig {
+export class Psywave extends Weapon implements WeaponConfig {
     id = 'psywave';
     name = 'Psywave (精神波)';
     description = 'Psychic energy that orbits the user.';
@@ -160,6 +162,8 @@ export class Psywave implements WeaponConfig {
              if (existing.length > 0) return; 
         }
 
+        const finalDamage = this.getCalculatedDamage(stats.damage, player);
+
         // Cleanup existing (for non-infinite levels, or if resetting infinite)
         if (level < 8) {
              const existing = projectilesGroup.getChildren().filter(
@@ -194,7 +198,7 @@ export class Psywave implements WeaponConfig {
             projectilesGroup.add(projectile);
             
             projectile.setup({
-                damage: stats.damage,
+                damage: finalDamage,
                 knockback: stats.knockback
             });
 

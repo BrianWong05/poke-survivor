@@ -238,14 +238,16 @@ export class MainScene extends Phaser.Scene {
       this.lootManager.drop(x, y, EnemyTier.TIER_1);
     });
 
-    this.events.on('spawn-aoe-damage', (x: number, y: number, radius: number, damage: number) => {
-      this.combatManager.applyAOEDamage(x, y, radius, damage, this.enemies);
-      this.combatManager.applyAOEDamage(x, y, radius, damage, this.enemySpawner.getEnemyGroup() as Phaser.Physics.Arcade.Group);
+    this.events.on('spawn-aoe-damage', (x: number, y: number, radius: number, damage: number, isFinal: boolean = false) => {
+      // Apply player might modifier unless strictly final
+      const finalDamage = isFinal ? damage : (damage * this.player.might);
+      this.combatManager.applyAOEDamage(x, y, radius, finalDamage, this.enemies);
+      this.combatManager.applyAOEDamage(x, y, radius, finalDamage, this.enemySpawner.getEnemyGroup() as Phaser.Physics.Arcade.Group);
     });
 
-    this.events.on('damage-enemy', (enemy: Phaser.Physics.Arcade.Sprite, damage: number) => {
-      // Apply player might modifier
-      const finalDamage = damage * this.player.might;
+    this.events.on('damage-enemy', (enemy: Phaser.Physics.Arcade.Sprite, damage: number, isFinal: boolean = false) => {
+      // Apply player might modifier unless strictly final
+      const finalDamage = isFinal ? damage : (damage * this.player.might);
       this.combatManager.damageEnemy(enemy, finalDamage);
     });
 

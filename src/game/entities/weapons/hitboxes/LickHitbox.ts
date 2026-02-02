@@ -90,12 +90,7 @@ export class LickHitbox extends Phaser.Physics.Arcade.Sprite {
             enemy.takeDamage(finalDamage);
         } else {
              // Fallback for primitive enemies
-             const currentHP = enemy.getData('hp') || 10;
-             enemy.setData('hp', currentHP - finalDamage);
-             if (currentHP - finalDamage <= 0) {
-                 enemy.setActive(false);
-                 enemy.setVisible(false);
-             }
+             this.scene.events.emit('damage-enemy', enemy, finalDamage, true);
         }
 
         // NO Knockback applied here.

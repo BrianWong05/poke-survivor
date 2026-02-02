@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import type { WeaponConfig, CharacterContext } from '@/game/entities/characters/types';
+import { Weapon } from '@/game/entities/weapons/Weapon';
 
 /**
  * Stealth Rock Shot (隱形岩)
@@ -73,12 +74,13 @@ export class StealthRockShot extends Phaser.Physics.Arcade.Sprite {
         if (this.canHit(enemy, now)) {
             this.hitList.set(enemy, now);
             const e = enemy as Phaser.Physics.Arcade.Sprite;
-            this.scene.events.emit('spawn-aoe-damage', e.x, e.y, 30, this.damage);
+            // Emit isFinal=true
+            this.scene.events.emit('spawn-aoe-damage', e.x, e.y, 30, this.damage, true);
         }
     }
 }
 
-export class StealthRock implements WeaponConfig {
+export class StealthRock extends Weapon implements WeaponConfig {
     id = 'stealth-rock';
     name = 'Stealth Rock (隱形岩)';
     description = 'Heavy rocks that crush enemies.';
@@ -123,6 +125,8 @@ export class StealthRock implements WeaponConfig {
             if (existing.length > 0) return; 
         }
 
+        const finalDamage = this.getCalculatedDamage(stats.damage, player);
+
         const existing = projectilesGroup.getChildren().filter(
             p => p.active && p.getData('weaponId') === 'stealth-rock' && p.getData('owner') === player
         );
@@ -136,7 +140,7 @@ export class StealthRock implements WeaponConfig {
                 stats.radius, stats.speed, startAngle
             );
             projectilesGroup.add(projectile);
-            projectile.setup({ damage: stats.damage, knockback: stats.knockback });
+            projectile.setup({ damage: finalDamage, knockback: stats.knockback });
             
             if (level < 8) {
                 scene.time.delayedCall(stats.duration, () => {

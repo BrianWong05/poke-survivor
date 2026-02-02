@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import type { WeaponConfig, CharacterContext } from '@/game/entities/characters/types';
+import type { CharacterContext } from '@/game/entities/characters/types';
+import { Weapon } from '@/game/entities/weapons/Weapon';
 import { Enemy } from '@/game/entities/enemies/Enemy';
 
 /**
@@ -155,7 +156,7 @@ export class WaterPulseShot extends Phaser.Physics.Arcade.Sprite {
   }
 }
 
-export class WaterPulse implements WeaponConfig {
+export class WaterPulse extends Weapon {
   id = 'water-pulse';
   name = 'Water Pulse (水之波動)';
   description = 'High speed pulses of water.';
@@ -206,7 +207,10 @@ export class WaterPulse implements WeaponConfig {
         
         const projectile = new WaterPulseShot(scene, player.x, player.y);
         
-        projectile.setDamage(stats.damage);
+        // Use standard damage calculation
+        const finalDamage = this.getCalculatedDamage(stats.damage, player);
+
+        projectile.setDamage(finalDamage);
         projectile.setPierce(stats.pierce);
         projectile.setKnockback(stats.knockback);
         projectile.setSpeed(stats.speed);

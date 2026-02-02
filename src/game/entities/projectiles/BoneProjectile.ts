@@ -2,17 +2,10 @@ import Phaser from 'phaser';
 
 export class BoneProjectile extends Phaser.Physics.Arcade.Sprite {
   // Config
-  private damageAmount = 30; // High contact damage
-  private knockbackForce = 500; // High Knockback
+  private damageAmount = 30; // Default, can be overridden
+  private knockbackForce = 500; 
 
-  // Orbiting bones persist. Hit enemies should take damage again after cooldown or just once?
-  // "Damage: High contact damage" usually implies continuous or interval damage if they stay in range.
-  // But standard projectiles destroy/pierce.
-  // Since these orbit for 8s, they should probably hit multiple enemies.
-  // And probably hit the SAME enemy multiple times if it stays? Or usually "invincibility frames" for enemy.
-  // For simplicity: Hit once per enemy? No, then they become useless quickly.
-  // Hit same enemy periodically?
-  // Let's implement a simple "cooldown" map.
+  // Hit Cooldown Map
   private hitCooldowns: Map<Phaser.GameObjects.GameObject, number> = new Map();
   private HIT_COOLDOWN = 500; // 0.5s cooldown per enemy
   
@@ -39,7 +32,11 @@ export class BoneProjectile extends Phaser.Physics.Arcade.Sprite {
     scene.physics.add.existing(this);
 
     // Physics
-    this.setBodySize(30, 30); // Generous hitbox
+    this.setBodySize(30, 30); 
+  }
+
+  setDamage(amount: number) {
+      this.damageAmount = amount;
   }
 
   preUpdate(time: number, delta: number): void {
@@ -52,12 +49,9 @@ export class BoneProjectile extends Phaser.Physics.Arcade.Sprite {
     }
 
     // Orbit Logic
-    // Angle increases over time
     this.orbitAngle += delta * 0.005; 
 
     // Radius expands/contracts
-    // time is ms. sin expects radians.
-    // period approx 2-3s?
     const t = time * 0.003; 
     const radius = 100 + Math.sin(t) * 50;
 
@@ -66,8 +60,6 @@ export class BoneProjectile extends Phaser.Physics.Arcade.Sprite {
         this.player.y + Math.sin(this.orbitAngle) * radius
     );
     
-    // Rotate to face trajectory or just spin?
-    // "Bone Rush" usually spins the bone itself.
     this.rotation += delta * 0.01;
 
     // Cleanup cooldowns
@@ -84,12 +76,8 @@ export class BoneProjectile extends Phaser.Physics.Arcade.Sprite {
     if (this.hitCooldowns.has(enemy)) return;
 
     // Apply Damage
-    // We can emit event or direct call. Direct call is safer for new Enemy class.
-     if ('takeDamage' in enemy) {
-        (enemy as any).takeDamage(this.damageAmount);
-    } else {
-         this.scene.events.emit('damage-enemy', enemy, this.damageAmount);
-    }
+    // Emit isFinal=true
+    this.scene.events.emit('damage-enemy', enemy, this.damageAmount, true);
 
     // Apply Knockback
     if (enemy.body) {

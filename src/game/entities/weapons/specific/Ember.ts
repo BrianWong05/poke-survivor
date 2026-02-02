@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import type { WeaponConfig, CharacterContext } from '@/game/entities/characters/types';
+import type { CharacterContext } from '@/game/entities/characters/types';
+import { Weapon } from '@/game/entities/weapons/Weapon';
 import { Fireball } from '@/game/entities/projectiles/Fireball';
 
 /**
@@ -33,7 +34,7 @@ function findNearestEnemy(
 }
 
 
-export class Ember implements WeaponConfig {
+export class Ember extends Weapon {
   id = 'ember';
   name = 'Ember (火花)';
   description = 'Fires small fireballs';
@@ -87,8 +88,11 @@ export class Ember implements WeaponConfig {
         const fireball = new Fireball(scene, player.x, player.y);
         projectilesGroup.add(fireball);
 
+        // Calculate final damage (variance per shot)
+        const finalDamage = this.getCalculatedDamage(stats.damage, player);
+
         // Apply stats
-        fireball.setDamage(stats.damage);
+        fireball.setDamage(finalDamage);
         fireball.setPierce(stats.pierce);
         // fireball.setProjectileTint(0xFF4500); // Removed tint to show natural sprite colors
         // fireball.setScale(1.0); // Allow Fireball default scale (0.2) or override here. Default is 0.2. Let's stick to default.

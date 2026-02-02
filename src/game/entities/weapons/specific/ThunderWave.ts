@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import type { WeaponConfig, CharacterContext } from '@/game/entities/characters/types';
+import type { CharacterContext } from '@/game/entities/characters/types';
+import { Weapon } from '@/game/entities/weapons/Weapon';
 
 /**
  * Thunder Wave Node (Laser Fence Segment)
@@ -179,7 +180,7 @@ export class ThunderWaveNode extends Phaser.Physics.Arcade.Sprite {
             
             // Apply Damage
             const e = enemy as Phaser.Physics.Arcade.Sprite & { applyStatus?: (status: string, duration: number) => void };
-            this.scene.events.emit('damage-enemy', enemy, this.damage);
+            this.scene.events.emit('damage-enemy', enemy, this.damage, true);
             
             // Stun Chance
             if (Math.random() < this.stunChance) {
@@ -202,7 +203,7 @@ export class ThunderWaveNode extends Phaser.Physics.Arcade.Sprite {
     }
 }
 
-export class ThunderWave implements WeaponConfig {
+export class ThunderWave extends Weapon {
     id = 'thunder-wave';
     name = 'Thunder Wave (電磁波)';
     description = 'Rotating electric fence.';
@@ -258,6 +259,9 @@ export class ThunderWave implements WeaponConfig {
         const nodeSpacing = 20;
         const nodesPerArm = Math.floor(stats.radius / nodeSpacing);
 
+        // Pre-calculate final damage once per spawn
+        const finalDamage = this.getCalculatedDamage(stats.damage, player);
+
         for (let arm = 0; arm < stats.armCount; arm++) {
             const armBaseAngle = arm * armStep;
             
@@ -277,7 +281,7 @@ export class ThunderWave implements WeaponConfig {
                 
                 projectilesGroup.add(node);
                 node.setup({ 
-                    damage: stats.damage, 
+                    damage: finalDamage, 
                     knockback: stats.knockback, 
                     stunChance: stats.stunChance 
                 });
