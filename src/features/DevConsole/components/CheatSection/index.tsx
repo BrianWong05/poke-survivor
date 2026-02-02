@@ -10,7 +10,36 @@ interface CheatSectionProps {
 export const CheatSection: React.FC<CheatSectionProps> = ({ handleCheat, isInvincible }) => {
     return (
         <Section title="Cheats">
-            <Button onClick={() => handleCheat('lvl')} color="#f1c40f">Level Up (Instant)</Button>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                <input 
+                    type="number" 
+                    placeholder="Set Level" 
+                    id="cheat-set-level-input"
+                    style={{ 
+                        flex: 1, 
+                        padding: '8px', 
+                        borderRadius: '4px', 
+                        border: '1px solid #444', 
+                        background: '#222', 
+                        color: 'white' 
+                    }}
+                    min="1"
+                />
+                <Button 
+                    onClick={() => {
+                        const input = document.getElementById('cheat-set-level-input') as HTMLInputElement;
+                        if (input && input.value) {
+                            handleCheat(`setLevel:${input.value}`);
+                            input.value = '';
+                        }
+                    }} 
+                    color="#f1c40f"
+                >
+                    Set
+                </Button>
+            </div>
+            <Button onClick={() => handleCheat('lvl')} color="#f1c40f">Level Up (+1)</Button>
+            <Button onClick={() => handleCheat('lvl-5')} color="#f39c12">Level Up (+5)</Button>
             <Button onClick={() => handleCheat('heal')} color="#2ecc71">Full Heal</Button>
             <Button onClick={() => handleCheat('invincible')} color="#9b59b6" outline={!isInvincible}>
                 {isInvincible ? 'Invincible Mode (ON)' : 'Invincible Mode (OFF)'}

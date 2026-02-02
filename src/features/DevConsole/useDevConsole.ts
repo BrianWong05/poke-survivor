@@ -79,8 +79,10 @@ export const useDevConsole = () => {
         
         switch(action) {
             case 'lvl': 
-                // Pass false for isLevelUpPending as MainScene handles it safely now
                 if (gameScene.debugSystem.debugLevelUp) gameScene.debugSystem.debugLevelUp(false);
+                break;
+            case 'lvl-5':
+                if (gameScene.debugSystem.debugAddLevels) gameScene.debugSystem.debugAddLevels(5);
                 break;
             case 'heal': 
                 if (gameScene.debugSystem.debugHeal) gameScene.debugSystem.debugHeal();
@@ -93,6 +95,14 @@ export const useDevConsole = () => {
                     const newState = !isInvincible;
                     gameScene.debugSystem.debugSetInvincible(newState);
                     setIsInvincible(newState);
+                }
+                break;
+            default:
+                if (action.startsWith('setLevel:')) {
+                    const targetLevel = parseInt(action.split(':')[1], 10);
+                    if (!isNaN(targetLevel) && gameScene.debugSystem.debugSetLevel) {
+                        gameScene.debugSystem.debugSetLevel(targetLevel);
+                    }
                 }
                 break;
         }

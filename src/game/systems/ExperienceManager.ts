@@ -49,6 +49,7 @@ export class ExperienceManager {
   
   /** XP required to reach the next level */
   public xpToNextLevel: number;
+  private pendingCheatRewards: number = 0;
 
   constructor(startLevel: number = 1) {
     this.currentLevel = startLevel;
@@ -140,6 +141,12 @@ export class ExperienceManager {
    * @returns `true` if a level up occurred
    */
   public processLevelUp(): boolean {
+    // Priority: Process queued cheat-granted rewards without checking XP cap logic
+    if (this.pendingCheatRewards > 0) {
+        this.pendingCheatRewards--;
+        return true;
+    }
+
     if (this.currentXP >= this.xpToNextLevel) {
       // Level up!
       this.currentLevel += 1;
@@ -164,6 +171,30 @@ export class ExperienceManager {
   public reset(): void {
     this.currentLevel = 1;
     this.currentXP = 0;
+    this.pendingCheatRewards = 0;
     this.xpToNextLevel = this.getNextLevelXpCap(1);
+  }
+
+  /**
+   * Cheat: Instantly increase level counter and queue N-1 rewards.
+   * This updates the visible level immediately (UX) while queuing upgrades.
+   * Logic:
+   *  - Level jumps from L to L+count immediately.
+   *  - We must show 'count' upgrade screens. 
+   *    - The first screen is shown by the caller triggering the sequence.
+   *    - The remaining 'count-1' screens are queued here so processLevelUp() returns true.
+   */
+  public grantCheatLevels(count: number): void {
+      if (count <= 0) return;
+      
+      this.currentLevel += count;
+      // Recalculate cap for the new high level
+      this.xpToNextLevel = this.getNextLevelXpCap(this.currentLevel);
+      
+      // Queue rewards.
+      // If we add 1 level -> Queue 0 (Caller shows 1 screen, processLevelUp finds 0, stops).
+      // If we add 5 levels -> Queue 4 (Caller shows 1, processLevelUp finds 4, recurses 4 times).
+      const additionalScreens = Math.max(0, count - 1);
+      this.pendingCheatRewards = (this.pendingCheatRewards || 0) + additionalScreens;
   }
 }

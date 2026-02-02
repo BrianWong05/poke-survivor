@@ -468,6 +468,33 @@ export class MainScene extends Phaser.Scene {
     console.log(`[MainScene] Acquired new weapon: ${config.name}`);
   }
 
+  /**
+   * Cheat: Grant XP for N levels and trigger sequence.
+   */
+  public cheatGrantLevels(count: number): void {
+    this.experienceManager.grantCheatLevels(count);
+    this.uiManager.updateLevelUI();
+    
+    // Trigger sequence to allow user to pick rewards for the new levels
+    this.startLevelUpSequence();
+    
+    console.log(`[Cheat] Granted ${count} levels. New Level: ${this.experienceManager.currentLevel}`);
+  }
+
+  /**
+   * Cheat: Set exact level.
+   * Calculates difference and grants levels if target > current.
+   */
+  public cheatSetLevel(targetLevel: number): void {
+      const currentLevel = this.experienceManager.currentLevel;
+      if (targetLevel > currentLevel) {
+          const diff = targetLevel - currentLevel;
+          this.cheatGrantLevels(diff);
+      } else {
+          console.log(`[Cheat] Target level ${targetLevel} is not higher than current ${currentLevel}. Ignoring.`);
+      }
+  }
+
   private cullExcessCandies(): void {
     const MAX_CANDIES = 300;
     const CULL_COUNT = 50;

@@ -94,6 +94,20 @@ export class DevDebugSystem {
     }
   }
 
+  public debugAddLevels(count: number): void {
+    const mainScene = this.scene as import('@/game/scenes/MainScene').MainScene;
+    if (mainScene.cheatGrantLevels) {
+      mainScene.cheatGrantLevels(count);
+    }
+  }
+
+  public debugSetLevel(targetLevel: number): void {
+    const mainScene = this.scene as import('@/game/scenes/MainScene').MainScene;
+    if (mainScene.cheatSetLevel) {
+      mainScene.cheatSetLevel(targetLevel);
+    }
+  }
+
   public debugHeal(): void {
     if (this.player) {
       this.combatManager.healPlayer(9999);
