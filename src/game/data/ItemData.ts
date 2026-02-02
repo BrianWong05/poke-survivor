@@ -12,6 +12,7 @@ export interface ItemConfig {
         maxHP?: number;
         amount?: number;
         growth?: number;
+        greed?: number;
     }
 }
 
@@ -51,5 +52,18 @@ export const LUCKY_EGG: ItemConfig = {
     maxLevel: 5,
     stats: {
         growth: 0.10, // +10% Growth per level
+    }
+};
+
+export const AMULET_COIN: ItemConfig = {
+    id: 'amulet_coin',
+    name: 'Amulet Coin',
+    nameKey: 'item_amulet_coin',
+    description: 'Gain 20% more gold coins.',
+    type: 'passive',
+    spriteKey: 'amulet_coin',
+    maxLevel: 5,
+    stats: {
+        greed: 0.20, // +20% Gold Multiplier per level
     }
 };

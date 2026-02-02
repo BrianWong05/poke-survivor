@@ -33,6 +33,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   public defense: number = 0;
   public amount: number = 0; // Projectile Amount Modifier
   public might: number = 1.0;
+  public greed: number = 1.0;
+  public gold: number = 0;
   public evolutionStage: number = 0;
   public formId: string = 'pikachu';
   public isInvulnerable: boolean = false; // Legacy: kept for debug console compatibility
@@ -398,10 +400,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.growth += (eggLevel * 0.10); // +10% per level
       }
 
+      // Amulet Coin (Greed)
+      this.greed = 1.0; // Reset
+      const coinLevel = this.inventory.getItemLevel('amulet_coin');
+      if (coinLevel > 0) {
+          this.greed += (coinLevel * 0.20); // +20% per level
+      }
+
       // Handle other items if necessary (e.g. Iron, HpUp could also be recalculated here)
       // For now focusing on Muscle Band as requested.
 
-      console.log(`Stats Recalculated: Might is now ${(this.might * 100).toFixed(0)}%, Growth is now ${(this.growth * 100).toFixed(0)}%`);
+      console.log(`Stats Recalculated: Might is now ${(this.might * 100).toFixed(0)}%, Growth is now ${(this.growth * 100).toFixed(0)}%, Greed is now ${(this.greed * 100).toFixed(0)}%`);
   }
 
   /**
@@ -415,6 +424,20 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           return false;
       }
       return this.experienceManager.addXP(finalAmount);
+  }
+
+  /**
+   * Add Gold to the player, applying greed multiplier.
+   * Logic: Math.ceil(amount * greed)
+   */
+  public gainGold(amount: number): void {
+      const finalAmount = Math.ceil(amount * (this.greed || 1.0));
+      this.gold += finalAmount;
+      
+      // Emit event for UI or systems tracking gold
+      this.scene.events.emit('update-gold', this.gold);
+      
+      console.log(`[Player] Gained ${finalAmount} gold (Base: ${amount}, Greed: ${this.greed}). Total: ${this.gold}`);
   }
 
     // Limit Break: Small incremental boost for fully evolved characters
