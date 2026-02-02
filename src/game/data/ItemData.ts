@@ -11,6 +11,7 @@ export interface ItemConfig {
         defense?: number;
         maxHP?: number;
         amount?: number;
+        growth?: number;
     }
 }
 
@@ -37,5 +38,18 @@ export const LOADED_DICE: ItemConfig = {
     maxLevel: 2,
     stats: {
         amount: 1, // +1 Projectile count per level (Total +2)
+    }
+};
+
+export const LUCKY_EGG: ItemConfig = {
+    id: 'lucky_egg',
+    name: 'Lucky Egg',
+    nameKey: 'item_lucky_egg',
+    description: 'Gain 10% more experience.',
+    type: 'passive',
+    spriteKey: 'lucky_egg',
+    maxLevel: 5,
+    stats: {
+        growth: 0.10, // +10% Growth per level
     }
 };

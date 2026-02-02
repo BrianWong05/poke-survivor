@@ -98,7 +98,7 @@ export class ExperienceManager {
       multiplier = 0.75;
     }
     
-    return Math.floor(amount * multiplier);
+    return amount * multiplier;
   }
 
   public calculateGain(amount: number, level: number): number {

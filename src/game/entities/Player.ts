@@ -3,6 +3,7 @@ import { FloatingHpBar } from '@/game/ui/FloatingHpBar';
 import { PlayerInventory } from './components/PlayerInventory';
 import { getCharacter } from '@/game/entities/characters/registry';
 import type { CharacterConfig } from '@/game/entities/characters/types';
+import { ExperienceManager } from '@/game/systems/ExperienceManager';
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
   // Collection zone for XP gems (Magnet)
@@ -11,6 +12,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   // Modifiers
   public moveSpeedMultiplier = 1.0;
   public projectileSizeModifier = 1.0;
+  public growth: number = 1.0;
 
   // Inventory Component
   public inventory: PlayerInventory;
@@ -34,6 +36,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   public evolutionStage: number = 0;
   public formId: string = 'pikachu';
   public isInvulnerable: boolean = false; // Legacy: kept for debug console compatibility
+  
+  private experienceManager!: ExperienceManager;
   
   private regenTimer: number = 0;
   private hpBar: FloatingHpBar;
@@ -105,6 +109,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // Initialize UI
     this.hpBar = new FloatingHpBar(scene, this);
     this.hpBar.draw(this.health, this.maxHP);
+  }
+
+  /**
+   * Inject experience manager reference.
+   */
+  public setExperienceManager(manager: ExperienceManager): void {
+      this.experienceManager = manager;
   }
 
   /**
@@ -380,10 +391,30 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.amount += diceLevel; // +1 per level
       }
 
+      // Lucky Egg (Growth)
+      this.growth = 1.0; // Reset
+      const eggLevel = this.inventory.getItemLevel('lucky_egg');
+      if (eggLevel > 0) {
+          this.growth += (eggLevel * 0.10); // +10% per level
+      }
+
       // Handle other items if necessary (e.g. Iron, HpUp could also be recalculated here)
       // For now focusing on Muscle Band as requested.
 
-      console.log(`Stats Recalculated: Might is now ${(this.might * 100).toFixed(0)}%`);
+      console.log(`Stats Recalculated: Might is now ${(this.might * 100).toFixed(0)}%, Growth is now ${(this.growth * 100).toFixed(0)}%`);
+  }
+
+  /**
+   * Add XP to the player, applying growth multiplier.
+   * Logic: amount * growth
+   */
+  public gainExperience(amount: number): boolean {
+      const finalAmount = amount * (this.growth || 1.0);
+      if (!this.experienceManager) {
+          console.warn("[Player] ExperienceManager not set! Cannot gain XP.");
+          return false;
+      }
+      return this.experienceManager.addXP(finalAmount);
   }
 
     // Limit Break: Small incremental boost for fully evolved characters

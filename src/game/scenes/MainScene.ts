@@ -186,6 +186,7 @@ export class MainScene extends Phaser.Scene {
     const spriteKey = this.usePlaceholderGraphics ? 'player' : this.characterConfig.spriteKey;
     
     this.player = new Player(this, centerX, centerY, spriteKey);
+    this.player.setExperienceManager(this.experienceManager);
     // Initialize stats from configuration
     this.player.setHealth(this.characterConfig.stats.maxHP, this.characterConfig.stats.maxHP);
 
@@ -368,7 +369,7 @@ export class MainScene extends Phaser.Scene {
     if (isRareCandy) {
         canLevelUp = this.experienceManager.addInstantLevel();
     } else {
-        canLevelUp = this.experienceManager.addXP(xpValue);
+        canLevelUp = this.player.gainExperience(xpValue);
     }
     
     this.score += xpValue;

@@ -180,13 +180,14 @@ export class UIManager {
     this.characterState.xp = this.experienceManager.currentXP;
     this.characterState.xpToNextLevel = this.experienceManager.xpToNextLevel;
 
+    const roundedXp = Math.floor(this.characterState.xp);
     if (this.callbacks.onLevelUpdate) {
-      this.callbacks.onLevelUpdate(this.characterState.level, this.characterState.xp, this.characterState.xpToNextLevel);
+      this.callbacks.onLevelUpdate(this.characterState.level, roundedXp, this.characterState.xpToNextLevel);
     }
     
     window.dispatchEvent(new CustomEvent('xp-update', {
       detail: {
-        current: this.characterState.xp,
+        current: roundedXp,
         max: this.characterState.xpToNextLevel,
         level: this.characterState.level,
       },
