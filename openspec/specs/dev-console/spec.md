@@ -15,6 +15,16 @@ The console MUST provide a mechanism to trigger an instant level up for the play
 #### Scenario: Clicking Level Up
 When the user clicks the "Level Up" button in the debug console, the player character immediately gains enough experience to fill their current XP bar and trigger the level-up event/menu.
 
+### Requirement: Level Manipulation Cheats
+The Dev Console SHALL provide controls to add player levels.
+
+#### Scenario: Add Level
+- **WHEN** user clicks "Level Up (Instant)" button in Cheats tab
+- **THEN** player level increases by 1
+- **THEN** player XP bar updates
+- **THEN** any side effects of leveling (stats, evolution checks) are triggered
+
+
 ### Requirement: Debug Action - Full Heal
 The console MUST provide a mechanism to fully heal the player character.
 
