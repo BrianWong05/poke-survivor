@@ -339,6 +339,12 @@ export class MainScene extends Phaser.Scene {
     this.enemySpawner.stop();
     this.player.setVelocity(0, 0);
     this.callbacks.onGameOver();
+    
+    // Stop all game visuals immediately
+    if (this.physics.world) this.physics.pause();
+    this.anims.pauseAll();
+    this.tweens.pauseAll();
+    this.time.paused = true;
   }
 
   private handleXPCollection(
