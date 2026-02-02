@@ -84,6 +84,10 @@ export class LootManager {
       candy.setData('tier', type); // Identifying type
       candy.setData('xpValue', config.xp);
       candy.setData('lootType', type);
+      
+      // Reset state for pooling
+      candy.setData('isMagnetized', false);
+      candy.setVelocity(0, 0);
     }
   }
 }

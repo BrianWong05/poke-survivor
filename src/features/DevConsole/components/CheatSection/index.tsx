@@ -5,9 +5,10 @@ import { Button } from '@/features/DevConsole/components/Shared/Button';
 interface CheatSectionProps {
     handleCheat: (action: string) => void;
     isInvincible: boolean;
+    showMagnetRange: boolean;
 }
 
-export const CheatSection: React.FC<CheatSectionProps> = ({ handleCheat, isInvincible }) => {
+export const CheatSection: React.FC<CheatSectionProps> = ({ handleCheat, isInvincible, showMagnetRange }) => {
     return (
         <Section title="Cheats">
             <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
@@ -43,6 +44,9 @@ export const CheatSection: React.FC<CheatSectionProps> = ({ handleCheat, isInvin
             <Button onClick={() => handleCheat('heal')} color="#2ecc71">Full Heal</Button>
             <Button onClick={() => handleCheat('invincible')} color="#9b59b6" outline={!isInvincible}>
                 {isInvincible ? 'Invincible Mode (ON)' : 'Invincible Mode (OFF)'}
+            </Button>
+            <Button onClick={() => handleCheat('toggle-magnet-range')} color="#27ae60" outline={!showMagnetRange}>
+                {showMagnetRange ? 'Show Magnet Range (ON)' : 'Show Magnet Range (OFF)'}
             </Button>
             <Button onClick={() => handleCheat('kill')} color="#e74c3c">Kill All Enemies</Button>
         </Section>

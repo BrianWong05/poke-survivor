@@ -13,6 +13,7 @@ export interface ItemConfig {
         amount?: number;
         growth?: number;
         greed?: number;
+        magnet?: number;
     }
 }
 
@@ -65,5 +66,18 @@ export const AMULET_COIN: ItemConfig = {
     maxLevel: 5,
     stats: {
         greed: 0.20, // +20% Gold Multiplier per level
+    }
+};
+
+export const MAGNET: ItemConfig = {
+    id: 'magnet',
+    name: 'Magnet',
+    nameKey: 'item_magnet',
+    description: 'Increases pickup range by 30%.',
+    type: 'passive',
+    spriteKey: 'magnet',
+    maxLevel: 5,
+    stats: {
+        magnet: 0.30, // +30% Radius per level
     }
 };

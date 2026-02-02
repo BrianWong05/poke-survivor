@@ -13,6 +13,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   public moveSpeedMultiplier = 1.0;
   public projectileSizeModifier = 1.0;
   public growth: number = 1.0;
+  public baseMagnetRadius = 50;
+  public magnetRadius = 50;
+  private magnetRangeGraphic!: Phaser.GameObjects.Graphics;
 
   // Inventory Component
   public inventory: PlayerInventory;
@@ -100,6 +103,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // Set circle physics body for the zone (Radius 50)
     const body = this.collectionZone.body as Phaser.Physics.Arcade.Body;
     body.setCircle(50);
+
+    // Initialize Magnet Range Graphic
+    this.magnetRangeGraphic = scene.add.graphics();
+    this.magnetRangeGraphic.setVisible(false);
+    this.magnetRangeGraphic.setDepth(5); // Below player
     
     // Initialize stats
     this.health = this.maxHP;
@@ -154,6 +162,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.health = current;
     this.maxHP = max;
     this.hpBar.draw(this.health, this.maxHP);
+  }
+
+  /**
+   * Toggle the visibility of the magnet range visualization.
+   */
+  public setMagnetRangeVisible(visible: boolean): void {
+      if (this.magnetRangeGraphic) {
+          this.magnetRangeGraphic.setVisible(visible);
+      }
   }
 
   /**
@@ -259,6 +276,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // Sync collection zone with player position
     if (this.collectionZone) {
       this.collectionZone.setPosition(this.x, this.y);
+    }
+
+    // Update Magnet Range Graphic
+    if (this.magnetRangeGraphic && this.magnetRangeGraphic.visible) {
+        this.magnetRangeGraphic.clear();
+        this.magnetRangeGraphic.lineStyle(2, 0x00ff00, 0.5);
+        this.magnetRangeGraphic.strokeCircle(this.x, this.y, this.magnetRadius);
     }
   }
 
@@ -407,10 +431,21 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.greed += (coinLevel * 0.20); // +20% per level
       }
 
-      // Handle other items if necessary (e.g. Iron, HpUp could also be recalculated here)
-      // For now focusing on Muscle Band as requested.
+      // Magnet (Pickup Range)
+      let magnetBonus = 1.0;
+      const magnetLevel = this.inventory.getItemLevel('magnet');
+      if (magnetLevel > 0) {
+          magnetBonus += (magnetLevel * 0.30); // +30% per level
+      }
+      this.magnetRadius = this.baseMagnetRadius * magnetBonus;
+      
+      // Update Physics Body
+      if (this.collectionZone && this.collectionZone.body) {
+          const body = this.collectionZone.body as Phaser.Physics.Arcade.Body;
+          body.setCircle(this.magnetRadius);
+      }
 
-      console.log(`Stats Recalculated: Might is now ${(this.might * 100).toFixed(0)}%, Growth is now ${(this.growth * 100).toFixed(0)}%, Greed is now ${(this.greed * 100).toFixed(0)}%`);
+      console.log(`Stats Recalculated: Might ${(this.might * 100).toFixed(0)}%, Growth ${(this.growth * 100).toFixed(0)}%, Greed ${(this.greed * 100).toFixed(0)}%, Magnet Radius ${this.magnetRadius.toFixed(0)}px`);
   }
 
   /**

@@ -155,9 +155,11 @@ export class MainScene extends Phaser.Scene {
         this.hazardGroup
     );
      
-    // XP Collection Collision
+    /* Magnetism now handled by distance check in update for better precision */
+
+    // XP Actual Collection (Inner Zone - Player Body)
     this.physics.add.overlap(
-        this.player.collectionZone,
+        this.player,
         this.xpGems,
         this.handleXPCollection.bind(this) as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback,
         undefined,
@@ -349,6 +351,8 @@ export class MainScene extends Phaser.Scene {
     this.tweens.pauseAll();
     this.time.paused = true;
   }
+
+  /* Removed handleXPMagnetism as it is now handled by distance check in update */
 
   private handleXPCollection(
     _playerObj: Phaser.Types.Physics.Arcade.GameObjectWithBody | Phaser.Tilemaps.Tile,
@@ -644,6 +648,27 @@ export class MainScene extends Phaser.Scene {
              }
           }
        }
+    });
+
+    // Magnetized XP Gems movement
+    this.xpGems.getChildren().forEach((child) => {
+        const gem = child as Phaser.Physics.Arcade.Sprite;
+        if (!gem.active) return;
+
+        // Precise Distance Check for Magnetism trigger
+        if (!gem.getData('isMagnetized')) {
+            const dist = Phaser.Math.Distance.Between(gem.x, gem.y, this.player.x, this.player.y);
+            if (dist <= this.player.magnetRadius) {
+                gem.setData('isMagnetized', true);
+            }
+        }
+
+        // Movement logic for magnetized gems
+        if (gem.getData('isMagnetized')) {
+            const angle = Phaser.Math.Angle.Between(gem.x, gem.y, this.player.x, this.player.y);
+            const speed = 400; // Suck in speed
+            gem.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
+        }
     });
 
     // Passive update

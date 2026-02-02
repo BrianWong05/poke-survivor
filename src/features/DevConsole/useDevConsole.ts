@@ -9,6 +9,7 @@ export const useDevConsole = () => {
     const [isVisible, setIsVisible] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
     const [isInvincible, setIsInvincible] = useState(false);
+    const [showMagnetRange, setShowMagnetRange] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [itemSearchQuery, setItemSearchQuery] = useState('');
     const [activeWeapons, setActiveWeapons] = useState<ActiveWeapon[]>([]);
@@ -95,6 +96,13 @@ export const useDevConsole = () => {
                     const newState = !isInvincible;
                     gameScene.debugSystem.debugSetInvincible(newState);
                     setIsInvincible(newState);
+                }
+                break;
+            case 'toggle-magnet-range':
+                if (gameScene.debugSystem.debugToggleMagnetRange) {
+                    const newState = !showMagnetRange;
+                    gameScene.debugSystem.debugToggleMagnetRange(newState);
+                    setShowMagnetRange(newState);
                 }
                 break;
             default:
@@ -203,6 +211,7 @@ export const useDevConsole = () => {
         handleSetLevel,
         handleAddItem,
         handleRemoveItem,
-        handleSetItemLevel
+        handleSetItemLevel,
+        showMagnetRange
     };
 };

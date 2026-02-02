@@ -1,7 +1,8 @@
 # passives Specification
 
 ## Purpose
-TBD - created by archiving change implement-passive-items. Update Purpose after archive.
+This specification defines the system for passive items that provide permanent stat bonuses or utility effects to the player.
+
 ## Requirements
 ### Requirement: HpUp Item
 The `HpUp` item MUST calculate its bonus strictly based on the item's level.
@@ -68,3 +69,32 @@ The `Amulet Coin` item MUST increase the player's gold gain (`greed`).
 - **WHEN** the player upgrades Amulet Coin to Level 5 (Max)
 - **THEN** the total `greed` increase SHALL be 100% (+1.00 multiplier)
 
+### Requirement: Magnet Passive Item
+The Magnet item MUST be registered as a passive item in the game's item system.
+- **ID**: `magnet`
+- **Type**: `passive`
+- **Effect**: Increases pickup range.
+
+#### Scenario: Item Registration
+- **WHEN** the item data is initialized
+- **THEN** the `magnet` item is included in the available passive items list.
+
+### Requirement: Lucky Egg passive item
+The system SHALL support the Lucky Egg as a passive item.
+
+#### Scenario: Lucky Egg Sprite and Asset
+- **WHEN** the Lucky Egg is initialized
+- **THEN** it MUST use the `lucky_egg` sprite key
+- **AND** the sprite SHALL be loaded from `public/assets/items/lucky_egg.png`
+
+### Requirement: Lucky Egg Metadata
+The Lucky Egg SHALL have following properties:
+- **Max Level**: 5
+- **Description**: Gain 10% more experience.
+
+### Requirement: Muscle Band Item Registration
+The Muscle Band item MUST be registered as a passive item in the game's item system.
+
+#### Scenario: Item Registration
+- **WHEN** the item data is initialized
+- **THEN** the `muscle_band` item is included in the available passive items list.

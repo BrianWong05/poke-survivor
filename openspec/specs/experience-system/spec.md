@@ -1,7 +1,8 @@
 # experience-system Specification
 
 ## Purpose
-TBD - created by archiving change add-loot-and-leveling. Update Purpose after archive.
+This specification defines the player experience and leveling system, including XP gain, level thresholds, and progression mechanics.
+
 ## Requirements
 ### Requirement: Exp Candy Tier Constants
 The system SHALL use updated XP values aligned with tier-based loot.
@@ -100,4 +101,10 @@ The Experience System SHALL expose a method to force a specific level or add lev
 - **THEN** XP to next level is recalculated for level X
 - **THEN** current XP is reset to 0
 
+### Requirement: Growth Multiplier
+The Experience system SHALL apply a `growth` multiplier to all XP gains after diminishing returns are calculated.
 
+#### Scenario: XP gain with growth multiplier 
+- **WHEN** the player gains 100 base XP
+- **AND** the `growth` multiplier is 1.2
+- **THEN** the final XP gain SHALL be 120 (assuming multiplier 1.0 from diminishing returns)

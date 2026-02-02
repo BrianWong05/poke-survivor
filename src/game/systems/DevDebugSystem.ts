@@ -347,4 +347,11 @@ export class DevDebugSystem {
   public getActiveWeaponIds(): string[] {
     return Array.from(this.debugWeapons.values()).map(entry => entry.baseConfig.id);
   }
+
+  public debugToggleMagnetRange(visible: boolean): void {
+      if (this.player) {
+          this.player.setMagnetRangeVisible(visible);
+          console.log(`[DevConsole] Magnet Range Visualization: ${visible ? 'ON' : 'OFF'}`);
+      }
+  }
 }
