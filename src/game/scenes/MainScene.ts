@@ -424,7 +424,10 @@ export class MainScene extends Phaser.Scene {
                this.scene.resume('MainScene');
                
                // On Resume - check for more pending levels
-               if (this.experienceManager.processLevelUp()) {
+               // Always commit the level we just finished selecting for
+               this.experienceManager.processLevelUp();
+
+               if (this.experienceManager.hasPendingLevelUp) {
                  // Reset flag momentarily to allow re-entry
                  this.isLevelUpPending = false; 
                  // Recursively start next sequence immediately

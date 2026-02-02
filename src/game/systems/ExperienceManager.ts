@@ -69,6 +69,13 @@ export class ExperienceManager {
   }
 
   /**
+   * Check if there is a pending level up (either from XP or cheats).
+   */
+  public get hasPendingLevelUp(): boolean {
+    return this.currentXP >= this.xpToNextLevel || this.pendingCheatRewards > 0;
+  }
+
+  /**
    * Helper to expose static-like access if needed, or just instance method.
    * Keeping instance method as primary.
    */
