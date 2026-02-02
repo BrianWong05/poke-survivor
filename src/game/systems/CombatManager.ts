@@ -217,25 +217,22 @@ export class CombatManager {
     _playerObj: Phaser.Types.Physics.Arcade.GameObjectWithBody | Phaser.Tilemaps.Tile,
     enemyObj: Phaser.Types.Physics.Arcade.GameObjectWithBody | Phaser.Tilemaps.Tile
   ): void {
-    // Debug invincible check should be passed in or checked differently
-    // We'll rely on local invincibility state + player data
-    // Debug invincibility is handled by not calling this or checking a flag
-    // We can assume if debug is on, we won't get hurt if we check a global or similar.
-    // For now, check standard flags.
-    // Debug invincible check
-    if (this.isInverseGameOver() || this.player.isInvulnerable || this.player.getData('debugInvincible')) return;
+    // Debug invincible check (keeps debug mode working)
+    if (this.isInverseGameOver() || this.player.getData('debugInvincible')) return;
 
     const enemy = enemyObj as Phaser.Physics.Arcade.Sprite;
+    const currentTime = this.scene.time.now;
+
+    // Per-enemy cooldown check (replaces global player invulnerability)
+    if ((enemy as any).canAttack && !(enemy as any).canAttack(currentTime)) {
+      return; // This specific enemy is still on cooldown
+    }
 
     // Passive onEnemyTouch
     if (this.characterConfig.passive.onEnemyTouch) {
       const ctx = this.getCharacterContext();
       this.characterConfig.passive.onEnemyTouch(ctx, enemy);
     }
-
-    // Do NOT destroy enemy on contact (Continuous Damage Style)
-    // enemy.setActive(false);
-    // enemy.setVisible(false);
 
     // Get damage from enemy stats (default 1)
     let damage = (enemy as any).damage || 1;
@@ -256,15 +253,18 @@ export class CombatManager {
       });
     }
 
-    // Delegate damage to Player (Handles invincibility and HP)
+    // Apply damage to player
     this.player.takeDamage(damage);
+
+    // Mark this enemy as having attacked (per-enemy cooldown)
+    if ((enemy as any).onAttack) {
+      (enemy as any).onAttack(currentTime);
+    }
 
     if (this.characterState.currentHP <= 0) {
       this.triggerGameOver();
       return;
     }
-    
-    // Invincibility is now handled inside Player.takeDamage()
   }
 
   // Helper for inversion because I used a function call in the condition

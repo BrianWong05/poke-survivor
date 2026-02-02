@@ -32,13 +32,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   public might: number = 1.0;
   public evolutionStage: number = 0;
   public formId: string = 'pikachu';
-  public isInvulnerable: boolean = false;
+  public isInvulnerable: boolean = false; // Legacy: kept for debug console compatibility
   
   private regenTimer: number = 0;
   private hpBar: FloatingHpBar;
-  
-  // Invulnerability duration in ms
-  private readonly INVULNERABILITY_DURATION = 100;
 
   // Configuration
   public characterConfig: CharacterConfig;
@@ -174,13 +171,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   /**
    * Handle taking damage from enemies.
-   * Applies damage, emits event, and triggers short invulnerability.
+   * Applies damage and triggers visual feedback.
+   * NOTE: Invulnerability is now handled per-enemy in CombatManager.
    */
   public takeDamage(amount: number): void {
-    // 1. Check Immunity
-    if (this.isInvulnerable) return;
-
-    // 2. Apply Damage (mitigated by defense)
+    // Apply Damage (mitigated by defense)
     // Formula: Effective HP multiplier
     // damage = amount * (1 / (1 + def * 0.1))
     const mitigationFactor = 1 / (1 + (this.defense * 0.1));
@@ -196,12 +191,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     console.log(`[Player] Took ${finalDamage.toFixed(2)} damage (Raw: ${amount}, Def: ${this.defense}, Factor: ${mitigationFactor.toFixed(2)}). HP: ${this.health.toFixed(2)}`);
 
-    // 3. Trigger Short Immunity
-    this.isInvulnerable = true;
-    
-    // Visual Feedback: Red Tint + Flicker
+    // Visual Feedback: Red Tint + Flicker (cosmetic only, does NOT block damage)
     this.setTint(0xff0000);
-    this.setAlpha(1); // Ensure start at 1
+    this.setAlpha(1);
 
     // Stop existing tweens to prevent conflict
     this.scene.tweens.killTweensOf(this);
@@ -209,18 +201,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.tweens.add({
         targets: this,
         alpha: 0.5,
-        duration: 50, // 50ms fade out, 50ms fade in = 100ms total
+        duration: 50,
         yoyo: true,
-        repeat: 0, // Run exactly once to match 100ms invuln window
+        repeat: 0,
         onComplete: () => {
             this.clearTint();
             this.setAlpha(1);
         }
-    });
-
-    // Reset Immunity matches visual duration
-    this.scene.time.delayedCall(this.INVULNERABILITY_DURATION, () => {
-        this.isInvulnerable = false;
     });
   }
 

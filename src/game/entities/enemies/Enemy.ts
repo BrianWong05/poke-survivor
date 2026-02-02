@@ -39,6 +39,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   /** Damage dealt on contact */
   public damage: number = 1;
 
+  /** Timestamp of last attack on player (per-enemy cooldown) */
+  public lastAttackTime: number = 0;
+
   // Components
   public movement: EnemyMovement;
   public visuals: EnemyVisuals;
@@ -81,6 +84,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.enemyType = enemyType;
     this.isBoss = stats.tier === EnemyTier.BOSS;
     this.isDying = false;
+    this.lastAttackTime = 0; // Reset attack timer for recycled enemies
 
     // Check if main texture exists, otherwise use fallback
     if (this.scene.textures.exists(stats.textureKey)) {
@@ -153,6 +157,23 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     if (this.hp <= 0) {
       this.die();
     }
+  }
+
+  /**
+   * Check if this enemy can attack the player (per-enemy cooldown).
+   * @param time Current game time in ms
+   * @returns true if cooldown has elapsed (500ms)
+   */
+  public canAttack(time: number): boolean {
+    return time > this.lastAttackTime + 500;
+  }
+
+  /**
+   * Record that this enemy attacked the player.
+   * @param time Current game time in ms
+   */
+  public onAttack(time: number): void {
+    this.lastAttackTime = time;
   }
 
   // --- Delegation Methods ---
