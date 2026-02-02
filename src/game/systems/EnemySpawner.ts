@@ -9,6 +9,7 @@ import {
   type EnemyStats,
 } from '@/game/entities/enemies';
 import { DexManager } from '@/systems/DexManager';
+import { ExperienceManager } from '@/game/systems/ExperienceManager';
 
 /**
  * Wave configuration for enemy spawning.
@@ -47,6 +48,7 @@ const POOL_SIZE_PER_TYPE = 100;
 export class EnemySpawner {
   private scene: Phaser.Scene;
   private player: Phaser.Physics.Arcade.Sprite;
+  private experienceManager: ExperienceManager;
 
   /** Pools for each enemy type */
   private rattataPool: Phaser.GameObjects.Group;
@@ -68,9 +70,10 @@ export class EnemySpawner {
   /** Whether spawning is active */
   private isActive: boolean = false;
 
-  constructor(scene: Phaser.Scene, player: Phaser.Physics.Arcade.Sprite) {
+  constructor(scene: Phaser.Scene, player: Phaser.Physics.Arcade.Sprite, experienceManager: ExperienceManager) {
     this.scene = scene;
     this.player = player;
+    this.experienceManager = experienceManager;
 
     // Create object pools for each enemy type
     this.rattataPool = this.createPool(Rattata, 'enemy-rattata');
@@ -191,26 +194,27 @@ export class EnemySpawner {
     const spawnX = this.player.x + Math.cos(angle) * SPAWN_RADIUS;
     const spawnY = this.player.y + Math.sin(angle) * SPAWN_RADIUS;
 
-    // Calculate HP Multiplier based on Player Level
-    // Formula: 1 + (PlayerLevel * 0.05)
-    // Level 1: 1.05x, Level 20: 2.0x
-    
-    const currentLevel = (this.player as any).level || 1;
-    const hpMultiplier = 1 + (currentLevel * 0.05);
+    // Calculate Scaling Multiplier based on Player Level
+    // Formula: Start at 1.0, add +10% per level gained (Level 11 = 2.0x, Level 41 = 5.0x)
+    const currentLevel = this.experienceManager.currentLevel;
+    const hpMultiplier = 1 + (currentLevel - 1) * 0.1;
+    const damageMultiplier = 1 + (currentLevel - 1) * 0.05;
 
     // Get Base Stats
     const baseStats = ENEMY_STATS[enemyType];
     
-    // Scale HP
-    const scaledHP = Math.floor(baseStats.maxHP * hpMultiplier);
+    // Scale Stats
+    const scaledHP = Math.round(baseStats.maxHP * hpMultiplier);
+    const scaledDamage = Math.round(baseStats.damage * damageMultiplier);
     
     // Create Scaled Stats
     const scaledStats = {
       ...baseStats,
       maxHP: scaledHP,
+      damage: scaledDamage,
     };
 
-    console.log(`[EnemySpawner] Spawning ${enemyType} at Level ${currentLevel}. Multiplier: ${hpMultiplier.toFixed(2)}. HP: ${scaledHP} (Base: ${baseStats.maxHP})`);
+    console.log(`[EnemySpawner] Spawning ${enemyType} at Level ${currentLevel}. Multipliers: HP x${hpMultiplier.toFixed(1)}, Dmg x${damageMultiplier.toFixed(1)}. Stats: HP ${scaledHP}, Dmg ${scaledDamage}`);
 
     // Get enemy from appropriate pool
     const enemy = this.getEnemyFromPool(enemyType, spawnX, spawnY, scaledStats);

@@ -202,7 +202,7 @@ export class MainScene extends Phaser.Scene {
       runChildUpdate: false,
     });
 
-    this.enemySpawner = new EnemySpawner(this, this.player);
+    this.enemySpawner = new EnemySpawner(this, this.player, this.experienceManager);
 
     this.projectiles = this.physics.add.group({
       classType: Phaser.Physics.Arcade.Sprite,
