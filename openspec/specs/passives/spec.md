@@ -41,3 +41,17 @@ Given the player has `Iron` Level 1
 When the player upgrades `Iron` to Level 3 (+1 Defense every 2 levels)
 Then the player's Defense should increase appropriately (e.g., total 2 or 3 depending on exact formula)
 
+### Requirement: Muscle Band Item
+The `Muscle Band` item MUST increase the player's damage output (`might`).
+
+#### Scenario: Acquisition and Leveling
+- **WHEN** the player acquires `Muscle Band` Level 1
+- **THEN** the player's `might` stat increases by 10% (+0.10 multiplier)
+- **WHEN** the player upgrades `Muscle Band` to Level 5 (Max)
+- **THEN** the total `might` increase SHALL be 50% (+0.50 multiplier)
+
+### Requirement: Muscle Band Sprite
+The `Muscle Band` item MUST display correctly using its designated sprite.
+- **Sprite Key**: `muscle_band`
+- **Source**: `public/assets/items/muscle_band.png`
+

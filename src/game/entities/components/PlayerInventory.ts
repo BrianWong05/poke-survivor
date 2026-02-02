@@ -79,6 +79,15 @@ export class PlayerInventory {
   }
 
   /**
+   * Get the current level of an item in the inventory.
+   * Returns 0 if item is not present.
+   */
+  public getItemLevel(itemId: string): number {
+      const item = this.items.find(i => i.id === itemId);
+      return item ? item.level : 0;
+  }
+
+  /**
    * Helper to construct the context object required by Items.
    */
   private getPlayerContext() {

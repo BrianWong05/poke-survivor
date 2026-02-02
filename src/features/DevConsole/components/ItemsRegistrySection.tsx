@@ -15,8 +15,9 @@ export const ItemsRegistrySection: React.FC<ItemsRegistrySectionProps> = ({
     onSearchChange,
     onAddItem
 }) => {
-    const filteredItems = AVAILABLE_ITEMS.filter(id => 
-        id.toLowerCase().includes(searchQuery.toLowerCase())
+    const filteredItems = AVAILABLE_ITEMS.filter(item => 
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.id.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     return (
@@ -37,13 +38,13 @@ export const ItemsRegistrySection: React.FC<ItemsRegistrySectionProps> = ({
                 {filteredItems.length === 0 ? (
                     <div style={styles.hint}>No items found.</div>
                 ) : (
-                    filteredItems.map(id => (
+                    filteredItems.map(item => (
                         <Button 
-                            key={id}
-                            onClick={() => onAddItem(id)}
+                            key={item.id}
+                            onClick={() => onAddItem(item.id)}
                             outline={true}
                         >
-                            {id}
+                            {item.name}
                         </Button>
                     ))
                 )}

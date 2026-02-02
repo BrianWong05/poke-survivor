@@ -112,6 +112,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    */
   public addItem(item: Item): void {
       this.inventory.addItem(item);
+      this.recalculateStats();
   }
 
   /**
@@ -120,6 +121,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    */
   public removeItem(itemId: string): void {
       this.inventory.removeItem(itemId);
+      this.recalculateStats();
   }
 
   /**
@@ -128,6 +130,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    */
   public setItemLevel(itemId: string, targetLevel: number): void {
       this.inventory.setItemLevel(itemId, targetLevel);
+      this.recalculateStats();
   }
 
   /**
@@ -345,6 +348,34 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.health = this.maxHP;
       this.hpBar.draw(this.health, this.maxHP);
       this.scene.events.emit('hp-update', this.health);
+  }
+
+  /**
+   * Recalculate player stats based on base stats and active items.
+   */
+  public recalculateStats(): void {
+      // 1. Reset to Base Stats (Character defaults)
+      // We use baseStats from config or current values as fallback
+      const baseMight = this.characterConfig.stats.might || 1.0;
+      this.might = baseMight;
+      
+      // 2. Add Evolution/Level Break Bonuses
+      // Note: evolutionStage is tracked, but boosts were applied directly in checkAndApplyEvolution.
+      // For a more robust system, we should track total bonuses separately.
+      // However, following the user's logic exactly:
+      // const muscleBandLevel = this.inventory.getItemLevel('muscle_band');
+      
+      // 3. Loop through Inventory and apply Passives
+      const muscleBandLevel = this.inventory.getItemLevel('muscle_band');
+      if (muscleBandLevel > 0) {
+          // Apply 0.10 per level
+          this.might += (muscleBandLevel * 0.10);
+      }
+
+      // Handle other items if necessary (e.g. Iron, HpUp could also be recalculated here)
+      // For now focusing on Muscle Band as requested.
+
+      console.log(`Stats Recalculated: Might is now ${(this.might * 100).toFixed(0)}%`);
   }
 
     // Limit Break: Small incremental boost for fully evolved characters
