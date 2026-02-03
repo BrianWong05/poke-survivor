@@ -172,17 +172,35 @@ export class LevelUpScene extends Phaser.Scene {
     }).setOrigin(0.5);
     card.add(badgeText);
     
-    // Item icon placeholder (circle with first letter)
-    const iconBg = this.add.circle(0, -25, 35, 0x1abc9c, 1);
-    iconBg.setStrokeStyle(2, 0xffffff);
-    card.add(iconBg);
-    
-    const iconLetter = this.add.text(0, -25, option.displayName.charAt(0).toUpperCase(), {
-      fontSize: '32px',
-      color: '#ffffff',
-      fontStyle: 'bold'
-    }).setOrigin(0.5);
-    card.add(iconLetter);
+    // Item icon
+    let hasSprite = false;
+    if (option.spriteKey && this.textures.exists(option.spriteKey)) {
+      const sprite = this.add.sprite(0, -25, option.spriteKey);
+      
+      // Calculate scale to fit in a ~70px area (diameter of original circle)
+      const maxDim = Math.max(sprite.width, sprite.height);
+      const targetDim = 64;
+      if (maxDim > 0) {
+        sprite.setScale(targetDim / maxDim);
+      }
+      
+      card.add(sprite);
+      hasSprite = true;
+    }
+
+    if (!hasSprite) {
+      // Fallback: Item icon placeholder (circle with first letter)
+      const iconBg = this.add.circle(0, -25, 35, 0x1abc9c, 1);
+      iconBg.setStrokeStyle(2, 0xffffff);
+      card.add(iconBg);
+      
+      const iconLetter = this.add.text(0, -25, option.displayName.charAt(0).toUpperCase(), {
+        fontSize: '32px',
+        color: '#ffffff',
+        fontStyle: 'bold'
+      }).setOrigin(0.5);
+      card.add(iconLetter);
+    }
     
     // Item name
     const nameText = this.add.text(0, 35, option.displayName, {

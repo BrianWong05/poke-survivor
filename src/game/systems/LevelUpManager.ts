@@ -33,6 +33,7 @@ export interface LevelUpOption {
   displayName: string;
   displayLevel: string;
   description: string;
+  spriteKey?: string;
 }
 
 /**
@@ -75,7 +76,8 @@ export class LevelUpManager {
           : `Lv.${currentLevel} → Lv.${currentLevel + 1}`,
         description: isEvolutionLevel 
           ? `Evolves into ${characterState.config?.weapon?.evolution?.name || 'evolved form'}!`
-          : weapon.description || 'Upgrade your main weapon'
+          : weapon.description || 'Upgrade your main weapon',
+        spriteKey: weapon.id
       });
     }
     
@@ -100,7 +102,8 @@ export class LevelUpManager {
           weaponCurrentLevel: 0,
           displayName: weaponConfig.name,
           displayLevel: 'New!',
-          description: weaponConfig.description || 'Learn a new weapon'
+          description: weaponConfig.description || 'Learn a new weapon',
+          spriteKey: weaponConfig.id
         });
       }
     }
@@ -114,7 +117,8 @@ export class LevelUpManager {
           itemInstance: item,
           displayName: item.name,
           displayLevel: `Lv.${item.level} → Lv.${item.level + 1}`,
-          description: item.description
+          description: item.description,
+          spriteKey: item.id
         });
       }
     }
@@ -142,7 +146,8 @@ export class LevelUpManager {
           itemInstance: undefined,
           displayName: tempInstance.name,
           displayLevel: 'New!',
-          description: tempInstance.description
+          description: tempInstance.description,
+          spriteKey: tempInstance.id
         });
       }
     }
