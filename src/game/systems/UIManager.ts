@@ -76,6 +76,7 @@ export class UIManager {
       
       this.pauseContainer = this.scene.add.container(0, 0);
       this.pauseContainer.setDepth(200);
+      this.pauseContainer.setScrollFactor(0); // Fix to camera viewport
 
       // Darken background
       const dimmer = this.scene.add.rectangle(0, 0, width, height, 0x000000, 0.5);
@@ -127,6 +128,7 @@ export class UIManager {
     const overlay = this.scene.add.rectangle(0, 0, width, height, 0x000000, 0.7);
     overlay.setOrigin(0, 0);
     overlay.setDepth(100);
+    overlay.setScrollFactor(0); // Fix to camera viewport
     
     const levelUpText = this.scene.add.text(width / 2, height / 2 - 20, 'LEVEL UP!', {
       fontSize: '48px',
@@ -134,12 +136,12 @@ export class UIManager {
       fontStyle: 'bold',
       stroke: '#000000',
       strokeThickness: 6
-    }).setOrigin(0.5).setDepth(101);
+    }).setOrigin(0.5).setDepth(101).setScrollFactor(0);
     
     const continueText = this.scene.add.text(width / 2, height / 2 + 40, 'Press ENTER to Continue', {
       fontSize: '24px',
       color: '#ffffff',
-    }).setOrigin(0.5).setDepth(101);
+    }).setOrigin(0.5).setDepth(101).setScrollFactor(0);
     
     const resumeHandler = (e: KeyboardEvent) => {
       // Guard against zombie listeners

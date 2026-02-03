@@ -82,6 +82,10 @@ export class MainScene extends Phaser.Scene {
     super({ key: 'MainScene' });
   }
 
+  // Map size constants for large world
+  private readonly MAP_WIDTH = 3200;
+  private readonly MAP_HEIGHT = 3200;
+
   create(): void {
     // Expose scene globally for DevConsole
     (window as any).gameScene = this;
@@ -96,13 +100,30 @@ export class MainScene extends Phaser.Scene {
     this.manifest = this.registry.get('spriteManifest') as SpriteManifestEntry[] || [];
     this.usePlaceholderGraphics = this.manifest.length === 0;
 
-    // 2. Systems Setup
+    // 2. Set Physics Bounds (Player can't walk off edge)
+    this.physics.world.setBounds(0, 0, this.MAP_WIDTH, this.MAP_HEIGHT);
+
+    // 3. Create a Simple Grid Background (Procedural Texture)
+    // This creates a 64x64 green grid pattern in memory
+    const graphics = this.add.graphics();
+    graphics.fillStyle(0x228b22); // Forest Green base
+    graphics.fillRect(0, 0, 64, 64);
+    graphics.lineStyle(2, 0x006400); // Darker Green lines
+    graphics.strokeRect(0, 0, 64, 64);
+    graphics.generateTexture('grid_bg', 64, 64);
+    graphics.destroy(); // Clean up after generating texture
+
+    // 4. Add the Background as a TileSprite (Repeating pattern)
+    // We place it at the center of the world
+    this.add.tileSprite(this.MAP_WIDTH / 2, this.MAP_HEIGHT / 2, this.MAP_WIDTH, this.MAP_HEIGHT, 'grid_bg');
+
+    // 5. Systems Setup
     this.textureManager = new TextureManager(this);
     this.textureManager.createTextures();
     
     this.experienceManager = new ExperienceManager();
     
-    // 3. Create Player & Groups
+    // 6. Create Player & Groups (after background so player renders on top)
     this.createPlayer();
     this.createGroups();
 
@@ -191,6 +212,10 @@ export class MainScene extends Phaser.Scene {
 
     // Listen for inventory changes (from DevTools or internal logic)
     this.events.on('inventory-updated', () => this.updateInventoryUI());
+
+    // 7. Setup Camera
+    this.cameras.main.setBounds(0, 0, this.MAP_WIDTH, this.MAP_HEIGHT);
+    this.cameras.main.startFollow(this.player, true, 0.1, 0.1); // Smooth follow
   }
 
   private inventoryDisplay!: InventoryDisplay;
@@ -203,14 +228,19 @@ export class MainScene extends Phaser.Scene {
   }
 
   private createPlayer(): void {
-    const centerX = this.scale.width / 2;
-    const centerY = this.scale.height / 2;
+    // Spawn player at world center for large map exploration
+    const centerX = this.MAP_WIDTH / 2;
+    const centerY = this.MAP_HEIGHT / 2;
     const spriteKey = this.usePlaceholderGraphics ? 'player' : this.characterConfig.spriteKey;
     
     this.player = new Player(this, centerX, centerY, spriteKey);
     this.player.setExperienceManager(this.experienceManager);
     // Initialize stats from configuration
     this.player.setHealth(this.characterConfig.stats.maxHP, this.characterConfig.stats.maxHP);
+
+    // Enable collision with world bounds
+    const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
+    playerBody.setCollideWorldBounds(true);
 
     if (!this.usePlaceholderGraphics) {
       this.player.play(`${this.characterConfig.spriteKey}-idle-down`);
