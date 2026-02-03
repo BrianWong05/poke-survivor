@@ -449,11 +449,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
       this.hpBar.draw(this.health, this.maxHP);
 
-      // Iron (Defense)
-      const ironLevel = this.inventory.getItemLevel('iron');
+      // Assault Vest (Defense)
+      const avLevel = this.inventory.getItemLevel('assault_vest');
       const baseDefense = this.characterConfig.stats.defense || 0;
-      if (ironLevel > 0) {
-          this.defense = baseDefense + ironLevel;
+      if (avLevel > 0) {
+          this.defense = baseDefense + avLevel;
       } else {
           this.defense = baseDefense;
       }

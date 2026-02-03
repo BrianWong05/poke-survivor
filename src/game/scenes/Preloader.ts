@@ -77,7 +77,7 @@ export class Preloader extends Phaser.Scene {
     this.load.image('amulet_coin', 'assets/items/amulet_coin.png');
     this.load.image('magnet', 'assets/items/magnet.png');
     this.load.image('hp_up', 'assets/items/hp_up.png');
-    this.load.image('iron', 'assets/items/iron.png');
+    this.load.image('assault_vest', 'assets/items/assault_vest.png');
     this.load.image('leftovers', 'assets/items/leftovers.png');
 
     // Weapon sprites
