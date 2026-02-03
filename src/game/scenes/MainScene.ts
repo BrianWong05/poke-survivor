@@ -450,29 +450,52 @@ export class MainScene extends Phaser.Scene {
   private handleWeaponLevelUp(): void {
     // Increment weapon level (this is what drives weapon power)
     this.characterState.weaponLevel++;
+    this.applyWeaponEvolution();
     
-    // Check for evolution
+    console.log(`[MainScene] Weapon leveled up to Lv.${this.characterState.weaponLevel}`);
+  }
+
+  /**
+   * Check and apply weapon evolution based on current weaponLevel
+   */
+  public applyWeaponEvolution(): void {
     const evolutionLevel = this.characterConfig.weapon.evolutionLevel ?? 5;
+    const currentWeaponLevel = this.characterState.weaponLevel;
+
     if (!this.characterState.isEvolved && 
-        this.characterState.weaponLevel >= evolutionLevel && 
+        currentWeaponLevel >= evolutionLevel && 
         this.characterConfig.weapon.evolution) {
       
       this.characterState.activeWeapon = this.characterConfig.weapon.evolution;
       this.characterState.isEvolved = true;
       
-      // Restart fire timer with new weapon cooldown
-      this.fireTimer.remove();
-      this.fireTimer = this.time.addEvent({
-        delay: this.characterState.activeWeapon.cooldownMs,
-        callback: () => this.fireWeapon(),
-        callbackScope: this,
-        loop: true,
-      });
+      this.restartMainWeaponTimer();
       
       console.log(`[MainScene] Weapon evolved to ${this.characterState.activeWeapon.name}!`);
+    } else if (this.characterState.isEvolved && currentWeaponLevel < evolutionLevel) {
+        // DevConsole De-evolution support
+        this.characterState.activeWeapon = this.characterConfig.weapon;
+        this.characterState.isEvolved = false;
+        this.restartMainWeaponTimer();
+        console.log(`[MainScene] Weapon de-evolved to ${this.characterState.activeWeapon.name}`);
+    }
+  }
+
+  /**
+   * Restarts the main weapon fire timer with current weapon's cooldown.
+   * Useful when weapon evolves or stats change.
+   */
+  public restartMainWeaponTimer(): void {
+    if (this.fireTimer) {
+        this.fireTimer.remove();
     }
     
-    console.log(`[MainScene] Weapon leveled up to Lv.${this.characterState.weaponLevel}`);
+    this.fireTimer = this.time.addEvent({
+      delay: this.characterState.activeWeapon.cooldownMs,
+      callback: () => this.fireWeapon(),
+      callbackScope: this,
+      loop: true,
+    });
   }
 
   /**

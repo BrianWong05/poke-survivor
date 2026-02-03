@@ -231,40 +231,18 @@ export class DevDebugSystem {
 
   public debugSetWeaponLevel(id: string, newLevel: number): void {
       if (id === 'main_weapon') {
-          // Handle Main Weapon (Character Level)
-          this.characterState.level = newLevel;
-          this.experienceManager.currentLevel = newLevel;
-          this.experienceManager.currentXP = 0;
-          this.experienceManager.xpToNextLevel = this.experienceManager.getNextLevelXpCap(newLevel);
+          // Handle Main Weapon
+          this.characterState.weaponLevel = newLevel;
           
           this.uiManager.updateLevelUI();
 
-          const weaponConfig = this.characterState.config.weapon;
-          const evolutionLevel = weaponConfig.evolutionLevel ?? 5;
+          // Trigger evolution check in MainScene
+          const mainScene = this.scene as import('@/game/scenes/MainScene').MainScene;
+          if (mainScene.applyWeaponEvolution) {
+              mainScene.applyWeaponEvolution();
+          }
           
-          let nextWeapon = weaponConfig;
-          if (newLevel >= evolutionLevel && weaponConfig.evolution) {
-              nextWeapon = weaponConfig.evolution;
-              this.characterState.isEvolved = true;
-          } else {
-              this.characterState.isEvolved = false;
-          }
-
-          if (this.characterState.activeWeapon.id !== nextWeapon.id && this.mainWeaponFireTimerRef) {
-               console.log(`[DevConsole] Main Weapon evolved/devolved to ${nextWeapon.name}`);
-               this.characterState.activeWeapon = nextWeapon;
-               
-               // Restart timer with new cooldown via ref
-               const oldTimer = this.mainWeaponFireTimerRef.get();
-               if (oldTimer) oldTimer.remove();
-
-               // We cannot recreate the timer easily here without access to 'fireWeapon' bound to scene
-               // This implies MainScene should handle the callback part or we pass it in.
-               // Ideally, Evolution logic should be centralized.
-               // For now, let's just Log it and rely on MainScene update loop or leave timer as is (imperfect for cooldown changes)
-               // ACTUALLY: The easiest way is for MainScene to expose a "restartFireTimer()" method.
-               // Or we just update the delay on the existing timer if Phaser supports it? No.
-          }
+          console.log(`[DevDebugSystem] Main Weapon level set to ${newLevel}`);
           return;
       }
 
