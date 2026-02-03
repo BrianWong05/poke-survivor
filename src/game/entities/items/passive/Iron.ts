@@ -11,11 +11,6 @@ export class Iron extends PassiveItem {
   tint = 0xC0C0C0;
 
   getStats(level: number): ItemStats {
-    // Linear scaling: +1 Defense per level
-    // Lvl 1: 1 Defense
-    // Lvl 2: 2 Defense
-    // ...
-    // Lvl 5: 5 Defense
     return {
       value: level,
       increaseValue: 1
@@ -23,23 +18,14 @@ export class Iron extends PassiveItem {
   }
 
   onAcquire(ctx: CharacterContext): void {
-    const stats = this.getStats(1);
-    ctx.player.defense += stats.value;
-    console.log(`[Iron] Acquired. Defense +${stats.value}. Total: ${ctx.player.defense}`);
+    ctx.player.recalculateStats?.();
   }
 
   onUpgrade(ctx: CharacterContext): void {
-    const oldStats = this.getStats(this.level - 1);
-    const newStats = this.getStats(this.level);
-    const gain = newStats.value - oldStats.value;
-    
-    ctx.player.defense += gain;
-    console.log(`[Iron] Upgraded to Lvl ${this.level}. Defense +${gain}. Total: ${ctx.player.defense}`);
+    ctx.player.recalculateStats?.();
   }
 
   onRemove(ctx: CharacterContext): void {
-    const stats = this.getStats(this.level);
-    ctx.player.defense -= stats.value;
-    console.log(`[Iron] Removed. Defense -${stats.value}. Total: ${ctx.player.defense}`);
+    ctx.player.recalculateStats?.();
   }
 }

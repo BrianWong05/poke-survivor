@@ -2,16 +2,16 @@ import { PassiveItem } from '@/game/entities/items/passive/PassiveItem';
 import type { ItemStats } from '@/game/entities/items/Item';
 import type { CharacterContext } from '@/game/entities/characters/types';
 
-export class MuscleBand extends PassiveItem {
-  id = 'muscle_band';
-  name = 'Muscle Band (力量頭帶)';
-  description = 'Increases Damage output by 10% per rank.';
+export class AmuletCoin extends PassiveItem {
+  id = 'amulet_coin';
+  name = 'Amulet Coin (護身金幣)';
+  description = 'Gain 20% more gold coins per rank.';
   maxLevel = 5;
 
   getStats(level: number): ItemStats {
     return {
-      value: level * 0.1,
-      increaseValue: 0.1
+      value: level * 0.2,
+      increaseValue: 0.2
     };
   }
 

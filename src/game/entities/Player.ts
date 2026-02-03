@@ -438,7 +438,34 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           magnetBonus += (magnetLevel * 0.30); // +30% per level
       }
       this.magnetRadius = this.baseMagnetRadius * magnetBonus;
-      
+
+      // HP Up (Max HP)
+      const hpUpLevel = this.inventory.getItemLevel('hp_up');
+      if (hpUpLevel > 0) {
+          const hpBonus = hpUpLevel * 20;
+          this.maxHP = (this.characterConfig.stats.maxHP || 100) + hpBonus;
+      } else {
+          this.maxHP = this.characterConfig.stats.maxHP || 100;
+      }
+      this.hpBar.draw(this.health, this.maxHP);
+
+      // Iron (Defense)
+      const ironLevel = this.inventory.getItemLevel('iron');
+      const baseDefense = this.characterConfig.stats.defense || 0;
+      if (ironLevel > 0) {
+          this.defense = baseDefense + ironLevel;
+      } else {
+          this.defense = baseDefense;
+      }
+
+      // Leftovers (Regen)
+      const leftoversLevel = this.inventory.getItemLevel('leftovers');
+      if (leftoversLevel > 0) {
+          this.regen = leftoversLevel; // 1 HP per second per level
+      } else {
+          this.regen = 0;
+      }
+
       // Update Physics Body
       if (this.collectionZone && this.collectionZone.body) {
           const body = this.collectionZone.body as Phaser.Physics.Arcade.Body;
