@@ -180,6 +180,28 @@ export class DevDebugSystem {
   public debugAddWeapon(weaponConfig: WeaponConfig, _isGameOverUnused: boolean): void {
     if (!this.player) return;
 
+    // 1. Check if it matches the main weapon (base or evolution)
+    const isMainWeapon = this.characterState.config.weapon.id === weaponConfig.id || 
+                       (this.characterState.config.weapon.evolution?.id === weaponConfig.id);
+
+    if (isMainWeapon) {
+        console.log(`[DevDebugSystem] Weapon ${weaponConfig.id} matches main weapon, leveling up.`);
+        this.debugSetWeaponLevel('main_weapon', this.characterState.weaponLevel + 1);
+        return;
+    }
+
+    // 2. Check if it matches any existing debug weapon
+    for (const [debugId, entry] of this.debugWeapons.entries()) {
+        const isMatch = entry.baseConfig.id === weaponConfig.id || 
+                        (entry.baseConfig.evolution?.id === weaponConfig.id);
+        
+        if (isMatch) {
+            console.log(`[DevDebugSystem] Weapon ${weaponConfig.id} matches debug weapon ${debugId}, leveling up.`);
+            this.debugSetWeaponLevel(debugId, entry.level + 1);
+            return;
+        }
+    }
+
     const id = `debug-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     
     // We assume it's a valid WeaponConfig instance (or object)
@@ -231,6 +253,9 @@ export class DevDebugSystem {
   }
 
   public debugSetWeaponLevel(id: string, newLevel: number): void {
+      if (newLevel > 8) newLevel = 8;
+      if (newLevel < 1) newLevel = 1;
+
       if (id === 'main_weapon') {
           // Handle Main Weapon
           this.characterState.weaponLevel = newLevel;
