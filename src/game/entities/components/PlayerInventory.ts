@@ -27,6 +27,7 @@ export class PlayerInventory {
         item.levelUp(ctx);
         console.log(`[PlayerInventory] Acquired item: ${item.name}`);
     }
+    this.player.scene.events.emit('inventory-updated');
   }
 
   /**
@@ -43,6 +44,7 @@ export class PlayerInventory {
     item.onRemove(ctx);
     this.items.splice(index, 1);
     console.log(`[PlayerInventory] Removed item: ${item.name}`);
+    this.player.scene.events.emit('inventory-updated');
   }
 
   /**
@@ -76,6 +78,7 @@ export class PlayerInventory {
       }
       
       console.log(`[PlayerInventory] Set item ${item.name} to Level ${targetLevel}`);
+      this.player.scene.events.emit('inventory-updated');
   }
 
   /**
@@ -99,5 +102,25 @@ export class PlayerInventory {
           level: 0, // Placeholder
           xp: 0     // Placeholder
       };
+  }
+
+  /**
+   * Get all active weapons (Main + Debug/Cheat weapons).
+   * returns array of objects with { id, name, level, spriteKey (optional) }
+   */
+  public get weapons(): { id: string, name: string, level: number, spriteKey?: string }[] {
+      const scene = this.player.scene as any; 
+      // Safe check for debugSystem
+      if (scene.debugSystem && scene.debugSystem.getDebugWeapons) {
+          return scene.debugSystem.getDebugWeapons();
+      }
+      return [];
+  }
+
+  /**
+   * Get all passive items.
+   */
+  public get passives(): Item[] {
+      return this.items;
   }
 }

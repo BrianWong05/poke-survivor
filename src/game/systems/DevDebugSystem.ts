@@ -227,6 +227,7 @@ export class DevDebugSystem {
         activeConfig: activeWeapon
     });
     console.log(`[DevConsole] Added debug weapon: ${baseWeapon.name} (${id})`);
+    this.scene.events.emit('inventory-updated');
   }
 
   public debugSetWeaponLevel(id: string, newLevel: number): void {
@@ -243,6 +244,7 @@ export class DevDebugSystem {
           }
           
           console.log(`[DevDebugSystem] Main Weapon level set to ${newLevel}`);
+          this.scene.events.emit('inventory-updated');
           return;
       }
 
@@ -288,6 +290,7 @@ export class DevDebugSystem {
                 // but effectively we killed it.
                 this.isMainWeaponRemoved = true;
                 console.log(`[DevConsole] Removed main weapon`);
+                this.scene.events.emit('inventory-updated');
             }
         }
         return;
@@ -298,6 +301,7 @@ export class DevDebugSystem {
         entry.timer.remove();
         this.debugWeapons.delete(id);
         console.log(`[DevConsole] Removed debug weapon: ${entry.name}`);
+        this.scene.events.emit('inventory-updated');
     }
   }
 

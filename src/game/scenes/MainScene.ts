@@ -22,6 +22,7 @@ import { InputManager } from '@/game/systems/InputManager';
 import { CombatManager } from '@/game/systems/CombatManager';
 import { UIManager } from '@/game/systems/UIManager';
 import { DevDebugSystem } from '@/game/systems/DevDebugSystem';
+import { InventoryDisplay } from '@/game/ui/InventoryDisplay';
 
 interface SpriteAnimation {
   key: string;
@@ -180,6 +181,25 @@ export class MainScene extends Phaser.Scene {
         () => this.fireTimer,
         (t) => { this.fireTimer = t; }
     );
+
+    // Initialize Inventory Display (Top-Left, under HP bar)
+    // Adjust y to be below floating HP bar or health area.
+    this.inventoryDisplay = new InventoryDisplay(this, 20, 80);
+    this.inventoryDisplay.setScrollFactor(0); // Fix to screen (HUD)
+    this.inventoryDisplay.setDepth(100); // Ensure on top
+    this.updateInventoryUI(); // Initial draw
+
+    // Listen for inventory changes (from DevTools or internal logic)
+    this.events.on('inventory-updated', () => this.updateInventoryUI());
+  }
+
+  private inventoryDisplay!: InventoryDisplay;
+
+  // Call this whenever the player levels up or gets an item
+  public updateInventoryUI(): void {
+      if (this.player && this.inventoryDisplay) {
+          this.inventoryDisplay.refresh(this.player);
+      }
   }
 
   private createPlayer(): void {
@@ -379,6 +399,7 @@ export class MainScene extends Phaser.Scene {
     this.score += xpValue;
     this.callbacks.onScoreUpdate(this.score);
     this.uiManager.updateLevelUI();
+    this.updateInventoryUI();
 
     // Check for Automatic Evolution on Level Up
     if (canLevelUp) {
@@ -453,6 +474,7 @@ export class MainScene extends Phaser.Scene {
     this.applyWeaponEvolution();
     
     console.log(`[MainScene] Weapon leveled up to Lv.${this.characterState.weaponLevel}`);
+    this.updateInventoryUI();
   }
 
   /**
@@ -505,6 +527,7 @@ export class MainScene extends Phaser.Scene {
     // Add the new weapon via DevDebugSystem (same system used by DevConsole)
     this.debugSystem.debugAddWeapon(config, this.gameOver);
     console.log(`[MainScene] Acquired new weapon: ${config.name}`);
+    this.updateInventoryUI();
   }
 
   /**
