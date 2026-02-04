@@ -139,6 +139,9 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
     });
   };
 
+
+
+
   // Tab & Asset State
   const [activeTab, setActiveTab] = useState<'tileset' | 'autoset'>('tileset');
   const [activeAsset, setActiveAsset] = useState<string>('Outside.png');
@@ -395,6 +398,21 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
   };
 
 
+  // Global Mouse Up Handler
+  const onMouseUpRef = useRef({ handleCanvasMouseUp, setIsSelecting });
+  onMouseUpRef.current = { handleCanvasMouseUp, setIsSelecting };
+
+  useEffect(() => {
+    const handleGlobalMouseUp = () => {
+        // Stop Palette Selection
+        onMouseUpRef.current.setIsSelecting(false);
+        // Stop Canvas Drag (and commit paint if active)
+        onMouseUpRef.current.handleCanvasMouseUp();
+    };
+    
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
+  }, []);
 
   const handleExport = () => {
     const data: CustomMapData = {
@@ -543,8 +561,7 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
                        h: maxY - minY + 1
                      });
                   }}
-                  onMouseUp={() => setIsSelecting(false)}
-                  onMouseLeave={() => setIsSelecting(false)}
+                  onMouseUp={() => {}} // Handled globally
                   alt="Palette"
                 />
                  {activeAsset && (
@@ -574,8 +591,7 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
             width={mapSize.width * TILE_SIZE}
             height={mapSize.height * TILE_SIZE}
             onMouseDown={handleCanvasMouseDown}
-            onMouseUp={handleCanvasMouseUp}
-            onMouseLeave={() => setIsMapDragging(false)}
+            onMouseUp={() => {}} // Handled globally
             onMouseMove={handleCanvasMouseMove}
           />
         </div>
