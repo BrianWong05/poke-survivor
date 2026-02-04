@@ -20,42 +20,49 @@
   box-shadow: 2px 0 5px rgba(0,0,0,0.5);
 }
 
-.controls {
+.controls-group {
   display: flex;
   gap: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
-.play-btn {
-  background: #4CAF50;
-  color: white;
+.control-btn {
   border: none;
   padding: 0.5rem 1rem;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: 6px; /* Slightly softer corners */
   flex: 1;
-  font-weight: bold;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: white;
 }
 
-.exit-btn {
-  background: #f44336;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  cursor: pointer;
-  border-radius: 4px;
-  flex: 1;
+.control-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
 }
 
-.undo-btn {
-  background: #ff9800;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  cursor: pointer;
-  border-radius: 4px;
-  flex: 1;
-  font-weight: bold;
+.control-btn:active:not(:disabled) {
+  transform: translateY(0);
 }
+
+.control-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(0.8);
+}
+
+.play-btn { background: #2ecc71; }   /* Emerald Green */
+.exit-btn { background: #e74c3c; }   /* Alizarin Red */
+.load-btn { background: #3498db; }   /* Peter River Blue */
+.save-btn { background: #9b59b6; }   /* Amethyst Purple */
+.undo-btn { background: #f39c12; }   /* Orange */
+.redo-btn { background: #e67e22; }   /* Carrot Orange */
 
 .layer-select {
   display: flex;

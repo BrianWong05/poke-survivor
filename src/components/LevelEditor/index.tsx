@@ -413,7 +413,64 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
     window.addEventListener('mouseup', handleGlobalMouseUp);
     return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
   }, []);
+  // Save & Load Map Logic
+  const handleSaveMap = () => {
+    const data: CustomMapData = {
+      width: mapSize.width,
+      height: mapSize.height,
+      tileSize: TILE_SIZE,
+      ground: groundLayer,
+      objects: objectLayer
+    };
 
+    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    // Create temporary link and click it
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `my-map-${Date.now()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    
+    // Cleanup
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleLoadMap = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        try {
+            const json = event.target?.result as string;
+            const data = JSON.parse(json) as CustomMapData;
+            
+            // Basic Validation
+            if (data.width && data.height && data.ground && data.objects) {
+                // Save current state to history before loading
+                saveHistory();
+
+                setMapSize({ width: data.width, height: data.height });
+                setGroundLayer(data.ground);
+                setObjectLayer(data.objects);
+                
+                // Clear input value so same file can be loaded again if needed
+                if (fileInputRef.current) fileInputRef.current.value = '';
+            } else {
+                alert("Invalid map file format.");
+            }
+        } catch (err) {
+            console.error("Failed to load map:", err);
+            alert("Failed to parse map file.");
+        }
+    };
+    reader.readAsText(file);
+  };
   const handleExport = () => {
     const data: CustomMapData = {
       width: mapSize.width,
@@ -430,12 +487,29 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
       <div className="sidebar">
         <h2>Level Editor</h2>
         
-        <div className="controls">
-             <button onClick={handleExport} className="play-btn">▶ Play Map</button>
-             <button onClick={undo} className="undo-btn" disabled={history.length === 0}>⎌ Undo</button>
-             <button onClick={redo} className="undo-btn" disabled={redoStack.length === 0}>↻ Redo</button>
-             <button onClick={onExit} className="exit-btn">Exit</button>
+        <div className="controls-group main-controls">
+             <button onClick={handleExport} className="control-btn play-btn" title="Play Map">▶ Play</button>
+             <button onClick={onExit} className="control-btn exit-btn" title="Exit Editor">✖ Exit</button>
         </div>
+        
+        <div className="controls-group io-controls">
+             <button onClick={() => fileInputRef.current?.click()} className="control-btn load-btn" title="Load Map">📂 Load</button>
+             <button onClick={handleSaveMap} className="control-btn save-btn" title="Save Map">💾 Save</button>
+        </div>
+
+        <div className="controls-group history-controls">
+             <button onClick={undo} className="control-btn undo-btn" disabled={history.length === 0} title="Undo (Cmd+Z)">⎌ Undo</button>
+             <button onClick={redo} className="control-btn redo-btn" disabled={redoStack.length === 0} title="Redo (Cmd+Shift+Z)">↻ Redo</button>
+        </div>
+
+        {/* Hidden File Input */}
+        <input 
+           type="file" 
+           ref={fileInputRef} 
+           style={{ display: 'none' }} 
+           accept=".json"
+           onChange={handleLoadMap}
+        />
 
          <div className="map-settings">
             <div className="settings-row">
