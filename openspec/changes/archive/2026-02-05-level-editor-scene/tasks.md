@@ -69,4 +69,4 @@
 ## 11. Integration (Pending)
 
 - [x] 11.1 Add entry point to access Level Editor (e.g., from title screen or dev menu)
-- [ ] 11.2 Update MainScene to accept and render `customMapData` if provided
+- [x] 11.2 Update MainScene to accept and render `customMapData` if provided
