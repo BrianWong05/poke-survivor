@@ -148,26 +148,23 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
 
 
   // Available Assets (Mock/Scanned)
-  const tilesetOptions = [
-    "Bike shop interior.png", "Boat.png", "Caves.png", "Department store interior.png",
-    "Dungeon cave.png", "Dungeon forest.png", "Factory interior.png", "Game Corner interior.png",
-    "Graveyard tower interior.png", "Gyms interior.png", "Harbour interior.png", "Interior general.png",
-    "Mansion interior.png", "Mart interior.png", "Multiplayer rooms.png", "Museum interior.png",
-    "Outside.png", "Poke Centre interior.png", "Ruins interior.png", "Trainer Tower interior.png",
-    "Underground path.png", "Underwater.png"
-  ];
+  // Available Assets (Loaded via Vite glob import)
+  const tilesetModules = import.meta.glob('/src/assets/Tilesets/*.png', { eager: true });
+  const autosetModules = import.meta.glob('/src/assets/Autotiles/*.png', { eager: true });
+
+  // Helper to extract filename from path
+  const getFileName = (path: string) => path.split('/').pop() || '';
+
+  const tilesetAssets = Object.fromEntries(
+    Object.entries(tilesetModules).map(([path, mod]) => [getFileName(path), (mod as any).default])
+  );
   
-  const autosetOptions = [
-    "Black.png", "Blue cave floor.png", "Blue cave mud.png", "Brick path.png", "Brown cave floor.png",
-    "Brown cave sand.png", "Dirt cave highlight.png", "Dirt.png", "Flowers1.png", "Flowers2.png",
-    "Fountain1.png", "Fountain2.png", "Gravel.png", "Green cave floor.png", "Light grass.png",
-    "Red cave floor.png", "Red cave highlight.png", "Sand shore.png", "Sand.png", "Sea deep.png",
-    "Sea without shore.png", "Sea.png", "Seaweed dark.png", "Seaweed light.png", "Snow cave floor.png",
-    "Snow cave highlight.png", "Snow cave ice border.png", "Still water.png", "Underwater dark.png",
-    "Water current east.png", "Water current north.png", "Water current south.png",
-    "Water current west.png", "Water rock.png", "Waterfall bottom.png", "Waterfall crest.png",
-    "Waterfall.png", "White cave floor.png", "White cave highlight.png", "White path.png"
-  ]; 
+  const autosetAssets = Object.fromEntries(
+    Object.entries(autosetModules).map(([path, mod]) => [getFileName(path), (mod as any).default])
+  );
+
+  const tilesetOptions = Object.keys(tilesetAssets).sort();
+  const autosetOptions = Object.keys(autosetAssets).sort(); 
 
   // Load Tileset Image
   const tilesetRef = useRef<HTMLImageElement>(null);
@@ -176,17 +173,17 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
     // Determine path based on selection
     if (!activeAsset) return;
     
-    // Determine folder based on active tab
-    const basePath = activeTab === 'tileset' ? '/assets/tilesets/' : '/assets/autotiles/';
-    const fullPath = `${basePath}${activeAsset}`;
+    // Get URL from the map
+    const src = activeTab === 'tileset' ? tilesetAssets[activeAsset] : autosetAssets[activeAsset];
+    if (!src) return;
     
     const img = new Image();
-    img.src = fullPath;
+    img.src = src;
     img.onload = () => {
       tilesetRef.current = img;
       renderCanvas(); // Initial render once image loads
     };
-  }, [activeAsset]);
+  }, [activeAsset, activeTab]);
 
   // Render Canvas
   const drawTile = useCallback((ctx: CanvasRenderingContext2D, tileId: number, x: number, y: number, alpha: number) => {
@@ -598,12 +595,12 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
                 </select>
              </div>
 
-             {activeAsset && (
-              <>
-               <div className="palette-wrapper">
-                <img 
-                  src={`${activeTab === 'tileset' ? '/assets/tilesets/' : '/assets/autotiles/'}${activeAsset}`} 
-                  className="palette-image"
+              {activeAsset && (activeTab === 'tileset' ? tilesetAssets[activeAsset] : autosetAssets[activeAsset]) && (
+               <>
+                <div className="palette-wrapper">
+                 <img 
+                   src={activeTab === 'tileset' ? tilesetAssets[activeAsset] : autosetAssets[activeAsset]} 
+                   className="palette-image"
                   onMouseDown={(e) => {
                      e.preventDefault(); // Prevent native drag
                      const rect = e.currentTarget.getBoundingClientRect();
