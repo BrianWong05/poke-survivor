@@ -25,6 +25,8 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
   const [mapDragStart, setMapDragStart] = useState({ x: 0, y: 0 });
   const [mapDragCurrent, setMapDragCurrent] = useState({ x: 0, y: 0 });
   
+
+  
   // Map Data State
   const [mapSize, setMapSize] = useState({ width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT });
 
@@ -35,6 +37,75 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
   const [objectLayer, setObjectLayer] = useState<number[][]>(() => 
     Array(DEFAULT_HEIGHT).fill(0).map(() => Array(DEFAULT_WIDTH).fill(-1))
   );
+
+  // Undo History & Logic
+  const [history, setHistory] = useState<Array<{ground: number[][], objects: number[][]}>>([]);
+  const [redoStack, setRedoStack] = useState<Array<{ground: number[][], objects: number[][]}>>([]);
+
+  const saveHistory = () => {
+    // Current state to be saved
+    const currentState = {
+        ground: groundLayer.map(row => [...row]),
+        objects: objectLayer.map(row => [...row])
+    };
+    
+    setHistory(prev => {
+        const newHistory = [...prev, currentState];
+        if (newHistory.length > 50) newHistory.shift();
+        return newHistory;
+    });
+    setRedoStack([]); // Clear redo stack on new action
+  };
+
+  const undo = () => {
+    if (history.length === 0) return;
+
+    const currentState = {
+        ground: groundLayer.map(row => [...row]),
+        objects: objectLayer.map(row => [...row])
+    };
+    
+    const lastState = history[history.length - 1];
+
+    setRedoStack(prev => [...prev, currentState]);
+    setHistory(prev => prev.slice(0, -1));
+    
+    setGroundLayer(lastState.ground);
+    setObjectLayer(lastState.objects);
+  };
+
+  const redo = () => {
+    if (redoStack.length === 0) return;
+
+    const currentState = {
+        ground: groundLayer.map(row => [...row]),
+        objects: objectLayer.map(row => [...row])
+    };
+
+    const nextState = redoStack[redoStack.length - 1];
+
+    setHistory(prev => [...prev, currentState]);
+    setRedoStack(prev => prev.slice(0, -1));
+
+    setGroundLayer(nextState.ground);
+    setObjectLayer(nextState.objects);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.metaKey || e.ctrlKey) {
+            if (e.shiftKey && e.key.toLowerCase() === 'z') {
+                e.preventDefault();
+                redo();
+            } else if (e.key === 'z') {
+                e.preventDefault();
+                undo();
+            }
+        }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [history, redoStack, groundLayer, objectLayer]);
 
   // Resize Handler
   const handleResize = (newWidth: number, newHeight: number) => {
@@ -249,6 +320,10 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
   const handleCanvasMouseUp = () => {
     if (isMapDragging) {
         setIsMapDragging(false);
+        
+        // Save history before mutation
+        saveHistory();
+
         const minX = Math.min(mapDragStart.x, mapDragCurrent.x);
         const minY = Math.min(mapDragStart.y, mapDragCurrent.y);
         const maxX = Math.max(mapDragStart.x, mapDragCurrent.x);
@@ -321,6 +396,8 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
         
         <div className="controls">
              <button onClick={handleExport} className="play-btn">▶ Play Map</button>
+             <button onClick={undo} className="undo-btn" disabled={history.length === 0}>⎌ Undo</button>
+             <button onClick={redo} className="undo-btn" disabled={redoStack.length === 0}>↻ Redo</button>
              <button onClick={onExit} className="exit-btn">Exit</button>
         </div>
 

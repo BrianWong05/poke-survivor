@@ -46,6 +46,17 @@
   flex: 1;
 }
 
+.undo-btn {
+  background: #ff9800;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  border-radius: 4px;
+  flex: 1;
+  font-weight: bold;
+}
+
 .layer-select {
   display: flex;
   gap: 1rem;
