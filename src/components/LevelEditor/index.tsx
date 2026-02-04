@@ -15,6 +15,7 @@ interface LevelEditorProps {
 export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [currentLayer, setCurrentLayer] = useState<0 | 1>(0); // 0 = Ground, 1 = Objects
+  const [activeTool, setActiveTool] = useState<'brush' | 'eraser'>('brush');
   // Selection State (Tileset Coordinates)
   const [selection, setSelection] = useState({ x: 0, y: 0, w: 1, h: 1 });
   const [isSelecting, setIsSelecting] = useState(false);
@@ -261,30 +262,39 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
        
        const w = maxX - minX + 1;
        const h = maxY - minY + 1;
-
-       // Render Preview Tiles
-       for (let dy = 0; dy < h; dy++) {
-         for (let dx = 0; dx < w; dx++) {
-            const targetX = minX + dx;
-            const targetY = minY + dy;
-            
-            if (targetY < mapSize.height && targetX < mapSize.width) {
-                 const patternX = dx % selection.w;
-                 const patternY = dy % selection.h;
-                 
-                 const tilesPerRow = tilesetRef.current ? Math.floor(tilesetRef.current.width / TILE_SIZE) : 1;
-                 const sourceId = (selection.y + patternY) * tilesPerRow + (selection.x + patternX);
-                 
-                 drawTile(ctx, sourceId, targetX, targetY, 0.5); // 0.5 alpha for ghost effect
-            }
-         }
-       }
-
-       // Draw Outline
+       
        const pixelW = w * TILE_SIZE;
        const pixelH = h * TILE_SIZE;
-       ctx.strokeStyle = '#fff';
-       ctx.strokeRect(minX * TILE_SIZE, minY * TILE_SIZE, pixelW, pixelH);
+
+       if (activeTool === 'eraser') {
+           // Eraser Preview: Red overlay
+           ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+           ctx.fillRect(minX * TILE_SIZE, minY * TILE_SIZE, pixelW, pixelH);
+           ctx.strokeStyle = '#ff0000';
+           ctx.strokeRect(minX * TILE_SIZE, minY * TILE_SIZE, pixelW, pixelH);
+       } else {
+           // Render Preview Tiles
+           for (let dy = 0; dy < h; dy++) {
+             for (let dx = 0; dx < w; dx++) {
+                const targetX = minX + dx;
+                const targetY = minY + dy;
+                
+                if (targetY < mapSize.height && targetX < mapSize.width) {
+                     const patternX = dx % selection.w;
+                     const patternY = dy % selection.h;
+                     
+                     const tilesPerRow = tilesetRef.current ? Math.floor(tilesetRef.current.width / TILE_SIZE) : 1;
+                     const sourceId = (selection.y + patternY) * tilesPerRow + (selection.x + patternX);
+                     
+                     drawTile(ctx, sourceId, targetX, targetY, 0.5); // 0.5 alpha for ghost effect
+                }
+             }
+           }
+           
+           // Draw Outline
+           ctx.strokeStyle = '#fff';
+           ctx.strokeRect(minX * TILE_SIZE, minY * TILE_SIZE, pixelW, pixelH);
+       }
     }
   }, [groundLayer, objectLayer, isMapDragging, mapDragStart, mapDragCurrent, selection, mapSize, drawTile]);
 
@@ -340,13 +350,17 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
                         const targetX = minX + dx;
                         const targetY = minY + dy;
                         if (targetY < mapSize.height && targetX < mapSize.width) {
-                             // Pattern Logic
-                             const patternX = dx % selection.w;
-                             const patternY = dy % selection.h;
-                             
-                             const tilesPerRow = tilesetRef.current ? Math.floor(tilesetRef.current.width / TILE_SIZE) : 1;
-                             const sourceId = (selection.y + patternY) * tilesPerRow + (selection.x + patternX);
-                             newGrid[targetY][targetX] = sourceId;
+                             if (activeTool === 'eraser') {
+                                 newGrid[targetY][targetX] = -1;
+                             } else {
+                                 // Pattern Logic
+                                 const patternX = dx % selection.w;
+                                 const patternY = dy % selection.h;
+                                 
+                                 const tilesPerRow = tilesetRef.current ? Math.floor(tilesetRef.current.width / TILE_SIZE) : 1;
+                                 const sourceId = (selection.y + patternY) * tilesPerRow + (selection.x + patternX);
+                                 newGrid[targetY][targetX] = sourceId;
+                             }
                         }
                     }
                 }
@@ -360,13 +374,17 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
                         const targetX = minX + dx;
                         const targetY = minY + dy;
                         if (targetY < mapSize.height && targetX < mapSize.width) {
-                             // Pattern Logic
-                             const patternX = dx % selection.w;
-                             const patternY = dy % selection.h;
-                             
-                             const tilesPerRow = tilesetRef.current ? Math.floor(tilesetRef.current.width / TILE_SIZE) : 1;
-                             const sourceId = (selection.y + patternY) * tilesPerRow + (selection.x + patternX);
-                             newGrid[targetY][targetX] = sourceId;
+                             if (activeTool === 'eraser') {
+                                 newGrid[targetY][targetX] = -1;
+                             } else {
+                                 // Pattern Logic
+                                 const patternX = dx % selection.w;
+                                 const patternY = dy % selection.h;
+                                 
+                                 const tilesPerRow = tilesetRef.current ? Math.floor(tilesetRef.current.width / TILE_SIZE) : 1;
+                                 const sourceId = (selection.y + patternY) * tilesPerRow + (selection.x + patternX);
+                                 newGrid[targetY][targetX] = sourceId;
+                             }
                         }
                     }
                 }
@@ -430,6 +448,21 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
                  onClick={() => setCurrentLayer(1)}
                >
                  Objects
+               </button>
+            </div>
+            
+            <div className="settings-row" style={{ marginTop: '0.5rem' }}>
+               <button 
+                 className={`layer-btn ${activeTool === 'brush' ? 'active' : ''}`}
+                 onClick={() => setActiveTool('brush')}
+               >
+                 🖌 Brush
+               </button>
+               <button 
+                 className={`layer-btn ${activeTool === 'eraser' ? 'active' : ''}`}
+                 onClick={() => setActiveTool('eraser')}
+               >
+                 ⌫ Eraser
                </button>
             </div>
          </div>
