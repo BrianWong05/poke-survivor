@@ -4,10 +4,8 @@ import './styles.css';
 
 // Constants
 const TILE_SIZE = 32;
-const MAP_WIDTH_TILES = 50;
-const MAP_HEIGHT_TILES = 50;
-const CANVAS_WIDTH = MAP_WIDTH_TILES * TILE_SIZE;
-const CANVAS_HEIGHT = MAP_HEIGHT_TILES * TILE_SIZE;
+const DEFAULT_WIDTH = 20;
+const DEFAULT_HEIGHT = 20;
 
 interface LevelEditorProps {
   onPlay: (data: CustomMapData) => void;
@@ -21,13 +19,46 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
   const [isDrawing, setIsDrawing] = useState(false);
   
   // Map Data State
+  const [mapSize, setMapSize] = useState({ width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT });
+
   // Initialize with -1 (empty) for objects, and 0 (grass) for ground
   const [groundLayer, setGroundLayer] = useState<number[][]>(() => 
-    Array(MAP_HEIGHT_TILES).fill(0).map(() => Array(MAP_WIDTH_TILES).fill(0))
+    Array(DEFAULT_HEIGHT).fill(0).map(() => Array(DEFAULT_WIDTH).fill(0))
   );
   const [objectLayer, setObjectLayer] = useState<number[][]>(() => 
-    Array(MAP_HEIGHT_TILES).fill(0).map(() => Array(MAP_WIDTH_TILES).fill(-1))
+    Array(DEFAULT_HEIGHT).fill(0).map(() => Array(DEFAULT_WIDTH).fill(-1))
   );
+
+  // Resize Handler
+  const handleResize = (newWidth: number, newHeight: number) => {
+    // Clamp values
+    const w = Math.max(5, Math.min(100, newWidth));
+    const h = Math.max(5, Math.min(100, newHeight));
+    
+    setMapSize({ width: w, height: h });
+
+    // Resize Ground Layer
+    setGroundLayer(prev => {
+      const newGrid = Array(h).fill(0).map((_, y) => 
+        Array(w).fill(0).map((_, x) => {
+          if (y < prev.length && x < prev[0].length) return prev[y][x];
+          return 0; // Default ground
+        })
+      );
+      return newGrid;
+    });
+
+    // Resize Object Layer
+    setObjectLayer(prev => {
+      const newGrid = Array(h).fill(0).map((_, y) => 
+        Array(w).fill(0).map((_, x) => {
+          if (y < prev.length && x < prev[0].length) return prev[y][x];
+          return -1; // Default empty
+        })
+      );
+      return newGrid;
+    });
+  };
 
   // Tab & Asset State
   const [activeTab, setActiveTab] = useState<'tileset' | 'autoset'>('tileset');
@@ -81,9 +112,12 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    const width = mapSize.width * TILE_SIZE;
+    const height = mapSize.height * TILE_SIZE;
+
     // Clear
     ctx.fillStyle = '#1a1a1a'; // Dark background
-    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    ctx.fillRect(0, 0, width, height);
 
     // Render Ground
     groundLayer.forEach((row, y) => {
@@ -127,15 +161,18 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
     ctx.lineWidth = 1;
     ctx.beginPath();
     
+    const width = mapSize.width * TILE_SIZE;
+    const height = mapSize.height * TILE_SIZE;
+
     // Vertical
-    for (let x = 0; x <= CANVAS_WIDTH; x += TILE_SIZE) {
+    for (let x = 0; x <= width; x += TILE_SIZE) {
       ctx.moveTo(x, 0);
-      ctx.lineTo(x, CANVAS_HEIGHT);
+      ctx.lineTo(x, height);
     }
     // Horizontal
-    for (let y = 0; y <= CANVAS_HEIGHT; y += TILE_SIZE) {
+    for (let y = 0; y <= height; y += TILE_SIZE) {
       ctx.moveTo(0, y);
-      ctx.lineTo(CANVAS_WIDTH, y);
+      ctx.lineTo(width, y);
     }
     ctx.stroke();
   };
@@ -161,7 +198,7 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
     const tileX = Math.floor(nativeX / TILE_SIZE);
     const tileY = Math.floor(nativeY / TILE_SIZE);
 
-    if (tileX < 0 || tileX >= MAP_WIDTH_TILES || tileY < 0 || tileY >= MAP_HEIGHT_TILES) return;
+    if (tileX < 0 || tileX >= mapSize.width || tileY < 0 || tileY >= mapSize.height) return;
 
     if (currentLayer === 0) {
       const newGrid = [...groundLayer];
@@ -192,8 +229,8 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
 
   const handleExport = () => {
     const data: CustomMapData = {
-      width: MAP_WIDTH_TILES,
-      height: MAP_HEIGHT_TILES,
+      width: mapSize.width,
+      height: mapSize.height,
       tileSize: TILE_SIZE,
       ground: groundLayer,
       objects: objectLayer
@@ -211,22 +248,38 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
              <button onClick={onExit} className="exit-btn">Exit</button>
         </div>
 
-        <div className="layer-select">
-          <label>
-            <input 
-              type="radio" 
-              checked={currentLayer === 0} 
-              onChange={() => setCurrentLayer(0)} 
-            /> Ground
-          </label>
-          <label>
-            <input 
-              type="radio" 
-              checked={currentLayer === 1} 
-              onChange={() => setCurrentLayer(1)} 
-            /> Objects
-          </label>
-        </div>
+         <div className="map-settings">
+            <div className="settings-row">
+              <label>W:</label>
+              <input 
+                type="number" 
+                className="dim-input" 
+                value={mapSize.width} 
+                onChange={(e) => handleResize(parseInt(e.target.value) || 10, mapSize.height)}
+              />
+              <label>H:</label>
+              <input 
+                type="number" 
+                className="dim-input" 
+                value={mapSize.height} 
+                onChange={(e) => handleResize(mapSize.width, parseInt(e.target.value) || 10)}
+              />
+            </div>
+            <div className="settings-row">
+               <button 
+                 className={`layer-btn ${currentLayer === 0 ? 'active' : ''}`}
+                 onClick={() => setCurrentLayer(0)}
+               >
+                 Ground
+               </button>
+               <button 
+                 className={`layer-btn ${currentLayer === 1 ? 'active' : ''}`}
+                 onClick={() => setCurrentLayer(1)}
+               >
+                 Objects
+               </button>
+            </div>
+         </div>
 
         <div className="palette-container">
              <div className="tab-container">
@@ -296,8 +349,8 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
         <div className="canvas-wrapper">
           <canvas
             ref={canvasRef}
-            width={CANVAS_WIDTH}
-            height={CANVAS_HEIGHT}
+            width={mapSize.width * TILE_SIZE}
+            height={mapSize.height * TILE_SIZE}
             onMouseDown={startDrawing}
             onMouseUp={stopDrawing}
             onMouseLeave={stopDrawing}
