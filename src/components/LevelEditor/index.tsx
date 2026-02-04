@@ -20,7 +20,10 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectionStart, setSelectionStart] = useState({ x: 0, y: 0 });
 
-  const [isDrawing, setIsDrawing] = useState(false);
+
+  const [isMapDragging, setIsMapDragging] = useState(false);
+  const [mapDragStart, setMapDragStart] = useState({ x: 0, y: 0 });
+  const [mapDragCurrent, setMapDragCurrent] = useState({ x: 0, y: 0 });
   
   // Map Data State
   const [mapSize, setMapSize] = useState({ width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT });
@@ -111,6 +114,43 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
   }, [activeAsset]);
 
   // Render Canvas
+  const drawTile = useCallback((ctx: CanvasRenderingContext2D, tileId: number, x: number, y: number, alpha: number) => {
+    if (!tilesetRef.current) return;
+    const tilesPerRow = Math.floor(tilesetRef.current.width / TILE_SIZE);
+    
+    const srcX = (tileId % tilesPerRow) * TILE_SIZE;
+    const srcY = Math.floor(tileId / tilesPerRow) * TILE_SIZE;
+    
+    ctx.globalAlpha = alpha;
+    ctx.drawImage(
+      tilesetRef.current,
+      srcX, srcY, TILE_SIZE, TILE_SIZE,
+      x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE
+    );
+    ctx.globalAlpha = 1.0;
+  }, []);
+
+  const drawGrid = useCallback((ctx: CanvasRenderingContext2D) => {
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    
+    const width = mapSize.width * TILE_SIZE;
+    const height = mapSize.height * TILE_SIZE;
+
+    // Vertical
+    for (let x = 0; x <= width; x += TILE_SIZE) {
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, height);
+    }
+    // Horizontal
+    for (let y = 0; y <= height; y += TILE_SIZE) {
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+    }
+    ctx.stroke();
+  }, [mapSize]);
+
   const renderCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas || !tilesetRef.current) return;
@@ -141,46 +181,44 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
     // Render Grid
     drawGrid(ctx);
 
-    // Render Highlight if valid mouse pos? (Optional, skipping for simple React implementation)
+    // Draw Drag-to-Fill Preview
+    if (isMapDragging) {
+       const minX = Math.min(mapDragStart.x, mapDragCurrent.x);
+       const minY = Math.min(mapDragStart.y, mapDragCurrent.y);
+       const maxX = Math.max(mapDragStart.x, mapDragCurrent.x);
+       const maxY = Math.max(mapDragStart.y, mapDragCurrent.y);
+       
+       const w = maxX - minX + 1;
+       const h = maxY - minY + 1;
 
-  }, [groundLayer, objectLayer]);
+       // Render Preview Tiles
+       for (let dy = 0; dy < h; dy++) {
+         for (let dx = 0; dx < w; dx++) {
+            const targetX = minX + dx;
+            const targetY = minY + dy;
+            
+            if (targetY < mapSize.height && targetX < mapSize.width) {
+                 const patternX = dx % selection.w;
+                 const patternY = dy % selection.h;
+                 
+                 const tilesPerRow = tilesetRef.current ? Math.floor(tilesetRef.current.width / TILE_SIZE) : 1;
+                 const sourceId = (selection.y + patternY) * tilesPerRow + (selection.x + patternX);
+                 
+                 drawTile(ctx, sourceId, targetX, targetY, 0.5); // 0.5 alpha for ghost effect
+            }
+         }
+       }
 
-  const drawTile = (ctx: CanvasRenderingContext2D, tileId: number, x: number, y: number, alpha: number) => {
-    if (!tilesetRef.current) return;
-    const tilesPerRow = Math.floor(tilesetRef.current.width / TILE_SIZE);
-    
-    const srcX = (tileId % tilesPerRow) * TILE_SIZE;
-    const srcY = Math.floor(tileId / tilesPerRow) * TILE_SIZE;
-    
-    ctx.globalAlpha = alpha;
-    ctx.drawImage(
-      tilesetRef.current,
-      srcX, srcY, TILE_SIZE, TILE_SIZE,
-      x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE
-    );
-    ctx.globalAlpha = 1.0;
-  };
-
-  const drawGrid = (ctx: CanvasRenderingContext2D) => {
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    
-    const width = mapSize.width * TILE_SIZE;
-    const height = mapSize.height * TILE_SIZE;
-
-    // Vertical
-    for (let x = 0; x <= width; x += TILE_SIZE) {
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, height);
+       // Draw Outline
+       const pixelW = w * TILE_SIZE;
+       const pixelH = h * TILE_SIZE;
+       ctx.strokeStyle = '#fff';
+       ctx.strokeRect(minX * TILE_SIZE, minY * TILE_SIZE, pixelW, pixelH);
     }
-    // Horizontal
-    for (let y = 0; y <= height; y += TILE_SIZE) {
-      ctx.moveTo(0, y);
-      ctx.lineTo(width, y);
-    }
-    ctx.stroke();
-  };
+  }, [groundLayer, objectLayer, isMapDragging, mapDragStart, mapDragCurrent, selection, mapSize, drawTile]);
+
+
+
 
   // Re-render on state change
   useEffect(() => {
@@ -188,74 +226,82 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
   }, [renderCanvas]);
 
   // Painting Logic
-  const handlePaint = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    
-    
-    // const rect = canvas.getBoundingClientRect();
-    // const x = e.clientX - rect.left; // Adjust for scroll/offset
-    // const y = e.clientY - rect.top; // Adjust for scroll/offset (Note: logic might need simple container offset check)
-    // Actually simpler: e.nativeEvent.offsetX/Y gives pos inside element
-    const nativeX = e.nativeEvent.offsetX;
-    const nativeY = e.nativeEvent.offsetY;
 
-    const tileX = Math.floor(nativeX / TILE_SIZE);
-    const tileY = Math.floor(nativeY / TILE_SIZE);
+  const handleCanvasMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    setIsMapDragging(true);
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = Math.floor((e.clientX - rect.left) / TILE_SIZE);
+    const y = Math.floor((e.clientY - rect.top) / TILE_SIZE);
+    setMapDragStart({ x, y });
+    setMapDragCurrent({ x, y });
+  };
 
-    if (tileX < 0 || tileX >= mapSize.width || tileY < 0 || tileY >= mapSize.height) return;
+  const handleCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = Math.floor((e.clientX - rect.left) / TILE_SIZE);
+    const y = Math.floor((e.clientY - rect.top) / TILE_SIZE);
 
-    if (currentLayer === 0) {
-      const newGrid = [...groundLayer];
-      // Paint selection block
-      for (let dy = 0; dy < selection.h; dy++) {
-        for (let dx = 0; dx < selection.w; dx++) {
-          const mapY = tileY + dy;
-          const mapX = tileX + dx;
-          
-          if (mapY < mapSize.height && mapX < mapSize.width) {
-             const tilesPerRow = tilesetRef.current ? Math.floor(tilesetRef.current.width / TILE_SIZE) : 1;
-             const sourceId = (selection.y + dy) * tilesPerRow + (selection.x + dx);
-             
-             newGrid[mapY] = [...newGrid[mapY]];
-             newGrid[mapY][mapX] = sourceId;
-          }
-        }
-      }
-      setGroundLayer(newGrid);
-    } else {
-      const newGrid = [...objectLayer];
-      // Paint selection block
-      for (let dy = 0; dy < selection.h; dy++) {
-        for (let dx = 0; dx < selection.w; dx++) {
-            const mapY = tileY + dy;
-            const mapX = tileX + dx;
-
-            if (mapY < mapSize.height && mapX < mapSize.width) {
-               const tilesPerRow = tilesetRef.current ? Math.floor(tilesetRef.current.width / TILE_SIZE) : 1;
-               const sourceId = (selection.y + dy) * tilesPerRow + (selection.x + dx);
-
-               newGrid[mapY] = [...newGrid[mapY]];
-               newGrid[mapY][mapX] = sourceId;
-            }
-        }
-      }
-      setObjectLayer(newGrid);
+    if (isMapDragging) {
+        setMapDragCurrent({ x, y });
     }
   };
 
-  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    setIsDrawing(true);
-    handlePaint(e);
+  const handleCanvasMouseUp = () => {
+    if (isMapDragging) {
+        setIsMapDragging(false);
+        const minX = Math.min(mapDragStart.x, mapDragCurrent.x);
+        const minY = Math.min(mapDragStart.y, mapDragCurrent.y);
+        const maxX = Math.max(mapDragStart.x, mapDragCurrent.x);
+        const maxY = Math.max(mapDragStart.y, mapDragCurrent.y);
+
+        const w = maxX - minX + 1;
+        const h = maxY - minY + 1;
+
+        if (currentLayer === 0) {
+            setGroundLayer(prev => {
+                const newGrid = prev.map(row => [...row]);
+                for (let dy = 0; dy < h; dy++) {
+                    for (let dx = 0; dx < w; dx++) {
+                        const targetX = minX + dx;
+                        const targetY = minY + dy;
+                        if (targetY < mapSize.height && targetX < mapSize.width) {
+                             // Pattern Logic
+                             const patternX = dx % selection.w;
+                             const patternY = dy % selection.h;
+                             
+                             const tilesPerRow = tilesetRef.current ? Math.floor(tilesetRef.current.width / TILE_SIZE) : 1;
+                             const sourceId = (selection.y + patternY) * tilesPerRow + (selection.x + patternX);
+                             newGrid[targetY][targetX] = sourceId;
+                        }
+                    }
+                }
+                return newGrid;
+            });
+        } else {
+             setObjectLayer(prev => {
+                const newGrid = prev.map(row => [...row]);
+                for (let dy = 0; dy < h; dy++) {
+                    for (let dx = 0; dx < w; dx++) {
+                        const targetX = minX + dx;
+                        const targetY = minY + dy;
+                        if (targetY < mapSize.height && targetX < mapSize.width) {
+                             // Pattern Logic
+                             const patternX = dx % selection.w;
+                             const patternY = dy % selection.h;
+                             
+                             const tilesPerRow = tilesetRef.current ? Math.floor(tilesetRef.current.width / TILE_SIZE) : 1;
+                             const sourceId = (selection.y + patternY) * tilesPerRow + (selection.x + patternX);
+                             newGrid[targetY][targetX] = sourceId;
+                        }
+                    }
+                }
+                return newGrid;
+            });
+        }
+    }
   };
 
-  const stopDrawing = () => {
-    setIsDrawing(false);
-  };
 
-  const drawMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (isDrawing) handlePaint(e);
-  };
 
   const handleExport = () => {
     const data: CustomMapData = {
@@ -417,10 +463,10 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
             ref={canvasRef}
             width={mapSize.width * TILE_SIZE}
             height={mapSize.height * TILE_SIZE}
-            onMouseDown={startDrawing}
-            onMouseUp={stopDrawing}
-            onMouseLeave={stopDrawing}
-            onMouseMove={drawMove}
+            onMouseDown={handleCanvasMouseDown}
+            onMouseUp={handleCanvasMouseUp}
+            onMouseLeave={() => setIsMapDragging(false)}
+            onMouseMove={handleCanvasMouseMove}
           />
         </div>
       </div>
