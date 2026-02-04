@@ -232,9 +232,21 @@ export class MainScene extends Phaser.Scene {
     const centerX = this.physics.world.bounds.centerX;
     const centerY = this.physics.world.bounds.centerY;
 
-    // Create player at map center
+    // Create player
+    let startX = centerX;
+    let startY = centerY;
+
+    const mapData = this.registry.get('customMapData') as CustomMapData | undefined;
+    // Note: data argument in create() might also have mapData, handle precedence if needed.
+    // For now assuming registry is main source if loaded from editor.
+    
+    if (mapData && mapData.spawnPoint) {
+        startX = mapData.spawnPoint.x * mapData.tileSize + mapData.tileSize / 2;
+        startY = mapData.spawnPoint.y * mapData.tileSize + mapData.tileSize / 2;
+    }
+
     const spriteKey = this.usePlaceholderGraphics ? 'player' : this.characterConfig.spriteKey;
-    this.player = new Player(this, centerX, centerY, spriteKey);
+    this.player = new Player(this, startX, startY, spriteKey);
     this.cameras.main.startFollow(this.player);
     this.player.setExperienceManager(this.experienceManager);
     // Initialize stats from configuration

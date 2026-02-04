@@ -15,7 +15,8 @@ interface LevelEditorProps {
 export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [currentLayer, setCurrentLayer] = useState<0 | 1>(0); // 0 = Ground, 1 = Objects
-  const [activeTool, setActiveTool] = useState<'brush' | 'eraser'>('brush');
+  const [activeTool, setActiveTool] = useState<'brush' | 'eraser' | 'spawn'>('brush');
+  const [spawnPoint, setSpawnPoint] = useState<{ x: number, y: number } | null>(null);
   // Selection State (Tileset Coordinates)
   const [selection, setSelection] = useState({ x: 0, y: 0, w: 1, h: 1 });
   const [isSelecting, setIsSelecting] = useState(false);
@@ -279,6 +280,28 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
       });
     });
 
+    // Render Spawn Point
+    if (spawnPoint) {
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+        ctx.beginPath();
+        ctx.arc(
+            spawnPoint.x * TILE_SIZE + TILE_SIZE / 2,
+            spawnPoint.y * TILE_SIZE + TILE_SIZE / 2,
+            TILE_SIZE / 3,
+            0,
+            Math.PI * 2
+        );
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        ctx.font = '10px Arial';
+        ctx.fillStyle = 'white';
+        ctx.textAlign = 'center';
+        ctx.fillText('SPAWN', spawnPoint.x * TILE_SIZE + TILE_SIZE / 2, spawnPoint.y * TILE_SIZE + TILE_SIZE + 10);
+    }
+
     // Render Grid
     drawGrid(ctx);
 
@@ -375,6 +398,14 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
         const w = maxX - minX + 1;
         const h = maxY - minY + 1;
 
+        if (activeTool === 'spawn') {
+             // Set spawn point to the first tile clicked/dragged (ignore drag area for spawn)
+             if (mapDragStart.x < mapSize.width && mapDragStart.y < mapSize.height) {
+                 setSpawnPoint({ x: mapDragStart.x, y: mapDragStart.y });
+             }
+             return; // Don't paint tiles
+        }
+
         const updateGrid = (prev: TileData[][]) => {
              const newGrid = prev.map(row => [...row]);
              for (let dy = 0; dy < h; dy++) {
@@ -459,7 +490,8 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
       tileSize: TILE_SIZE,
       palette: palette,
       ground: compressedGround,
-      objects: compressedObjects
+      objects: compressedObjects,
+      spawnPoint: spawnPoint || undefined
     };
 
     try {
@@ -526,6 +558,7 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
 
                    setGroundLayer(normalizeGrid(data.ground, data.palette));
                    setObjectLayer(normalizeGrid(data.objects, data.palette));
+                   setSpawnPoint(data.spawnPoint || null);
                    setShowLoadModal(false);
                } else {
                    alert("Invalid map data.");
@@ -545,7 +578,8 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
       height: mapSize.height,
       tileSize: TILE_SIZE,
       ground: groundLayer,
-      objects: objectLayer
+      objects: objectLayer,
+      spawnPoint: spawnPoint || undefined
     };
     onPlay(data);
   };
@@ -615,9 +649,15 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
                  className={`layer-btn ${activeTool === 'eraser' ? 'active' : ''}`}
                  onClick={() => setActiveTool('eraser')}
                >
-                 ⌫ Eraser
-               </button>
-            </div>
+                  ⌫ Eraser
+                </button>
+                <button 
+                  className={`layer-btn ${activeTool === 'spawn' ? 'active' : ''}`}
+                  onClick={() => setActiveTool('spawn')}
+                >
+                  📍 Spawn
+                </button>
+             </div>
          </div>
 
         <div className="palette-container">
