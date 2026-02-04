@@ -15,7 +15,11 @@ interface LevelEditorProps {
 export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [currentLayer, setCurrentLayer] = useState<0 | 1>(0); // 0 = Ground, 1 = Objects
-  const [selectedTileId, setSelectedTileId] = useState(0);
+  // Selection State (Tileset Coordinates)
+  const [selection, setSelection] = useState({ x: 0, y: 0, w: 1, h: 1 });
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [selectionStart, setSelectionStart] = useState({ x: 0, y: 0 });
+
   const [isDrawing, setIsDrawing] = useState(false);
   
   // Map Data State
@@ -63,7 +67,7 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
   // Tab & Asset State
   const [activeTab, setActiveTab] = useState<'tileset' | 'autoset'>('tileset');
   const [activeAsset, setActiveAsset] = useState<string>('Outside.png');
-  const [tilesPerRow, setTilesPerRow] = useState(0);
+
 
   // Available Assets (Mock/Scanned)
   const tilesetOptions = [
@@ -102,7 +106,6 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
     img.src = fullPath;
     img.onload = () => {
       tilesetRef.current = img;
-      setTilesPerRow(Math.floor(img.width / TILE_SIZE));
       renderCanvas(); // Initial render once image loads
     };
   }, [activeAsset]);
@@ -204,14 +207,39 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
 
     if (currentLayer === 0) {
       const newGrid = [...groundLayer];
-      // Clone row to avoid mutation (react state rule)
-      newGrid[tileY] = [...newGrid[tileY]];
-      newGrid[tileY][tileX] = selectedTileId;
+      // Paint selection block
+      for (let dy = 0; dy < selection.h; dy++) {
+        for (let dx = 0; dx < selection.w; dx++) {
+          const mapY = tileY + dy;
+          const mapX = tileX + dx;
+          
+          if (mapY < mapSize.height && mapX < mapSize.width) {
+             const tilesPerRow = tilesetRef.current ? Math.floor(tilesetRef.current.width / TILE_SIZE) : 1;
+             const sourceId = (selection.y + dy) * tilesPerRow + (selection.x + dx);
+             
+             newGrid[mapY] = [...newGrid[mapY]];
+             newGrid[mapY][mapX] = sourceId;
+          }
+        }
+      }
       setGroundLayer(newGrid);
     } else {
       const newGrid = [...objectLayer];
-      newGrid[tileY] = [...newGrid[tileY]];
-      newGrid[tileY][tileX] = selectedTileId;
+      // Paint selection block
+      for (let dy = 0; dy < selection.h; dy++) {
+        for (let dx = 0; dx < selection.w; dx++) {
+            const mapY = tileY + dy;
+            const mapX = tileX + dx;
+
+            if (mapY < mapSize.height && mapX < mapSize.width) {
+               const tilesPerRow = tilesetRef.current ? Math.floor(tilesetRef.current.width / TILE_SIZE) : 1;
+               const sourceId = (selection.y + dy) * tilesPerRow + (selection.x + dx);
+
+               newGrid[mapY] = [...newGrid[mapY]];
+               newGrid[mapY][mapX] = sourceId;
+            }
+        }
+      }
       setObjectLayer(newGrid);
     }
   };
@@ -328,31 +356,55 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
                 <img 
                   src={`${activeTab === 'tileset' ? '/assets/tilesets/' : '/assets/autotiles/'}${activeAsset}`} 
                   className="palette-image"
-                  onClick={(e) => {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const y = e.clientY - rect.top;
-                    const tx = Math.floor(x / TILE_SIZE);
-                    const ty = Math.floor(y / TILE_SIZE);
-                    // Use local width or logic. tilesPerRow state should match this.
-                    const currentTilesPerRow = Math.floor(e.currentTarget.width / TILE_SIZE);
-                    const id = ty * currentTilesPerRow + tx;
-                    setSelectedTileId(id);
+                  onMouseDown={(e) => {
+                     e.preventDefault(); // Prevent native drag
+                     const rect = e.currentTarget.getBoundingClientRect();
+                     const x = Math.floor((e.clientX - rect.left) / TILE_SIZE);
+                     const y = Math.floor((e.clientY - rect.top) / TILE_SIZE);
+                     setIsSelecting(true);
+                     setSelectionStart({ x, y });
+                     setSelection({ x, y, w: 1, h: 1 });
                   }}
+                  onMouseMove={(e) => {
+                     if (!isSelecting) return;
+                     const rect = e.currentTarget.getBoundingClientRect();
+                     // Clamp to image bounds? Native mouse can go outside, but let's stick to simple logic
+                     const currentX = Math.floor((e.clientX - rect.left) / TILE_SIZE);
+                     const currentY = Math.floor((e.clientY - rect.top) / TILE_SIZE);
+                     
+                     const startX = selectionStart.x;
+                     const startY = selectionStart.y;
+                     
+                     const minX = Math.min(startX, currentX);
+                     const minY = Math.min(startY, currentY);
+                     const maxX = Math.max(startX, currentX);
+                     const maxY = Math.max(startY, currentY);
+                     
+                     setSelection({
+                       x: minX,
+                       y: minY,
+                       w: maxX - minX + 1,
+                       h: maxY - minY + 1
+                     });
+                  }}
+                  onMouseUp={() => setIsSelecting(false)}
+                  onMouseLeave={() => setIsSelecting(false)}
                   alt="Palette"
                 />
-                 {tilesPerRow > 0 && (
+                 {activeAsset && (
                     <div 
                       className="tile-selection-highlight" 
                       style={{
-                        left: (selectedTileId % tilesPerRow) * TILE_SIZE,
-                        top: Math.floor(selectedTileId / tilesPerRow) * TILE_SIZE
+                        left: selection.x * TILE_SIZE,
+                        top: selection.y * TILE_SIZE,
+                        width: selection.w * TILE_SIZE,
+                        height: selection.h * TILE_SIZE
                       }}
                     />
                   )}
                </div>
                 <div className="selected-tile-preview">
-                    Selected ID: {selectedTileId}
+                    Selection: {selection.w}x{selection.h} at ({selection.x}, {selection.y})
                 </div>
               </>
              )}
