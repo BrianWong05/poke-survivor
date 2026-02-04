@@ -206,3 +206,63 @@ canvas {
   background-color: #1a1a1a;
   cursor: crosshair;
 }
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: #333;
+  padding: 2rem;
+  border-radius: 8px;
+  width: 400px;
+  max-width: 90%;
+  color: white;
+  border: 1px solid #555;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+
+.map-list {
+  max-height: 300px;
+  overflow-y: auto;
+  margin: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.map-list-item {
+  background: #444;
+  border: 1px solid #555;
+  padding: 0.75rem;
+  color: white;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.map-list-item:hover {
+  background: #555;
+  border-color: #666;
+}
+
+.close-modal-btn {
+  width: 100%;
+  padding: 0.5rem;
+  background: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}

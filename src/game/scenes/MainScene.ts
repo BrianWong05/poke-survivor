@@ -802,41 +802,95 @@ export class MainScene extends Phaser.Scene {
         height
     });
     
-    // Add Tileset
-    const tileset = map.addTilesetImage('editor-tileset', 'editor-tileset');
-    
-    if (!tileset) {
-        console.warn('MainScene: editor-tileset not found. Falling back to default map.');
+    // 1. Collect all unique tilesets needed
+    const usedTilesets = new Set<string>();
+    if (data.palette) {
+        data.palette.forEach(p => usedTilesets.add(p.set));
+    } else {
+        usedTilesets.add('editor-tileset'); // Legacy fallback
+    }
+
+    // 2. Add Tilesets to map & Build GID Map
+    const tilesetObjects: Phaser.Tilemaps.Tileset[] = [];
+    const tilesetGidMap = new Map<string, number>();
+
+    usedTilesets.forEach(filename => {
+       // Note: Preloader loads keys matching filenames
+       const tileset = map.addTilesetImage(filename, filename);
+       if (tileset) {
+           tilesetObjects.push(tileset);
+           tilesetGidMap.set(filename, tileset.firstgid);
+       } else {
+           console.warn(`[MainScene] Tileset ${filename} not found!`);
+       }
+    });
+
+    if (tilesetObjects.length === 0) {
+        // Ultimate fallback
         this.createDefaultMap();
         return;
     }
-    
-    // Create Layers
-    const groundLayer = map.createBlankLayer('Ground', tileset);
-    const objectsLayer = map.createBlankLayer('Objects', tileset);
-    
+
+    // 3. Create Layers (Passing ALL tilesets allows multi-tileset layers)
+    const groundLayer = map.createBlankLayer('Ground', tilesetObjects);
+    const objectsLayer = map.createBlankLayer('Objects', tilesetObjects);
+
+    // 4. Helper to resolve GID from Map Cell
+    const resolveGid = (cell: number | import('@/game/types/map').TileData): number => {
+        // Handle -1
+        if (typeof cell === 'number' && cell === -1) return -1;
+        if (typeof cell !== 'number' && cell.id === -1) return -1;
+
+        let set: string = 'editor-tileset';
+        let localId: number = 0;
+
+        if (data.palette && typeof cell === 'number') {
+            // New Compressed Format: cell is index into palette
+            const p = data.palette[cell];
+            if (!p) return -1;
+            set = p.set;
+            localId = p.id;
+        } else if (typeof cell !== 'number') {
+            // Uncompressed Object Format
+            set = cell.set;
+            localId = cell.id;
+        } else {
+             // Legacy Number Format (assumes editor-tileset / Outside.png)
+             // But wait, if Preloader loads it as 'Outside.png', 'editor-tileset' might fail lookup if we changed keys.
+             // Preloader step 2 kept 'editor-tileset' key? 
+             // Correction: Preloader now loads explicit files. 'editor-tileset' was the old key.
+             // If legacy map uses uncompressed numbers, it assumes 'Outside.png' basically.
+             // Let's assume 'Outside.png' for legacy numbers.
+             set = 'Outside.png';
+             localId = cell;
+        }
+
+        const firstGid = tilesetGidMap.get(set);
+        if (firstGid === undefined) return -1; 
+        
+        return firstGid + localId;
+    };
+
     if (groundLayer) {
         for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
-                const tileIndex = ground[y][x];
-                if (tileIndex !== -1) {
-                    groundLayer.putTileAt(tileIndex, x, y);
-                }
+                const cell = ground[y][x];
+                const gid = resolveGid(cell);
+                if (gid !== -1) groundLayer.putTileAt(gid, x, y);
             }
         }
-        groundLayer.setDepth(-10); // Background
+        groundLayer.setDepth(-10);
     }
     
     if (objectsLayer) {
         for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
-                const tileIndex = objects[y][x];
-                if (tileIndex !== -1) {
-                    objectsLayer.putTileAt(tileIndex, x, y);
-                }
+                const cell = objects[y][x];
+                const gid = resolveGid(cell);
+                if (gid !== -1) objectsLayer.putTileAt(gid, x, y);
             }
         }
-        objectsLayer.setDepth(0); // Objects at same level as player 
+        objectsLayer.setDepth(0);
     }
   }
 }

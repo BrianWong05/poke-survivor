@@ -85,7 +85,21 @@ export class Preloader extends Phaser.Scene {
     this.load.image('petal', 'assets/sprites/petal.png');
 
     // Level Editor tileset
-    this.load.image('editor-tileset', 'assets/tilesets/Outside.png');
+    // this.load.image('editor-tileset', 'assets/tilesets/Outside.png');
+    
+    // Dynamic Load of All Tilesets for Level Editor compatibility
+    const tilesets = import.meta.glob('/src/assets/Tilesets/*.png', { eager: true });
+    for (const path in tilesets) {
+        const filename = path.split('/').pop() || '';
+        // Key is just the filename (e.g., "Outside.png") for matching the editor "set" property
+        this.load.image(filename, (tilesets[path] as any).default);
+    }
+
+    const autosets = import.meta.glob('/src/assets/Autotiles/*.png', { eager: true });
+    for (const path in autosets) {
+        const filename = path.split('/').pop() || '';
+        this.load.image(filename, (autosets[path] as any).default);
+    }
 
     // Load manifest first as JSON
     this.load.json('manifest', 'assets/manifest.json');

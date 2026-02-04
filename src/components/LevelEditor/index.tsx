@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
-import type { CustomMapData } from '@/game/types/map';
+import type { CustomMapData, TileData } from '@/game/types/map';
 import './styles.css';
 
 // Constants
@@ -31,17 +31,19 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
   // Map Data State
   const [mapSize, setMapSize] = useState({ width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT });
 
-  // Initialize with -1 (empty) for objects, and -1 (empty/black) for ground
-  const [groundLayer, setGroundLayer] = useState<number[][]>(() => 
-    Array(DEFAULT_HEIGHT).fill(0).map(() => Array(DEFAULT_WIDTH).fill(-1))
+  // Initialize with empty objects
+  const emptyTile: TileData = { id: -1, set: '', type: 'tileset' };
+  
+  const [groundLayer, setGroundLayer] = useState<TileData[][]>(() => 
+    Array(DEFAULT_HEIGHT).fill(0).map(() => Array(DEFAULT_WIDTH).fill({ ...emptyTile }))
   );
-  const [objectLayer, setObjectLayer] = useState<number[][]>(() => 
-    Array(DEFAULT_HEIGHT).fill(0).map(() => Array(DEFAULT_WIDTH).fill(-1))
+  const [objectLayer, setObjectLayer] = useState<TileData[][]>(() => 
+    Array(DEFAULT_HEIGHT).fill(0).map(() => Array(DEFAULT_WIDTH).fill({ ...emptyTile }))
   );
 
   // Undo History & Logic
-  const [history, setHistory] = useState<Array<{ground: number[][], objects: number[][]}>>([]);
-  const [redoStack, setRedoStack] = useState<Array<{ground: number[][], objects: number[][]}>>([]);
+  const [history, setHistory] = useState<Array<{ground: TileData[][], objects: TileData[][]}>>([]);
+  const [redoStack, setRedoStack] = useState<Array<{ground: TileData[][], objects: TileData[][]}>>([]);
 
   const saveHistory = () => {
     // Current state to be saved
@@ -121,7 +123,7 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
       const newGrid = Array(h).fill(0).map((_, y) => 
         Array(w).fill(0).map((_, x) => {
           if (y < prev.length && x < prev[0].length) return prev[y][x];
-          return -1; // Default empty/black
+          return { ...emptyTile };
         })
       );
       return newGrid;
@@ -132,7 +134,7 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
       const newGrid = Array(h).fill(0).map((_, y) => 
         Array(w).fill(0).map((_, x) => {
           if (y < prev.length && x < prev[0].length) return prev[y][x];
-          return -1; // Default empty
+          return { ...emptyTile };
         })
       );
       return newGrid;
@@ -166,36 +168,63 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
   const tilesetOptions = Object.keys(tilesetAssets).sort();
   const autosetOptions = Object.keys(autosetAssets).sort(); 
 
-  // Load Tileset Image
-  const tilesetRef = useRef<HTMLImageElement>(null);
-  
+  // Image Cache
+  const imageCache = useRef<Record<string, HTMLImageElement>>({});
+  const [imagesLoaded, setImagesLoaded] = useState(false);
+
+  // Preload all assets
   useEffect(() => {
-    // Determine path based on selection
-    if (!activeAsset) return;
+    let loadedCount = 0;
+    const totalAssets = Object.keys(tilesetAssets).length + Object.keys(autosetAssets).length;
     
-    // Get URL from the map
-    const src = activeTab === 'tileset' ? tilesetAssets[activeAsset] : autosetAssets[activeAsset];
-    if (!src) return;
-    
-    const img = new Image();
-    img.src = src;
-    img.onload = () => {
-      tilesetRef.current = img;
-      renderCanvas(); // Initial render once image loads
+    const loadImg = (name: string, src: string) => {
+        if (imageCache.current[name]) {
+            loadedCount++;
+            if (loadedCount === totalAssets) setImagesLoaded(true);
+            return;
+        }
+        const img = new Image();
+        img.src = src;
+        img.onload = () => {
+            imageCache.current[name] = img;
+            loadedCount++;
+            if (loadedCount === totalAssets) {
+                setImagesLoaded(true);
+                renderCanvas();
+            }
+        };
+        // Handle error?
     };
-  }, [activeAsset, activeTab]);
+
+    Object.entries(tilesetAssets).forEach(([name, src]) => loadImg(name, src as string));
+    Object.entries(autosetAssets).forEach(([name, src]) => loadImg(name, src as string));
+    
+  }, []);
+
+  // Sync tilesetRef for Preview/Selection matching existing logic
+  // (We keep this to support query selection from the palette)
+  const tilesetRef = useRef<HTMLImageElement>(null);
+  useEffect(() => {
+     if (!activeAsset) return;
+     const img = imageCache.current[activeAsset];
+     if (img) tilesetRef.current = img;
+  }, [activeAsset, imagesLoaded]);
 
   // Render Canvas
-  const drawTile = useCallback((ctx: CanvasRenderingContext2D, tileId: number, x: number, y: number, alpha: number) => {
-    if (!tilesetRef.current) return;
-    const tilesPerRow = Math.floor(tilesetRef.current.width / TILE_SIZE);
+  const drawTile = useCallback((ctx: CanvasRenderingContext2D, tile: TileData, x: number, y: number, alpha: number) => {
+    if (tile.id === -1) return;
     
-    const srcX = (tileId % tilesPerRow) * TILE_SIZE;
-    const srcY = Math.floor(tileId / tilesPerRow) * TILE_SIZE;
+    const img = imageCache.current[tile.set];
+    if (!img) return;
+
+    const tilesPerRow = Math.floor(img.width / TILE_SIZE);
+    
+    const srcX = (tile.id % tilesPerRow) * TILE_SIZE;
+    const srcY = Math.floor(tile.id / tilesPerRow) * TILE_SIZE;
     
     ctx.globalAlpha = alpha;
     ctx.drawImage(
-      tilesetRef.current,
+      img,
       srcX, srcY, TILE_SIZE, TILE_SIZE,
       x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE
     );
@@ -238,15 +267,15 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
 
     // Render Ground
     groundLayer.forEach((row, y) => {
-      row.forEach((tileId, x) => {
-        if (tileId >= 0) drawTile(ctx, tileId, x, y, 1.0);
+      row.forEach((tile, x) => {
+        if (tile.id >= 0) drawTile(ctx, tile, x, y, 1.0);
       });
     });
 
     // Render Objects
     objectLayer.forEach((row, y) => {
-      row.forEach((tileId, x) => {
-        if (tileId >= 0) drawTile(ctx, tileId, x, y, 1.0);
+      row.forEach((tile, x) => {
+        if (tile.id >= 0) drawTile(ctx, tile, x, y, 1.0);
       });
     });
 
@@ -286,7 +315,14 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
                      const tilesPerRow = tilesetRef.current ? Math.floor(tilesetRef.current.width / TILE_SIZE) : 1;
                      const sourceId = (selection.y + patternY) * tilesPerRow + (selection.x + patternX);
                      
-                     drawTile(ctx, sourceId, targetX, targetY, 0.5); // 0.5 alpha for ghost effect
+                     // Construct preview tile data
+                     const previewTile: TileData = { 
+                         id: sourceId, 
+                         set: activeAsset, 
+                         type: activeTab 
+                     };
+                     
+                     drawTile(ctx, previewTile, targetX, targetY, 0.5); // 0.5 alpha for ghost effect
                 }
              }
            }
@@ -330,67 +366,44 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
   const handleCanvasMouseUp = () => {
     if (isMapDragging) {
         setIsMapDragging(false);
-        
-        // Save history before mutation
         saveHistory();
 
         const minX = Math.min(mapDragStart.x, mapDragCurrent.x);
         const minY = Math.min(mapDragStart.y, mapDragCurrent.y);
         const maxX = Math.max(mapDragStart.x, mapDragCurrent.x);
         const maxY = Math.max(mapDragStart.y, mapDragCurrent.y);
-
         const w = maxX - minX + 1;
         const h = maxY - minY + 1;
 
-        if (currentLayer === 0) {
-            setGroundLayer(prev => {
-                const newGrid = prev.map(row => [...row]);
-                for (let dy = 0; dy < h; dy++) {
-                    for (let dx = 0; dx < w; dx++) {
-                        const targetX = minX + dx;
-                        const targetY = minY + dy;
-                        if (targetY < mapSize.height && targetX < mapSize.width) {
-                             if (activeTool === 'eraser') {
-                                 newGrid[targetY][targetX] = -1;
-                             } else {
-                                 // Pattern Logic
-                                 const patternX = dx % selection.w;
-                                 const patternY = dy % selection.h;
-                                 
-                                 const tilesPerRow = tilesetRef.current ? Math.floor(tilesetRef.current.width / TILE_SIZE) : 1;
-                                 const sourceId = (selection.y + patternY) * tilesPerRow + (selection.x + patternX);
-                                 newGrid[targetY][targetX] = sourceId;
-                             }
-                        }
-                    }
-                }
-                return newGrid;
-            });
-        } else {
-             setObjectLayer(prev => {
-                const newGrid = prev.map(row => [...row]);
-                for (let dy = 0; dy < h; dy++) {
-                    for (let dx = 0; dx < w; dx++) {
-                        const targetX = minX + dx;
-                        const targetY = minY + dy;
-                        if (targetY < mapSize.height && targetX < mapSize.width) {
-                             if (activeTool === 'eraser') {
-                                 newGrid[targetY][targetX] = -1;
-                             } else {
-                                 // Pattern Logic
-                                 const patternX = dx % selection.w;
-                                 const patternY = dy % selection.h;
-                                 
-                                 const tilesPerRow = tilesetRef.current ? Math.floor(tilesetRef.current.width / TILE_SIZE) : 1;
-                                 const sourceId = (selection.y + patternY) * tilesPerRow + (selection.x + patternX);
-                                 newGrid[targetY][targetX] = sourceId;
-                             }
-                        }
-                    }
-                }
-                return newGrid;
-            });
-        }
+        const updateGrid = (prev: TileData[][]) => {
+             const newGrid = prev.map(row => [...row]);
+             for (let dy = 0; dy < h; dy++) {
+                 for (let dx = 0; dx < w; dx++) {
+                     const targetX = minX + dx;
+                     const targetY = minY + dy;
+                     if (targetY < mapSize.height && targetX < mapSize.width) {
+                          if (activeTool === 'eraser') {
+                              newGrid[targetY][targetX] = { ...emptyTile };
+                          } else {
+                              const patternX = dx % selection.w;
+                              const patternY = dy % selection.h;
+                              const tilesPerRow = tilesetRef.current ? Math.floor(tilesetRef.current.width / TILE_SIZE) : 1;
+                              const sourceId = (selection.y + patternY) * tilesPerRow + (selection.x + patternX);
+                              
+                              newGrid[targetY][targetX] = {
+                                  id: sourceId,
+                                  set: activeAsset,
+                                  type: activeTab
+                              };
+                          }
+                     }
+                 }
+             }
+             return newGrid;
+        };
+
+        if (currentLayer === 0) setGroundLayer(updateGrid);
+        else setObjectLayer(updateGrid);
     }
   };
 
@@ -410,64 +423,122 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
     window.addEventListener('mouseup', handleGlobalMouseUp);
     return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
   }, []);
-  // Save & Load Map Logic
-  const handleSaveMap = () => {
+  // Save & Load Map Logic (Server-Side)
+  const [showLoadModal, setShowLoadModal] = useState(false);
+  const [savedMaps, setSavedMaps] = useState<string[]>([]);
+  
+  const handleSaveMap = async () => {
+    const name = window.prompt("Enter map name (letters, numbers, dashes only):");
+    if (!name) return;
+
+    // PALETTE COMPRESSION LOGIC
+    const palette: TileData[] = [];
+    const paletteMap = new Map<string, number>(); // Key: "id:set", Value: PaletteIndex
+
+    const getPaletteIndex = (tile: TileData): number => {
+        if (tile.id === -1) return -1;
+        const key = `${tile.id}:${tile.set}`;
+        if (paletteMap.has(key)) return paletteMap.get(key)!;
+        
+        const newIndex = palette.length;
+        palette.push(tile);
+        paletteMap.set(key, newIndex);
+        return newIndex;
+    };
+
+    const compressLayer = (layer: TileData[][]): number[][] => {
+        return layer.map(row => row.map(tile => getPaletteIndex(tile)));
+    };
+
+    const compressedGround = compressLayer(groundLayer);
+    const compressedObjects = compressLayer(objectLayer);
+
     const data: CustomMapData = {
       width: mapSize.width,
       height: mapSize.height,
       tileSize: TILE_SIZE,
-      ground: groundLayer,
-      objects: objectLayer
+      palette: palette,
+      ground: compressedGround,
+      objects: compressedObjects
     };
 
-    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    
-    // Create temporary link and click it
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `my-map-${Date.now()}.json`;
-    document.body.appendChild(a);
-    a.click();
-    
-    // Cleanup
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    try {
+      const res = await fetch('/api/maps', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, data })
+      });
+      
+      if (res.ok) {
+        alert(`Map saved successfully! Palette size: ${palette.length} unique tiles.`);
+      } else {
+        alert("Failed to save map.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error saving map.");
+    }
   };
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleLoadMap = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-        try {
-            const json = event.target?.result as string;
-            const data = JSON.parse(json) as CustomMapData;
-            
-            // Basic Validation
-            if (data.width && data.height && data.ground && data.objects) {
-                // Save current state to history before loading
-                saveHistory();
-
-                setMapSize({ width: data.width, height: data.height });
-                setGroundLayer(data.ground);
-                setObjectLayer(data.objects);
-                
-                // Clear input value so same file can be loaded again if needed
-                if (fileInputRef.current) fileInputRef.current.value = '';
-            } else {
-                alert("Invalid map file format.");
-            }
-        } catch (err) {
-            console.error("Failed to load map:", err);
-            alert("Failed to parse map file.");
-        }
-    };
-    reader.readAsText(file);
+  const openLoadModal = async () => {
+      try {
+          const res = await fetch('/api/maps');
+          if (res.ok) {
+              const files = await res.json();
+              setSavedMaps(files);
+              setShowLoadModal(true);
+          } else {
+              alert("Failed to list maps.");
+          }
+      } catch (err) {
+          console.error(err);
+          alert("Error listing maps.");
+      }
   };
+
+  const loadMapFromServer = async (filename: string) => {
+      try {
+          const res = await fetch(`/api/maps/${filename}`);
+           if (res.ok) {
+              const data = await res.json() as CustomMapData;
+               // Basic Validation
+               if (data.width && data.height && data.ground && data.objects) {
+                   saveHistory();
+                   setMapSize({ width: data.width, height: data.height });
+                   
+                   // Convert legacy/plain number grids or Palette Indices to TileData grids
+                   const normalizeGrid = (grid: (number | TileData)[][], palette?: TileData[]): TileData[][] => {
+                        return grid.map(row => row.map(cell => {
+                            // Case 1: Palette Based (Index)
+                            if (typeof cell === 'number') {
+                                if (cell === -1) return { ...emptyTile };
+                                if (palette) {
+                                    const tile = palette[cell];
+                                    return tile ? { ...tile } : { ...emptyTile }; // Graceful fallback
+                                }
+                                // Legacy: Number ID without palette implies default 'Outside.png'
+                                return { id: cell, set: 'Outside.png', type: 'tileset' };
+                            }
+                            // Case 2: Direct Object (Old uncompressed format)
+                            return cell;
+                        }));
+                   };
+
+                   setGroundLayer(normalizeGrid(data.ground, data.palette));
+                   setObjectLayer(normalizeGrid(data.objects, data.palette));
+                   setShowLoadModal(false);
+               } else {
+                   alert("Invalid map data.");
+               }
+          } else {
+              alert("Failed to load map.");
+          }
+      } catch (err) {
+          console.error(err);
+          alert("Error loading map.");
+      }
+  };
+
   const handleExport = () => {
     const data: CustomMapData = {
       width: mapSize.width,
@@ -490,7 +561,7 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
         </div>
         
         <div className="controls-group io-controls">
-             <button onClick={() => fileInputRef.current?.click()} className="control-btn load-btn" title="Load Map">📂 Load</button>
+             <button onClick={openLoadModal} className="control-btn load-btn" title="Load Map">📂 Load</button>
              <button onClick={handleSaveMap} className="control-btn save-btn" title="Save Map">💾 Save</button>
         </div>
 
@@ -499,14 +570,7 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
              <button onClick={redo} className="control-btn redo-btn" disabled={redoStack.length === 0} title="Redo (Cmd+Shift+Z)">↻ Redo</button>
         </div>
 
-        {/* Hidden File Input */}
-        <input 
-           type="file" 
-           ref={fileInputRef} 
-           style={{ display: 'none' }} 
-           accept=".json"
-           onChange={handleLoadMap}
-        />
+
 
          <div className="map-settings">
             <div className="settings-row">
@@ -667,6 +731,25 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
           />
         </div>
       </div>
+      
+      {/* Load Modal */}
+      {showLoadModal && (
+        <div className="modal-overlay">
+            <div className="modal-content">
+                <h3>Load Map</h3>
+                <div className="map-list">
+                    {savedMaps.length === 0 ? <p>No saved maps found.</p> : (
+                        savedMaps.map(mapName => (
+                            <button key={mapName} onClick={() => loadMapFromServer(mapName)} className="map-list-item">
+                                {mapName}
+                            </button>
+                        ))
+                    )}
+                </div>
+                <button onClick={() => setShowLoadModal(false)} className="close-modal-btn">Cancel</button>
+            </div>
+        </div>
+      )}
     </div>
   );
 };
