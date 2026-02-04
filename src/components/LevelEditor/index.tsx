@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import type { CustomMapData, TileData } from '@/game/types/map';
+import { SaveModal } from './SaveModal';
 import './styles.css';
 
 // Constants
@@ -456,10 +457,35 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
   }, []);
   // Save & Load Map Logic (Server-Side)
   const [showLoadModal, setShowLoadModal] = useState(false);
+  const [showSaveModal, setShowSaveModal] = useState(false);
   const [savedMaps, setSavedMaps] = useState<string[]>([]);
   
-  const handleSaveMap = async () => {
-    const name = window.prompt("Enter map name (letters, numbers, dashes only):");
+  // Helper to fetch maps (reused by Load and Save)
+  const fetchMaps = async () => {
+      try {
+          const res = await fetch('/api/maps');
+          if (res.ok) {
+              const files = await res.json() as string[];
+              // Strip .json extension for consistent base name usage in the UI
+              setSavedMaps(files.map(f => f.replace(/\.json$/, '')));
+              return true;
+          } else {
+              alert("Failed to list maps.");
+              return false;
+          }
+      } catch (err) {
+          console.error(err);
+          alert("Error listing maps.");
+          return false;
+      }
+  };
+
+  const handleOpenSaveModal = async () => {
+    await fetchMaps();
+    setShowSaveModal(true);
+  };
+
+  const handleSaveMap = async (name: string) => {
     if (!name) return;
 
     // PALETTE COMPRESSION LOGIC
@@ -502,7 +528,8 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
       });
       
       if (res.ok) {
-        alert(`Map saved successfully! Palette size: ${palette.length} unique tiles.`);
+        alert(`Map "${name}" saved successfully!`);
+        setShowSaveModal(false);
       } else {
         alert("Failed to save map.");
       }
@@ -513,24 +540,14 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
   };
 
   const openLoadModal = async () => {
-      try {
-          const res = await fetch('/api/maps');
-          if (res.ok) {
-              const files = await res.json();
-              setSavedMaps(files);
-              setShowLoadModal(true);
-          } else {
-              alert("Failed to list maps.");
-          }
-      } catch (err) {
-          console.error(err);
-          alert("Error listing maps.");
-      }
+      const success = await fetchMaps();
+      if (success) setShowLoadModal(true);
   };
 
-  const loadMapFromServer = async (filename: string) => {
+  const loadMapFromServer = async (baseName: string) => {
       try {
-          const res = await fetch(`/api/maps/${filename}`);
+          // Re-append .json extension for server request
+          const res = await fetch(`/api/maps/${baseName}.json`);
            if (res.ok) {
               const data = await res.json() as CustomMapData;
                // Basic Validation
@@ -596,7 +613,7 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
         
         <div className="controls-group io-controls">
              <button onClick={openLoadModal} className="control-btn load-btn" title="Load Map">📂 Load</button>
-             <button onClick={handleSaveMap} className="control-btn save-btn" title="Save Map">💾 Save</button>
+             <button onClick={handleOpenSaveModal} className="control-btn save-btn" title="Save Map">💾 Save</button>
         </div>
 
         <div className="controls-group history-controls">
@@ -778,7 +795,7 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
             <div className="modal-content">
                 <h3>Load Map</h3>
                 <div className="map-list">
-                    {savedMaps.length === 0 ? <p>No saved maps found.</p> : (
+                    {savedMaps.length === 0 ? <p className="empty-list-msg">No saved maps found.</p> : (
                         savedMaps.map(mapName => (
                             <button key={mapName} onClick={() => loadMapFromServer(mapName)} className="map-list-item">
                                 {mapName}
@@ -790,6 +807,14 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
             </div>
         </div>
       )}
+
+      {/* Save Modal */}
+      <SaveModal
+        isOpen={showSaveModal}
+        onClose={() => setShowSaveModal(false)}
+        onSave={handleSaveMap}
+        existingMaps={savedMaps}
+      />
     </div>
   );
 };

@@ -1,5 +1,8 @@
-## ADDED Requirements
+# level-editor Specification
 
+## Purpose
+The Level Editor allows users to create, modify, and manage custom tile-based maps for the game.
+## Requirements
 ### Requirement: Split-Screen Layout
 The Level Editor SHALL display a split-screen interface with a tile palette on the left (25% width) and a map canvas on the right (75% width).
 
@@ -124,3 +127,20 @@ The palette camera and map camera SHALL be isolated so each only displays its ow
 #### Scenario: Map camera ignores palette
 - **WHEN** the Level Editor scene is active
 - **THEN** the map camera SHALL NOT render the palette image or palette marker
+
+### Requirement: Save Map with Context
+The Level Editor SHALL allow the user to save the current map using a custom UI that displays existing maps.
+
+#### Scenario: Opening the Save Modal
+- **WHEN** the user clicks the "Save" button
+- **THEN** a modal SHALL appear showing a list of existing map names
+- **AND** a text input SHALL be provided for the new map name
+
+#### Scenario: Selecting existing map to overwrite
+- **WHEN** the user clicks an existing map name in the Save Modal list
+- **THEN** the map name SHALL be populated in the input field
+
+#### Scenario: Overwrite confirmation
+- **WHEN** the user attempts to save a map with a name that already exists
+- **THEN** the system SHALL prompt for confirmation before proceeding with the save
+
