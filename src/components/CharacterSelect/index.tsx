@@ -8,9 +8,10 @@ import { LanguageToggle } from '@/components/Shared/LanguageToggle';
 
 interface CharacterSelectProps {
   onSelect: (characterId: string) => void;
+  onOpenLevelEditor?: () => void;
 }
 
-export function CharacterSelect({ onSelect }: CharacterSelectProps) {
+export function CharacterSelect({ onSelect, onOpenLevelEditor }: CharacterSelectProps) {
   const { t } = useTranslation();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showDex, setShowDex] = useState(false);
@@ -82,13 +83,23 @@ export function CharacterSelect({ onSelect }: CharacterSelectProps) {
           ))}
         </div>
 
-        <button
-          className="confirm-button"
-          disabled={!selectedId}
-          onClick={handleConfirm}
-        >
-          {t('start_game')}
-        </button>
+        <div className="button-group">
+          <button
+            className="confirm-button"
+            disabled={!selectedId}
+            onClick={handleConfirm}
+          >
+            {t('start_game')}
+          </button>
+          {onOpenLevelEditor && (
+            <button
+              className="editor-button"
+              onClick={onOpenLevelEditor}
+            >
+              🗺️ Level Editor
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

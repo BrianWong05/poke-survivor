@@ -3,6 +3,7 @@ import { Preloader } from '@/game/scenes/Preloader';
 import { MainScene } from '@/game/scenes/MainScene';
 import { LevelUpScene } from '@/game/scenes/LevelUpScene';
 
+
 export interface GameCallbacks {
   onScoreUpdate: (score: number) => void;
   onGameOver: () => void;

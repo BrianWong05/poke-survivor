@@ -84,6 +84,9 @@ export class Preloader extends Phaser.Scene {
     this.load.image('will-o-wisp', 'assets/sprites/will-o-wisp.png');
     this.load.image('petal', 'assets/sprites/petal.png');
 
+    // Level Editor tileset
+    this.load.image('editor-tileset', 'assets/tilesets/Outside.png');
+
     // Load manifest first as JSON
     this.load.json('manifest', 'assets/manifest.json');
   }
@@ -93,8 +96,8 @@ export class Preloader extends Phaser.Scene {
     this.manifest = this.cache.json.get('manifest') as SpriteManifestEntry[];
 
     if (!this.manifest || this.manifest.length === 0) {
-      console.warn('No sprites in manifest, starting MainScene without sprites');
-      this.scene.start('MainScene');
+      console.warn('No sprites in manifest, starting scene without sprites');
+      this.startAppropriateScene();
       return;
     }
 
@@ -200,10 +203,9 @@ export class Preloader extends Phaser.Scene {
   }
 
   private loadSprites(): void {
-    // Register load callbacks
     this.load.on('complete', () => {
       this.createAnimations();
-      this.scene.start('MainScene');
+      this.startAppropriateScene();
     });
 
     // Queue all spritesheets
@@ -263,6 +265,15 @@ export class Preloader extends Phaser.Scene {
           repeat: -1,
         });
       }
+    }
+  }
+
+  private startAppropriateScene(): void {
+    const startInLevelEditor = this.registry.get('startInLevelEditor') as boolean;
+    if (startInLevelEditor) {
+      this.scene.start('LevelEditorScene');
+    } else {
+      this.scene.start('MainScene');
     }
   }
 }

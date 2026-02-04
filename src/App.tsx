@@ -3,6 +3,8 @@ import { GameCanvas } from '@/components/GameCanvas';
 import { HUD } from '@/components/HUD';
 import { CharacterSelect } from '@/components/CharacterSelect';
 import { DevConsole } from '@/features/DevConsole';
+import { LevelEditor } from '@/components/LevelEditor';
+import type { CustomMapData } from '@/game/types/map';
 
 function App() {
   const [score, setScore] = useState(0);
@@ -13,6 +15,8 @@ function App() {
   const [isGameOver, setIsGameOver] = useState(false);
   const [gameKey, setGameKey] = useState(0);
   const [selectedCharacter, setSelectedCharacter] = useState<string | null>(null);
+  const [isLevelEditorMode, setIsLevelEditorMode] = useState(false);
+  const [customMapData, setCustomMapData] = useState<CustomMapData | undefined>(undefined);
 
   const handleScoreUpdate = useCallback((newScore: number) => {
     setScore(newScore);
@@ -46,6 +50,7 @@ function App() {
   const handleRestart = useCallback(() => {
     // Go back to character select
     setSelectedCharacter(null);
+    setIsLevelEditorMode(false);
     setScore(0);
     setLevel(1);
     setXP(0);
@@ -55,9 +60,42 @@ function App() {
     setGameKey(prev => prev + 1);
   }, []);
 
+  const handleOpenLevelEditor = useCallback(() => {
+    setIsLevelEditorMode(true);
+    // No character selected yet, we are in editor mode
+    setSelectedCharacter('__editor__'); 
+  }, []);
+
+  const handlePlayCustomMap = useCallback((data: CustomMapData) => {
+    setIsLevelEditorMode(false);
+    setCustomMapData(data);
+    setSelectedCharacter('pikachu'); // Default character for testing map
+    // Force re-mount of game canvas
+    setGameKey(prev => prev + 1);
+  }, []);
+
+  const handleExitEditor = useCallback(() => {
+    setIsLevelEditorMode(false);
+    setSelectedCharacter(null);
+  }, []);
+
   // Show character select screen if no character chosen
   if (!selectedCharacter) {
-    return <CharacterSelect onSelect={handleCharacterSelect} />;
+    return (
+      <CharacterSelect
+        onSelect={handleCharacterSelect}
+        onOpenLevelEditor={handleOpenLevelEditor}
+      />
+    );
+  }
+
+  if (isLevelEditorMode) {
+    return (
+      <LevelEditor 
+        onPlay={handlePlayCustomMap} 
+        onExit={handleExitEditor} 
+      />
+    );
   }
 
   return (
@@ -65,6 +103,8 @@ function App() {
       <GameCanvas
         key={gameKey}
         selectedCharacter={selectedCharacter}
+        startInLevelEditor={false} // Deprecated, we use React editor now
+        customMapData={customMapData}
         onScoreUpdate={handleScoreUpdate}
         onLevelUpdate={handleLevelUpdate}
         onTimeUpdate={handleTimeUpdate}

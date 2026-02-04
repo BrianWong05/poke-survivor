@@ -4,10 +4,13 @@ import nipplejs from 'nipplejs';
 import type { JoystickManager } from 'nipplejs';
 import { createGameConfig, type GameCallbacks } from '@/game/config';
 import { MainScene } from '@/game/scenes/MainScene';
+import type { CustomMapData } from '@/game/types/map';
 import './styles.css';
 
 interface GameCanvasProps {
   selectedCharacter: string;
+  startInLevelEditor?: boolean;
+  customMapData?: CustomMapData;
   onScoreUpdate: (score: number) => void;
   onLevelUpdate: (level: number, xp: number, xpToNext: number) => void;
   onTimeUpdate: (time: number) => void;
@@ -17,6 +20,8 @@ interface GameCanvasProps {
 
 export const GameCanvas = ({
   selectedCharacter,
+  startInLevelEditor = false,
+  customMapData,
   onScoreUpdate,
   onLevelUpdate,
   onTimeUpdate,
@@ -44,8 +49,13 @@ export const GameCanvas = ({
     const game = new Phaser.Game(config);
     gameRef.current = game;
 
-    // Store selected character in registry for MainScene to access
+    // Store selected character and editor mode in registry
     game.registry.set('selectedCharacter', selectedCharacter);
+    game.registry.set('startInLevelEditor', startInLevelEditor);
+    
+    if (customMapData) {
+      game.registry.set('customMapData', customMapData);
+    }
 
     // Setup nipplejs for touch devices
     const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;

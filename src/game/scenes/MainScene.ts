@@ -13,6 +13,7 @@ import { ExperienceManager } from '@/game/systems/ExperienceManager';
 import { EnemySpawner } from '@/game/systems/EnemySpawner';
 import { ENEMY_STATS, EnemyType, EnemyTier } from '@/game/entities/enemies';
 import { LootManager } from '@/game/systems/LootManager';
+import type { CustomMapData } from '@/game/types/map';
 
 import { Player } from '@/game/entities/Player';
 
@@ -86,7 +87,7 @@ export class MainScene extends Phaser.Scene {
   private readonly MAP_WIDTH = 3200;
   private readonly MAP_HEIGHT = 3200;
 
-  create(): void {
+  create(data?: { customMapData?: CustomMapData }): void {
     // Expose scene globally for DevConsole
     (window as any).gameScene = this;
 
@@ -101,21 +102,18 @@ export class MainScene extends Phaser.Scene {
     this.usePlaceholderGraphics = this.manifest.length === 0;
 
     // 2. Set Physics Bounds (Player can't walk off edge)
+    // Default bounds, may be overridden by custom map
     this.physics.world.setBounds(0, 0, this.MAP_WIDTH, this.MAP_HEIGHT);
 
-    // 3. Create a Simple Grid Background (Procedural Texture)
-    // This creates a 64x64 green grid pattern in memory
-    const graphics = this.add.graphics();
-    graphics.fillStyle(0x228b22); // Forest Green base
-    graphics.fillRect(0, 0, 64, 64);
-    graphics.lineStyle(2, 0x006400); // Darker Green lines
-    graphics.strokeRect(0, 0, 64, 64);
-    graphics.generateTexture('grid_bg', 64, 64);
-    graphics.destroy(); // Clean up after generating texture
-
-    // 4. Add the Background as a TileSprite (Repeating pattern)
-    // We place it at the center of the world
-    this.add.tileSprite(this.MAP_WIDTH / 2, this.MAP_HEIGHT / 2, this.MAP_WIDTH, this.MAP_HEIGHT, 'grid_bg');
+    // 3. Create Map (Custom or Default)
+    const registryMapData = this.registry.get('customMapData') as CustomMapData | undefined;
+    const mapData = data?.customMapData || registryMapData;
+    
+    if (mapData) {
+      this.createCustomMap(mapData);
+    } else {
+      this.createDefaultMap();
+    }
 
     // 5. Systems Setup
     this.textureManager = new TextureManager(this);
@@ -149,6 +147,8 @@ export class MainScene extends Phaser.Scene {
         () => this.gameOver,
         () => this.handleGameOver()
     );
+
+
 
     // Debug System
     this.debugSystem = new DevDebugSystem(
@@ -228,12 +228,14 @@ export class MainScene extends Phaser.Scene {
   }
 
   private createPlayer(): void {
-    // Spawn player at world center for large map exploration
-    const centerX = this.MAP_WIDTH / 2;
-    const centerY = this.MAP_HEIGHT / 2;
+    // Calculate center of the map based on physics bounds
+    const centerX = this.physics.world.bounds.centerX;
+    const centerY = this.physics.world.bounds.centerY;
+
+    // Create player at map center
     const spriteKey = this.usePlaceholderGraphics ? 'player' : this.characterConfig.spriteKey;
-    
     this.player = new Player(this, centerX, centerY, spriteKey);
+    this.cameras.main.startFollow(this.player);
     this.player.setExperienceManager(this.experienceManager);
     // Initialize stats from configuration
     this.player.setHealth(this.characterConfig.stats.maxHP, this.characterConfig.stats.maxHP);
@@ -320,6 +322,13 @@ export class MainScene extends Phaser.Scene {
       const stats = ENEMY_STATS[enemyType];
       if (stats) {
         this.lootManager.drop(x, y, stats.tier);
+      }
+    });
+
+    // Level Editor shortcut (E key)
+    this.input.keyboard?.on('keydown-E', () => {
+      if (!(this as any).isDevConsoleOpen && !this.gameOver) {
+        this.scene.start('LevelEditorScene');
       }
     });
   }
@@ -754,6 +763,80 @@ export class MainScene extends Phaser.Scene {
     if (this.characterConfig.passive.onUpdate) {
       const ctx = this.getCharacterContext();
       this.characterConfig.passive.onUpdate(ctx, delta);
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Map Generation
+  // ─────────────────────────────────────────────────────────────────────────────
+  private createDefaultMap(): void {
+    // This creates a 64x64 green grid pattern in memory
+    if (!this.textures.exists('grid_bg')) {
+      const graphics = this.add.graphics();
+      graphics.fillStyle(0x228b22); // Forest Green base
+      graphics.fillRect(0, 0, 64, 64);
+      graphics.lineStyle(2, 0x006400); // Darker Green lines
+      graphics.strokeRect(0, 0, 64, 64);
+      graphics.generateTexture('grid_bg', 64, 64);
+      graphics.destroy();
+    }
+
+    // Add the Background as a TileSprite (Repeating pattern)
+    // Note: MAP_WIDTH/HEIGHT are constants on the class
+    this.add.tileSprite(this.MAP_WIDTH / 2, this.MAP_HEIGHT / 2, this.MAP_WIDTH, this.MAP_HEIGHT, 'grid_bg');
+  }
+
+  private createCustomMap(data: CustomMapData): void {
+    const { width, height, tileSize, ground, objects } = data;
+    const mapWidthPixels = width * tileSize;
+    const mapHeightPixels = height * tileSize;
+    
+    // Update Physics Bounds to match custom map
+    this.physics.world.setBounds(0, 0, mapWidthPixels, mapHeightPixels);
+    
+    // Create Tilemap
+    const map = this.make.tilemap({
+        tileWidth: tileSize,
+        tileHeight: tileSize,
+        width,
+        height
+    });
+    
+    // Add Tileset
+    const tileset = map.addTilesetImage('editor-tileset', 'editor-tileset');
+    
+    if (!tileset) {
+        console.warn('MainScene: editor-tileset not found. Falling back to default map.');
+        this.createDefaultMap();
+        return;
+    }
+    
+    // Create Layers
+    const groundLayer = map.createBlankLayer('Ground', tileset);
+    const objectsLayer = map.createBlankLayer('Objects', tileset);
+    
+    if (groundLayer) {
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const tileIndex = ground[y][x];
+                if (tileIndex !== -1) {
+                    groundLayer.putTileAt(tileIndex, x, y);
+                }
+            }
+        }
+        groundLayer.setDepth(-10); // Background
+    }
+    
+    if (objectsLayer) {
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const tileIndex = objects[y][x];
+                if (tileIndex !== -1) {
+                    objectsLayer.putTileAt(tileIndex, x, y);
+                }
+            }
+        }
+        objectsLayer.setDepth(0); // Objects at same level as player 
     }
   }
 }

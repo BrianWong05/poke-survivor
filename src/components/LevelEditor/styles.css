@@ -1,0 +1,126 @@
+.level-editor-container {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  background-color: #111;
+  color: white;
+  overflow: hidden;
+  font-family: sans-serif;
+}
+
+.sidebar {
+  width: 300px;
+  background-color: #222;
+  border-right: 1px solid #444;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  z-index: 10;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.5);
+}
+
+.controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.play-btn {
+  background: #4CAF50;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  border-radius: 4px;
+  flex: 1;
+  font-weight: bold;
+}
+
+.exit-btn {
+  background: #f44336;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  border-radius: 4px;
+  flex: 1;
+}
+
+.layer-select {
+  display: flex;
+  gap: 1rem;
+  padding: 0.5rem;
+  background: #333;
+  border-radius: 4px;
+}
+
+.palette-container {
+  flex: 1;
+  overflow-y: auto;
+  border: 1px solid #444;
+  padding: 0.5rem;
+  background: #1a1a1a;
+}
+
+.tab-container {
+  display: flex;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid #444;
+}
+
+.tab {
+  flex: 1;
+  padding: 0.5rem;
+  background: #2a2a2a;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  border-radius: 4px 4px 0 0;
+  font-weight: bold;
+}
+
+.tab.active {
+  background: #444;
+  color: white;
+  border-bottom: 2px solid #4CAF50;
+}
+
+.asset-selector {
+  margin-bottom: 0.5rem;
+}
+
+.asset-select {
+  width: 100%;
+  padding: 0.5rem;
+  background: #333;
+  color: white;
+  border: 1px solid #555;
+  border-radius: 4px;
+}
+
+.palette-image {
+  cursor: crosshair;
+  max-width: 100%;
+  image-rendering: pixelated;
+}
+
+.main-area {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+  background: #000;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 2rem;
+}
+
+.canvas-wrapper {
+  box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+canvas {
+  image-rendering: pixelated;
+  background-color: #1a1a1a;
+  cursor: crosshair;
+}
