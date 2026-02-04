@@ -21,9 +21,9 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
   // Map Data State
   const [mapSize, setMapSize] = useState({ width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT });
 
-  // Initialize with -1 (empty) for objects, and 0 (grass) for ground
+  // Initialize with -1 (empty) for objects, and -1 (empty/black) for ground
   const [groundLayer, setGroundLayer] = useState<number[][]>(() => 
-    Array(DEFAULT_HEIGHT).fill(0).map(() => Array(DEFAULT_WIDTH).fill(0))
+    Array(DEFAULT_HEIGHT).fill(0).map(() => Array(DEFAULT_WIDTH).fill(-1))
   );
   const [objectLayer, setObjectLayer] = useState<number[][]>(() => 
     Array(DEFAULT_HEIGHT).fill(0).map(() => Array(DEFAULT_WIDTH).fill(-1))
@@ -42,7 +42,7 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
       const newGrid = Array(h).fill(0).map((_, y) => 
         Array(w).fill(0).map((_, x) => {
           if (y < prev.length && x < prev[0].length) return prev[y][x];
-          return 0; // Default ground
+          return -1; // Default empty/black
         })
       );
       return newGrid;
@@ -63,6 +63,7 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
   // Tab & Asset State
   const [activeTab, setActiveTab] = useState<'tileset' | 'autoset'>('tileset');
   const [activeAsset, setActiveAsset] = useState<string>('Outside.png');
+  const [tilesPerRow, setTilesPerRow] = useState(0);
 
   // Available Assets (Mock/Scanned)
   const tilesetOptions = [
@@ -101,6 +102,7 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
     img.src = fullPath;
     img.onload = () => {
       tilesetRef.current = img;
+      setTilesPerRow(Math.floor(img.width / TILE_SIZE));
       renderCanvas(); // Initial render once image loads
     };
   }, [activeAsset]);
@@ -322,6 +324,7 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
 
              {activeAsset && (
               <>
+               <div className="palette-wrapper">
                 <img 
                   src={`${activeTab === 'tileset' ? '/assets/tilesets/' : '/assets/autotiles/'}${activeAsset}`} 
                   className="palette-image"
@@ -331,12 +334,23 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
                     const y = e.clientY - rect.top;
                     const tx = Math.floor(x / TILE_SIZE);
                     const ty = Math.floor(y / TILE_SIZE);
-                    const tilesPerRow = Math.floor(e.currentTarget.width / TILE_SIZE);
-                    const id = ty * tilesPerRow + tx;
+                    // Use local width or logic. tilesPerRow state should match this.
+                    const currentTilesPerRow = Math.floor(e.currentTarget.width / TILE_SIZE);
+                    const id = ty * currentTilesPerRow + tx;
                     setSelectedTileId(id);
                   }}
                   alt="Palette"
                 />
+                 {tilesPerRow > 0 && (
+                    <div 
+                      className="tile-selection-highlight" 
+                      style={{
+                        left: (selectedTileId % tilesPerRow) * TILE_SIZE,
+                        top: Math.floor(selectedTileId / tilesPerRow) * TILE_SIZE
+                      }}
+                    />
+                  )}
+               </div>
                 <div className="selected-tile-preview">
                     Selected ID: {selectedTileId}
                 </div>
