@@ -11,13 +11,13 @@ const DEFAULT_HEIGHT = 20;
 interface LevelEditorProps {
   onPlay: (data: CustomMapData) => void;
   onExit: () => void;
+  initialData?: CustomMapData;
 }
 
-export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
+export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [currentLayer, setCurrentLayer] = useState<0 | 1>(0); // 0 = Ground, 1 = Objects
   const [activeTool, setActiveTool] = useState<'brush' | 'eraser' | 'spawn'>('brush');
-  const [spawnPoint, setSpawnPoint] = useState<{ x: number, y: number } | null>(null);
   // Selection State (Tileset Coordinates)
   const [selection, setSelection] = useState({ x: 0, y: 0, w: 1, h: 1 });
   const [isSelecting, setIsSelecting] = useState(false);
@@ -30,18 +30,42 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
   
 
   
-  // Map Data State
-  const [mapSize, setMapSize] = useState({ width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT });
+  const [mapSize, setMapSize] = useState({ 
+    width: initialData?.width || DEFAULT_WIDTH, 
+    height: initialData?.height || DEFAULT_HEIGHT 
+  });
+  const [spawnPoint, setSpawnPoint] = useState<{ x: number, y: number } | null>(initialData?.spawnPoint || null);
 
   // Initialize with empty objects
   const emptyTile: TileData = { id: -1, set: '', type: 'tileset' };
   
-  const [groundLayer, setGroundLayer] = useState<TileData[][]>(() => 
-    Array(DEFAULT_HEIGHT).fill(0).map(() => Array(DEFAULT_WIDTH).fill({ ...emptyTile }))
-  );
-  const [objectLayer, setObjectLayer] = useState<TileData[][]>(() => 
-    Array(DEFAULT_HEIGHT).fill(0).map(() => Array(DEFAULT_WIDTH).fill({ ...emptyTile }))
-  );
+  const normalizeGrid = (grid: (number | TileData)[][], palette?: TileData[]): TileData[][] => {
+    return grid.map(row => row.map(cell => {
+        if (typeof cell === 'number') {
+            if (cell === -1) return { ...emptyTile };
+            if (palette) {
+                const tile = palette[cell];
+                return tile ? { ...tile } : { ...emptyTile };
+            }
+            return { id: cell, set: 'Outside.png', type: 'tileset' };
+        }
+        return cell;
+    }));
+  };
+
+  const [groundLayer, setGroundLayer] = useState<TileData[][]>(() => {
+    if (initialData?.ground) {
+        return normalizeGrid(initialData.ground, initialData.palette);
+    }
+    return Array(mapSize.height).fill(0).map(() => Array(mapSize.width).fill({ ...emptyTile }));
+  });
+
+  const [objectLayer, setObjectLayer] = useState<TileData[][]>(() => {
+    if (initialData?.objects) {
+        return normalizeGrid(initialData.objects, initialData.palette);
+    }
+    return Array(mapSize.height).fill(0).map(() => Array(mapSize.width).fill({ ...emptyTile }));
+  });
 
   // Undo History & Logic
   const [history, setHistory] = useState<Array<{ground: TileData[][], objects: TileData[][]}>>([]);
@@ -364,7 +388,7 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
   // Re-render on state change
   useEffect(() => {
     renderCanvas();
-  }, [renderCanvas]);
+  }, [renderCanvas, imagesLoaded]);
 
   // Painting Logic
 

@@ -57,6 +57,7 @@ function App() {
     setXPToNext(100);
     setTime(0);
     setIsGameOver(false);
+    setCustomMapData(undefined);
     setGameKey(prev => prev + 1);
   }, []);
 
@@ -79,6 +80,12 @@ function App() {
     setSelectedCharacter(null);
   }, []);
 
+  const handleBackToEditor = useCallback(() => {
+    setIsLevelEditorMode(true);
+    setSelectedCharacter('__editor__');
+    setGameKey(prev => prev + 1); // Ensure game is fully unmounted
+  }, []);
+
   // Show character select screen if no character chosen
   if (!selectedCharacter) {
     return (
@@ -94,6 +101,7 @@ function App() {
       <LevelEditor 
         onPlay={handlePlayCustomMap} 
         onExit={handleExitEditor} 
+        initialData={customMapData}
       />
     );
   }
@@ -119,6 +127,7 @@ function App() {
         time={time}
         isGameOver={isGameOver}
         onRestart={handleRestart}
+        onBackToEditor={customMapData ? handleBackToEditor : undefined}
       />
       {import.meta.env.DEV && <DevConsole />}
     </>

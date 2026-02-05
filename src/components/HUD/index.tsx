@@ -8,6 +8,7 @@ interface HUDProps {
   time: number;
   isGameOver: boolean;
   onRestart: () => void;
+  onBackToEditor?: () => void;
 }
 
 export const HUD = ({
@@ -18,6 +19,7 @@ export const HUD = ({
   time,
   isGameOver,
   onRestart,
+  onBackToEditor,
 }: HUDProps) => {
   const xpPercent = Math.max(0, (xp / xpToNext) * 100);
 
@@ -54,6 +56,14 @@ export const HUD = ({
         }}>
           {formatTime(time)}
         </div>
+        
+        {onBackToEditor && (
+          <div className="back-editor-container">
+            <button className="back-editor-btn" onClick={onBackToEditor}>
+              ⬅ Back to Editor
+            </button>
+          </div>
+        )}
 
         <div className="score-container">
           <div className="score-label">SCORE</div>
