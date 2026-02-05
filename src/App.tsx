@@ -91,7 +91,7 @@ function App() {
     return (
       <CharacterSelect
         onSelect={handleCharacterSelect}
-        onOpenLevelEditor={handleOpenLevelEditor}
+        onOpenLevelEditor={import.meta.env.DEV ? handleOpenLevelEditor : undefined}
       />
     );
   }
