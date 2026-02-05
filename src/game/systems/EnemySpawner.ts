@@ -191,8 +191,9 @@ export class EnemySpawner {
 
     // Calculate spawn position on circle around player
     const angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
-    const spawnX = this.player.x + Math.cos(angle) * SPAWN_RADIUS;
-    const spawnY = this.player.y + Math.sin(angle) * SPAWN_RADIUS;
+    const worldBounds = this.scene.physics.world.bounds;
+    const spawnX = Phaser.Math.Clamp(this.player.x + Math.cos(angle) * SPAWN_RADIUS, worldBounds.left, worldBounds.right);
+    const spawnY = Phaser.Math.Clamp(this.player.y + Math.sin(angle) * SPAWN_RADIUS, worldBounds.top, worldBounds.bottom);
 
     // Calculate Scaling Multiplier based on Player Level
     // Formula: Start at 1.0, add +10% per level gained (Level 11 = 2.0x, Level 41 = 5.0x)
