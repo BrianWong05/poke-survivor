@@ -15,7 +15,7 @@ i18n
       escapeValue: false, // react already safes from xss
     },
     backend: {
-      loadPath: '/locales/{{lng}}/translation.json?v=' + new Date().getTime(),
+      loadPath: import.meta.env.BASE_URL + 'locales/{{lng}}/translation.json?v=' + new Date().getTime(),
     }
   });
 

@@ -86,6 +86,7 @@ const mapServerPlugin = () => ({
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/poke-survivor/',
   plugins: [react(), mapServerPlugin()],
   resolve: {
     alias: {

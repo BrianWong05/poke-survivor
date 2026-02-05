@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { HashRouter, Routes, Route, useNavigate, useParams } from 'react-router-dom';
 import { GameCanvas } from '@/components/GameCanvas';
 import { HUD } from '@/components/HUD';
 import { CharacterSelect } from '@/components/CharacterSelect';
@@ -6,17 +7,18 @@ import { DevConsole } from '@/features/DevConsole';
 import { LevelEditor } from '@/components/LevelEditor';
 import type { CustomMapData } from '@/game/types/map';
 
-function App() {
+function GamePage() {
+  const { characterId } = useParams<{ characterId: string }>();
+  const navigate = useNavigate();
+
   const [score, setScore] = useState(0);
   const [level, setLevel] = useState(1);
   const [xp, setXP] = useState(0);
   const [xpToNext, setXPToNext] = useState(100);
   const [time, setTime] = useState(0);
   const [isGameOver, setIsGameOver] = useState(false);
-  const [gameKey, setGameKey] = useState(0);
-  const [selectedCharacter, setSelectedCharacter] = useState<string | null>(null);
-  const [isLevelEditorMode, setIsLevelEditorMode] = useState(false);
-  const [customMapData, setCustomMapData] = useState<CustomMapData | undefined>(undefined);
+  const [gameKey] = useState(0);
+  const [customMapData] = useState<CustomMapData | undefined>(undefined);
 
   const handleScoreUpdate = useCallback((newScore: number) => {
     setScore(newScore);
@@ -36,82 +38,25 @@ function App() {
     setIsGameOver(true);
   }, []);
 
-  const handleCharacterSelect = useCallback((characterId: string) => {
-    setSelectedCharacter(characterId);
-    // Reset game state for new character
-    setScore(0);
-    setLevel(1);
-    setXP(0);
-    setXPToNext(100);
-    setTime(0);
-    setIsGameOver(false);
-  }, []);
-
   const handleRestart = useCallback(() => {
-    // Go back to character select
-    setSelectedCharacter(null);
-    setIsLevelEditorMode(false);
-    setScore(0);
-    setLevel(1);
-    setXP(0);
-    setXPToNext(100);
-    setTime(0);
-    setIsGameOver(false);
-    setCustomMapData(undefined);
-    setGameKey(prev => prev + 1);
-  }, []);
-
-  const handleOpenLevelEditor = useCallback(() => {
-    setIsLevelEditorMode(true);
-    // No character selected yet, we are in editor mode
-    setSelectedCharacter('__editor__'); 
-  }, []);
-
-  const handlePlayCustomMap = useCallback((data: CustomMapData) => {
-    setIsLevelEditorMode(false);
-    setCustomMapData(data);
-    setSelectedCharacter('pikachu'); // Default character for testing map
-    // Force re-mount of game canvas
-    setGameKey(prev => prev + 1);
-  }, []);
-
-  const handleExitEditor = useCallback(() => {
-    setIsLevelEditorMode(false);
-    setSelectedCharacter(null);
-  }, []);
+    navigate('/');
+  }, [navigate]);
 
   const handleBackToEditor = useCallback(() => {
-    setIsLevelEditorMode(true);
-    setSelectedCharacter('__editor__');
-    setGameKey(prev => prev + 1); // Ensure game is fully unmounted
-  }, []);
+    navigate('/editor');
+  }, [navigate]);
 
-  // Show character select screen if no character chosen
-  if (!selectedCharacter) {
-    return (
-      <CharacterSelect
-        onSelect={handleCharacterSelect}
-        onOpenLevelEditor={import.meta.env.DEV ? handleOpenLevelEditor : undefined}
-      />
-    );
-  }
-
-  if (isLevelEditorMode) {
-    return (
-      <LevelEditor 
-        onPlay={handlePlayCustomMap} 
-        onExit={handleExitEditor} 
-        initialData={customMapData}
-      />
-    );
+  if (!characterId) {
+    navigate('/');
+    return null;
   }
 
   return (
     <>
       <GameCanvas
         key={gameKey}
-        selectedCharacter={selectedCharacter}
-        startInLevelEditor={false} // Deprecated, we use React editor now
+        selectedCharacter={characterId}
+        startInLevelEditor={false}
         customMapData={customMapData}
         onScoreUpdate={handleScoreUpdate}
         onLevelUpdate={handleLevelUpdate}
@@ -131,6 +76,58 @@ function App() {
       />
       {import.meta.env.DEV && <DevConsole />}
     </>
+  );
+}
+
+function CharacterSelectPage() {
+  const navigate = useNavigate();
+
+  const handleCharacterSelect = useCallback((characterId: string) => {
+    navigate(`/game/${characterId}`);
+  }, [navigate]);
+
+  const handleOpenLevelEditor = useCallback(() => {
+    navigate('/editor');
+  }, [navigate]);
+
+  return (
+    <CharacterSelect
+      onSelect={handleCharacterSelect}
+      onOpenLevelEditor={import.meta.env.DEV ? handleOpenLevelEditor : undefined}
+    />
+  );
+}
+
+function LevelEditorPage() {
+  const navigate = useNavigate();
+
+  const handlePlay = useCallback((_data: CustomMapData) => {
+    // For now, navigate to game with default character
+    // In future, could pass map data via state or context
+    navigate('/game/pikachu');
+  }, [navigate]);
+
+  const handleExit = useCallback(() => {
+    navigate('/');
+  }, [navigate]);
+
+  return (
+    <LevelEditor
+      onPlay={handlePlay}
+      onExit={handleExit}
+    />
+  );
+}
+
+function App() {
+  return (
+    <HashRouter>
+      <Routes>
+        <Route path="/" element={<CharacterSelectPage />} />
+        <Route path="/game/:characterId" element={<GamePage />} />
+        <Route path="/editor" element={<LevelEditorPage />} />
+      </Routes>
+    </HashRouter>
   );
 }
 
