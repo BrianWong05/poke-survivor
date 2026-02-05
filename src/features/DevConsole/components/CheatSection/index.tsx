@@ -6,9 +6,10 @@ interface CheatSectionProps {
     handleCheat: (action: string) => void;
     isInvincible: boolean;
     showMagnetRange: boolean;
+    showHitboxes: boolean;
 }
 
-export const CheatSection: React.FC<CheatSectionProps> = ({ handleCheat, isInvincible, showMagnetRange }) => {
+export const CheatSection: React.FC<CheatSectionProps> = ({ handleCheat, isInvincible, showMagnetRange, showHitboxes }) => {
     return (
         <Section title="Cheats">
             <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
@@ -47,6 +48,9 @@ export const CheatSection: React.FC<CheatSectionProps> = ({ handleCheat, isInvin
             </Button>
             <Button onClick={() => handleCheat('toggle-magnet-range')} color="#27ae60" outline={!showMagnetRange}>
                 {showMagnetRange ? 'Show Magnet Range (ON)' : 'Show Magnet Range (OFF)'}
+            </Button>
+            <Button onClick={() => handleCheat('toggle-hitboxes')} color="#3498db" outline={!showHitboxes}>
+                {showHitboxes ? 'Show Hitboxes (ON)' : 'Show Hitboxes (OFF)'}
             </Button>
             <Button onClick={() => handleCheat('kill')} color="#e74c3c">Kill All Enemies</Button>
         </Section>

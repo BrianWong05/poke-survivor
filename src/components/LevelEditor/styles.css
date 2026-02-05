@@ -201,7 +201,7 @@
   box-shadow: 0 0 20px rgba(0,0,0,0.5);
 }
 
-canvas {
+.level-editor-container canvas {
   image-rendering: pixelated;
   background-color: #1a1a1a;
   cursor: crosshair;

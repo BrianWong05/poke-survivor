@@ -97,7 +97,7 @@ export const GameCanvas = ({
         gameRef.current = null;
       }
     };
-  }, [selectedCharacter, onScoreUpdate, onGameOver, onQuit, onLevelUpdate, onTimeUpdate]);
+  }, [selectedCharacter, customMapData, onScoreUpdate, onGameOver, onQuit, onLevelUpdate, onTimeUpdate]);
 
   return (
     <div className="game-container">

@@ -91,8 +91,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // Configure physics body (Hitbox)
     this.setCollideWorldBounds(true);
     this.setDepth(10);
-    // Make hitbox smaller than visual if needed, but default is fine for now
-    // this.setBodySize(20, 20); 
+    // Make hitbox smaller than visual for more precise movement and better "depth" feel
+    this.setBodySize(16, 16);
+    this.setOffset(8, 16);
 
     // Initialize collection zone (Magnet)
     // We use a Zone so it can have its own physics body separate from the player's hitbox

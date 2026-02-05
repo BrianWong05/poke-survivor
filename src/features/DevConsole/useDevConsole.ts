@@ -10,6 +10,7 @@ export const useDevConsole = () => {
     const [isPaused, setIsPaused] = useState(false);
     const [isInvincible, setIsInvincible] = useState(false);
     const [showMagnetRange, setShowMagnetRange] = useState(false);
+    const [showHitboxes, setShowHitboxes] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [itemSearchQuery, setItemSearchQuery] = useState('');
     const [activeWeapons, setActiveWeapons] = useState<ActiveWeapon[]>([]);
@@ -103,6 +104,13 @@ export const useDevConsole = () => {
                     const newState = !showMagnetRange;
                     gameScene.debugSystem.debugToggleMagnetRange(newState);
                     setShowMagnetRange(newState);
+                }
+                break;
+            case 'toggle-hitboxes':
+                if (gameScene.debugSystem.debugToggleHitboxes) {
+                    const newState = !showHitboxes;
+                    gameScene.debugSystem.debugToggleHitboxes(newState);
+                    setShowHitboxes(newState);
                 }
                 break;
             default:
@@ -212,6 +220,7 @@ export const useDevConsole = () => {
         handleAddItem,
         handleRemoveItem,
         handleSetItemLevel,
-        showMagnetRange
+        showMagnetRange,
+        showHitboxes
     };
 };

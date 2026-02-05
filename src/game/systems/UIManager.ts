@@ -10,7 +10,7 @@ export class UIManager {
   private experienceManager: ExperienceManager;
   private characterState: CharacterState;
   
-  private pauseContainer?: Phaser.GameObjects.Container;
+  private pauseElements: Phaser.GameObjects.GameObject[] = [];
   private isPaused = false;
   private isLevelUpPending = false;
   private isGameOver = false;
@@ -63,10 +63,8 @@ export class UIManager {
       this.scene.tweens.resumeAll(); // Fix: Resume tweens
       this.scene.time.paused = false;
       
-      if (this.pauseContainer) {
-        this.pauseContainer.destroy();
-        this.pauseContainer = undefined;
-      }
+      this.pauseElements.forEach(el => el.destroy());
+      this.pauseElements = [];
     }
   }
 
@@ -74,21 +72,22 @@ export class UIManager {
       const width = this.scene.scale.width;
       const height = this.scene.scale.height;
       
-      this.pauseContainer = this.scene.add.container(0, 0);
-      this.pauseContainer.setDepth(200);
-      this.pauseContainer.setScrollFactor(0); // Fix to camera viewport
-
-      // Darken background
+      // Darken background (Block clicks)
       const dimmer = this.scene.add.rectangle(0, 0, width, height, 0x000000, 0.5);
       dimmer.setOrigin(0);
-      this.pauseContainer.add(dimmer);
+      dimmer.setScrollFactor(0);
+      dimmer.setDepth(200);
+      dimmer.setInteractive(); // Blocks input to game
+      this.pauseElements.push(dimmer);
 
       // Window Background
       const windowWidth = 400;
       const windowHeight = 280;
       const windowBg = this.scene.add.rectangle(width / 2, height / 2, windowWidth, windowHeight, 0x2c3e50, 1);
       windowBg.setStrokeStyle(4, 0xecf0f1);
-      this.pauseContainer.add(windowBg);
+      windowBg.setScrollFactor(0);
+      windowBg.setDepth(201);
+      this.pauseElements.push(windowBg);
 
       // Title
       const title = this.scene.add.text(width / 2, height / 2 - 80, i18n.t('pause_title'), {
@@ -98,19 +97,21 @@ export class UIManager {
         stroke: '#000000',
         strokeThickness: 6
       }).setOrigin(0.5);
-      this.pauseContainer.add(title);
+      title.setScrollFactor(0);
+      title.setDepth(202);
+      this.pauseElements.push(title);
 
       // Subtitle (Cancel/Resume)
-      const resumeBtn = this.createButton(width / 2, height / 2 + 20, i18n.t('pause_resume'), '#2ecc71', onResume);
-      this.pauseContainer.add(resumeBtn);
+      const resumeBtns = this.createButton(width / 2, height / 2 + 20, i18n.t('pause_resume'), '#2ecc71', onResume);
+      this.pauseElements.push(...resumeBtns);
 
       // Quit Button
-      const quitBtn = this.createButton(width / 2, height / 2 + 90, i18n.t('pause_quit'), '#e74c3c', () => {
+      const quitBtns = this.createButton(width / 2, height / 2 + 90, i18n.t('pause_quit'), '#e74c3c', () => {
         if (this.callbacks.onQuit) {
           this.callbacks.onQuit();
         }
       });
-      this.pauseContainer.add(quitBtn);
+      this.pauseElements.push(...quitBtns);
   }
 
   public showLevelUpMenu(onComplete: () => void): void {
@@ -196,23 +197,24 @@ export class UIManager {
     }));
   }
 
-  private createButton(x: number, y: number, text: string, color: string, onClick: () => void): Phaser.GameObjects.Container {
-    const btn = this.scene.add.container(x, y);
-    
-    const bg = this.scene.add.rectangle(0, 0, 200, 50, Number(color.replace('#', '0x')), 1);
+  private createButton(x: number, y: number, text: string, color: string, onClick: () => void): Phaser.GameObjects.GameObject[] {
+    const bg = this.scene.add.rectangle(x, y, 200, 50, Number(color.replace('#', '0x')), 1);
     bg.setStrokeStyle(2, 0xffffff);
     bg.setInteractive({ useHandCursor: true });
     bg.on('pointerdown', onClick);
     bg.on('pointerover', () => bg.setAlpha(0.8));
     bg.on('pointerout', () => bg.setAlpha(1));
+    bg.setScrollFactor(0);
+    bg.setDepth(202);
     
-    const label = this.scene.add.text(0, 0, text, {
+    const label = this.scene.add.text(x, y, text, {
       fontSize: '24px',
       color: '#ffffff',
       fontStyle: 'bold'
     }).setOrigin(0.5);
+    label.setScrollFactor(0);
+    label.setDepth(202);
     
-    btn.add([bg, label]);
-    return btn;
+    return [bg, label];
   }
 }

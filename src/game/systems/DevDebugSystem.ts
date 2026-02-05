@@ -361,4 +361,17 @@ export class DevDebugSystem {
           console.log(`[DevConsole] Magnet Range Visualization: ${visible ? 'ON' : 'OFF'}`);
       }
   }
+
+  public debugToggleHitboxes(visible: boolean): void {
+      // Toggle physics debug rendering at runtime
+      this.scene.physics.world.debugGraphic?.setVisible(visible);
+      this.scene.physics.world.drawDebug = visible;
+      
+      // Force refresh debug graphic if enabling
+      if (visible && !this.scene.physics.world.debugGraphic) {
+          this.scene.physics.world.createDebugGraphic();
+      }
+      
+      console.log(`[DevConsole] Show Hitboxes: ${visible ? 'ON' : 'OFF'}`);
+  }
 }

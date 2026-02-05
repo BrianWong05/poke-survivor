@@ -31,7 +31,8 @@ export const DevConsole: React.FC = () => {
         handleAddItem,
         handleRemoveItem,
         handleSetItemLevel,
-        showMagnetRange
+        showMagnetRange,
+        showHitboxes
     } = useDevConsole();
 
     const overlayRef = useRef<HTMLDivElement>(null);    
@@ -86,6 +87,7 @@ export const DevConsole: React.FC = () => {
                     handleCheat={handleCheat} 
                     isInvincible={isInvincible} 
                     showMagnetRange={showMagnetRange}
+                    showHitboxes={showHitboxes}
                 />
             )}
 

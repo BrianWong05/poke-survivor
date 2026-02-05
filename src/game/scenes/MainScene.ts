@@ -62,6 +62,9 @@ export class MainScene extends Phaser.Scene {
   private xpGems!: Phaser.Physics.Arcade.Group;
   private hazardGroup!: Phaser.Physics.Arcade.Group;
 
+  // Custom Map Layer (for collision)
+  private objectsTilemapLayer?: Phaser.Tilemaps.TilemapLayer;
+
   // Game Loop State
   private score = 0;
   private survivalTime = 0;
@@ -124,6 +127,12 @@ export class MainScene extends Phaser.Scene {
     // 6. Create Player & Groups (after background so player renders on top)
     this.createPlayer();
     this.createGroups();
+
+    // 4b. Setup Custom Map Collision (requires player to exist)
+    if (this.objectsTilemapLayer && this.player) {
+        this.physics.add.collider(this.player, this.objectsTilemapLayer);
+        console.log('[MainScene] Player-Objects collider added after player creation.');
+    }
 
     // 4. Advanced Systems Construction (Dependencies on groups/player)
     this.lootManager = new LootManager(this.xpGems);
@@ -819,7 +828,20 @@ export class MainScene extends Phaser.Scene {
     if (data.palette) {
         data.palette.forEach(p => usedTilesets.add(p.set));
     } else {
-        usedTilesets.add('editor-tileset'); // Legacy fallback
+        // Legacy/Editor Fallback: Scan layers for unique tilesets
+        const scanLayer = (layer: (number | import('@/game/types/map').TileData)[][]) => {
+            layer.forEach(row => row.forEach(cell => {
+                if (typeof cell !== 'number' && cell.set) {
+                    usedTilesets.add(cell.set);
+                }
+            }));
+        };
+        scanLayer(ground);
+        scanLayer(objects);
+
+        if (usedTilesets.size === 0) {
+            usedTilesets.add('Outside.png'); // Default fallback
+        }
     }
 
     // 2. Add Tilesets to map & Build GID Map
@@ -903,6 +925,13 @@ export class MainScene extends Phaser.Scene {
             }
         }
         objectsLayer.setDepth(0);
+
+        // Enable physics collision for all non-empty tiles
+        objectsLayer.setCollisionByExclusion([-1]);
+        console.log('[MainScene] Collision enabled for Objects layer. Tiles with collision: ', objectsLayer.getTilesWithin().filter(t => t.collides).length);
+        
+        // Store reference for collider setup in create() (after player exists)
+        this.objectsTilemapLayer = objectsLayer;
     }
   }
 }

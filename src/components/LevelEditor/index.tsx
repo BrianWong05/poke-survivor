@@ -488,37 +488,7 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
   const handleSaveMap = async (name: string) => {
     if (!name) return;
 
-    // PALETTE COMPRESSION LOGIC
-    const palette: TileData[] = [];
-    const paletteMap = new Map<string, number>(); // Key: "id:set", Value: PaletteIndex
-
-    const getPaletteIndex = (tile: TileData): number => {
-        if (tile.id === -1) return -1;
-        const key = `${tile.id}:${tile.set}`;
-        if (paletteMap.has(key)) return paletteMap.get(key)!;
-        
-        const newIndex = palette.length;
-        palette.push(tile);
-        paletteMap.set(key, newIndex);
-        return newIndex;
-    };
-
-    const compressLayer = (layer: TileData[][]): number[][] => {
-        return layer.map(row => row.map(tile => getPaletteIndex(tile)));
-    };
-
-    const compressedGround = compressLayer(groundLayer);
-    const compressedObjects = compressLayer(objectLayer);
-
-    const data: CustomMapData = {
-      width: mapSize.width,
-      height: mapSize.height,
-      tileSize: TILE_SIZE,
-      palette: palette,
-      ground: compressedGround,
-      objects: compressedObjects,
-      spawnPoint: spawnPoint || undefined
-    };
+    const data = getMapData();
 
     try {
       const res = await fetch('/api/maps', {
@@ -590,16 +560,42 @@ export const LevelEditor = ({ onPlay, onExit }: LevelEditorProps) => {
   };
 
   const handleExport = () => {
-    const data: CustomMapData = {
+    onPlay(getMapData());
+  };
+
+  const getMapData = useCallback((): CustomMapData => {
+    // PALETTE COMPRESSION LOGIC
+    const palette: TileData[] = [];
+    const paletteMap = new Map<string, number>(); // Key: "id:set", Value: PaletteIndex
+
+    const getPaletteIndex = (tile: TileData): number => {
+        if (tile.id === -1) return -1;
+        const key = `${tile.id}:${tile.set}`;
+        if (paletteMap.has(key)) return paletteMap.get(key)!;
+        
+        const newIndex = palette.length;
+        palette.push(tile);
+        paletteMap.set(key, newIndex);
+        return newIndex;
+    };
+
+    const compressLayer = (layer: TileData[][]): number[][] => {
+        return layer.map(row => row.map(tile => getPaletteIndex(tile)));
+    };
+
+    const compressedGround = compressLayer(groundLayer);
+    const compressedObjects = compressLayer(objectLayer);
+
+    return {
       width: mapSize.width,
       height: mapSize.height,
       tileSize: TILE_SIZE,
-      ground: groundLayer,
-      objects: objectLayer,
+      palette,
+      ground: compressedGround,
+      objects: compressedObjects,
       spawnPoint: spawnPoint || undefined
     };
-    onPlay(data);
-  };
+  }, [groundLayer, objectLayer, mapSize, spawnPoint]);
 
   return (
     <div className="level-editor-container">
