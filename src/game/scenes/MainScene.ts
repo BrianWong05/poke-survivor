@@ -222,9 +222,41 @@ export class MainScene extends Phaser.Scene {
     // Listen for inventory changes (from DevTools or internal logic)
     this.events.on('inventory-updated', () => this.updateInventoryUI());
 
-    // 7. Setup Camera
-    this.cameras.main.setBounds(0, 0, this.MAP_WIDTH, this.MAP_HEIGHT);
-    this.cameras.main.startFollow(this.player, true, 0.1, 0.1); // Smooth follow
+    // 7. Setup Camera - Dynamic Bounds for Centering
+    const viewportWidth = this.scale.width;
+    const viewportHeight = this.scale.height;
+    
+    // Determine current absolute map size
+    let currentMapWidth = this.MAP_WIDTH;
+    let currentMapHeight = this.MAP_HEIGHT;
+    
+    // Check if using custom map
+    const loadedMapData = data?.customMapData || this.registry.get('customMapData') as CustomMapData | undefined;
+    if (loadedMapData) {
+        currentMapWidth = loadedMapData.width * loadedMapData.tileSize;
+        currentMapHeight = loadedMapData.height * loadedMapData.tileSize;
+    }
+
+    // Calculate centered bounds if map < viewport
+    let camX = 0;
+    let camY = 0;
+    let camW = currentMapWidth;
+    let camH = currentMapHeight;
+
+    if (currentMapWidth < viewportWidth) {
+        const diff = viewportWidth - currentMapWidth;
+        camX = -diff / 2;
+        camW = currentMapWidth + diff;
+    }
+
+    if (currentMapHeight < viewportHeight) {
+        const diff = viewportHeight - currentMapHeight;
+        camY = -diff / 2;
+        camH = currentMapHeight + diff;
+    }
+    
+    this.cameras.main.setBounds(camX, camY, camW, camH);
+    // Follow already started in createPlayer
   }
 
   private inventoryDisplay!: InventoryDisplay;
@@ -256,7 +288,9 @@ export class MainScene extends Phaser.Scene {
 
     const spriteKey = this.usePlaceholderGraphics ? 'player' : this.characterConfig.spriteKey;
     this.player = new Player(this, startX, startY, spriteKey);
-    this.cameras.main.startFollow(this.player);
+    // Center camera immediately on player spawn, without smoothing first
+    this.cameras.main.centerOn(this.player.x, this.player.y);
+    this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
     this.player.setExperienceManager(this.experienceManager);
     // Initialize stats from configuration
     this.player.setHealth(this.characterConfig.stats.maxHP, this.characterConfig.stats.maxHP);
