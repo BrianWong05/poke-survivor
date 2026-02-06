@@ -18,6 +18,8 @@ import type { CustomMapData } from '@/game/types/map';
 import { Player } from '@/game/entities/Player';
 
 // New Systems
+import { TileAnimator } from '@/game/utils/TileAnimator';
+import { TILE_ANIMATIONS } from '@/game/config/TileAnimations';
 import { TextureManager } from '@/game/systems/TextureManager';
 import { InputManager } from '@/game/systems/InputManager';
 import { CombatManager } from '@/game/systems/CombatManager';
@@ -62,8 +64,10 @@ export class MainScene extends Phaser.Scene {
   private xpGems!: Phaser.Physics.Arcade.Group;
   private hazardGroup!: Phaser.Physics.Arcade.Group;
 
-  // Custom Map Layer (for collision)
+  // Custom Map Layer
   private objectsTilemapLayer?: Phaser.Tilemaps.TilemapLayer;
+  private groundTilemapLayer?: Phaser.Tilemaps.TilemapLayer;
+  private tileAnimator!: TileAnimator;
 
   // Game Loop State
   private score = 0;
@@ -703,6 +707,12 @@ export class MainScene extends Phaser.Scene {
 
     this.enemySpawner.update(delta);
 
+    // Update Tile Animations
+    if (this.tileAnimator) {
+        if (this.groundTilemapLayer) this.tileAnimator.update(delta, this.groundTilemapLayer);
+        if (this.objectsTilemapLayer) this.tileAnimator.update(delta, this.objectsTilemapLayer);
+    }
+
     if (this.characterState.ultimateCooldownRemaining > 0) {
       this.characterState.ultimateCooldownRemaining -= delta;
     }
@@ -881,13 +891,19 @@ export class MainScene extends Phaser.Scene {
     // 2. Add Tilesets to map & Build GID Map
     const tilesetObjects: Phaser.Tilemaps.Tileset[] = [];
     const tilesetGidMap = new Map<string, number>();
+    
+    // Manually manage GID offsets to prevent overlaps (GID 0 is empty)
+    let currentGidOffset = 1;
 
     usedTilesets.forEach(filename => {
        // Note: Preloader loads keys matching filenames
-       const tileset = map.addTilesetImage(filename, filename);
+       // We explicitly provide the firstGid to ensure unique ranges
+       const tileset = map.addTilesetImage(filename, filename, undefined, undefined, undefined, undefined, currentGidOffset);
        if (tileset) {
            tilesetObjects.push(tileset);
            tilesetGidMap.set(filename, tileset.firstgid);
+           // Increment offset by the number of tiles in this set
+           currentGidOffset += tileset.total;
        } else {
            console.warn(`[MainScene] Tileset ${filename} not found!`);
        }
@@ -903,7 +919,16 @@ export class MainScene extends Phaser.Scene {
     const groundLayer = map.createBlankLayer('Ground', tilesetObjects);
     const objectsLayer = map.createBlankLayer('Objects', tilesetObjects);
 
-    // 4. Helper to resolve GID from Map Cell
+    // 4. Setup Tile Animations
+    this.tileAnimator = new TileAnimator();
+    TILE_ANIMATIONS.forEach(anim => {
+        const firstGid = tilesetGidMap.get(anim.tileset);
+        if (firstGid !== undefined) {
+            this.tileAnimator.addAnimation(anim.tileset, firstGid + anim.startId, anim.frameCount, anim.duration);
+        }
+    });
+
+    // 5. Helper to resolve GID from Map Cell
     const resolveGid = (cell: number | import('@/game/types/map').TileData): number => {
         // Handle -1
         if (typeof cell === 'number' && cell === -1) return -1;
@@ -948,6 +973,7 @@ export class MainScene extends Phaser.Scene {
             }
         }
         groundLayer.setDepth(-10);
+        this.groundTilemapLayer = groundLayer;
     }
     
     if (objectsLayer) {

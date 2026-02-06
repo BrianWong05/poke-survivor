@@ -180,28 +180,36 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
   // Available Assets (Loaded via Vite glob import)
   const tilesetModules = import.meta.glob('/src/assets/Tilesets/*.png', { eager: true });
   const autosetModules = import.meta.glob('/src/assets/Autotiles/*.png', { eager: true });
+  const animationModules = import.meta.glob('/src/assets/Animations/*.png', { eager: true });
 
   // Helper to extract filename from path
   const getFileName = (path: string) => path.split('/').pop() || '';
 
-  const tilesetAssets = Object.fromEntries(
-    Object.entries(tilesetModules).map(([path, mod]) => [getFileName(path), (mod as any).default])
-  );
+  const tilesetAssets = {
+    ...Object.fromEntries(
+      Object.entries(tilesetModules).map(([path, mod]) => [getFileName(path), (mod as any).default])
+    ),
+    ...Object.fromEntries(
+      Object.entries(animationModules).map(([path, mod]) => [getFileName(path), (mod as any).default])
+    )
+  };
   
   const autosetAssets = Object.fromEntries(
     Object.entries(autosetModules).map(([path, mod]) => [getFileName(path), (mod as any).default])
   );
 
   const tilesetOptions = Object.keys(tilesetAssets).sort();
-  const autosetOptions = Object.keys(autosetAssets).sort(); 
-
-
-
   // Image Cache
   const imageCache = useRef<Record<string, HTMLImageElement | HTMLCanvasElement>>({});
   const [imagesLoaded, setImagesLoaded] = useState(false);
 
+  const [autosetOptions, setAutosetOptions] = useState<string[]>([]);
 
+  useEffect(() => {
+    if (imagesLoaded) {
+      setAutosetOptions(Object.keys(autosetAssets).filter(name => imageCache.current[name]).sort());
+    }
+  }, [imagesLoaded]); 
 
   // Sync tilesetRef for Preview (Supports both Image and Canvas)
   const tilesetRef = useRef<HTMLImageElement | HTMLCanvasElement>(null);
@@ -695,7 +703,13 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
             if (isAutoset) {
                 // Generate 47-tile texture from the 3x3 source
                 const generatedCanvas = generateAutoTileTexture(img);
-                storeAsset(name, generatedCanvas);
+                if (generatedCanvas) {
+                    storeAsset(name, generatedCanvas);
+                } else {
+                    // Not a valid 3x4 tileset, don't store as autotile
+                    loadedCount++;
+                    if (loadedCount === totalAssets) setImagesLoaded(true);
+                }
             } else {
                 storeAsset(name, img);
             }

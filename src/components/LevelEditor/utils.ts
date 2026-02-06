@@ -11,10 +11,17 @@ const SRC = {
     INNER_CORNER: { x: 4, y: 0 }
 };
 
-export const generateAutoTileTexture = (sourceImg: HTMLImageElement): HTMLCanvasElement => {
+export const generateAutoTileTexture = (sourceImg: HTMLImageElement): HTMLCanvasElement | null => {
+  // A standard 3x4 tileset (with 32x32 tiles) must be at least 96x128 pixels.
+  // (3 tiles wide * 32px = 96px, 4 tiles high * 32px = 128px)
+  if (sourceImg.width < 96 || sourceImg.height < 128) {
+      console.warn(`[AutoTileGenerator] Image ${sourceImg.src} is too small for 3x4 tileset (${sourceImg.width}x${sourceImg.height}).`);
+      return null;
+  }
+
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
-  if (!ctx) return canvas;
+  if (!ctx) return null;
 
   const TILE = 32;
 

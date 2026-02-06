@@ -101,6 +101,12 @@ export class Preloader extends Phaser.Scene {
         const filename = path.split('/').pop() || '';
         this.load.image(filename, (autosets[path] as any).default);
     }
+
+    const animations = import.meta.glob('/src/assets/Animations/*.png', { eager: true });
+    for (const path in animations) {
+        const filename = path.split('/').pop() || '';
+        this.load.image(filename, (animations[path] as any).default);
+    }
     
     // Load specific autotile source
     this.load.image('cave_raw', 'assets/Autotiles/Dirt.png');
