@@ -1,7 +1,7 @@
 export interface TileData {
   id: number;
   set: string; // Filename of the tileset/autoset
-  type: 'tileset' | 'autoset';
+  type: 'tileset' | 'autoset' | 'animations';
 }
 
 export interface CustomMapData {

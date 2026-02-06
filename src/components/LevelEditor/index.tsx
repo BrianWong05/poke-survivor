@@ -2,6 +2,7 @@ import { useRef, useEffect, useState, useCallback } from 'react';
 import type { CustomMapData, TileData } from '@/game/types/map';
 import { generateAutoTileTexture, updateAutoTileGrid } from './utils';
 import { SaveModal } from './SaveModal';
+import { AnimationSelector } from './AnimationSelector';
 import './styles.css';
 
 // Constants
@@ -172,7 +173,7 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
 
 
   // Tab & Asset State
-  const [activeTab, setActiveTab] = useState<'tileset' | 'autoset'>('tileset');
+  const [activeTab, setActiveTab] = useState<'tileset' | 'autoset' | 'animations'>('tileset');
   const [activeAsset, setActiveAsset] = useState<string>('Outside.png');
 
 
@@ -185,31 +186,23 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
   // Helper to extract filename from path
   const getFileName = (path: string) => path.split('/').pop() || '';
 
-  const tilesetAssets = {
-    ...Object.fromEntries(
-      Object.entries(tilesetModules).map(([path, mod]) => [getFileName(path), (mod as any).default])
-    ),
-    ...Object.fromEntries(
-      Object.entries(animationModules).map(([path, mod]) => [getFileName(path), (mod as any).default])
-    )
-  };
+  const tilesetAssets = Object.fromEntries(
+    Object.entries(tilesetModules).map(([path, mod]) => [getFileName(path), (mod as any).default])
+  );
   
   const autosetAssets = Object.fromEntries(
     Object.entries(autosetModules).map(([path, mod]) => [getFileName(path), (mod as any).default])
   );
 
+  const animationAssets = Object.fromEntries(
+    Object.entries(animationModules).map(([path, mod]) => [getFileName(path), (mod as any).default])
+  );
+
   const tilesetOptions = Object.keys(tilesetAssets).sort();
+  const autosetOptions = Object.keys(autosetAssets).sort();
   // Image Cache
   const imageCache = useRef<Record<string, HTMLImageElement | HTMLCanvasElement>>({});
   const [imagesLoaded, setImagesLoaded] = useState(false);
-
-  const [autosetOptions, setAutosetOptions] = useState<string[]>([]);
-
-  useEffect(() => {
-    if (imagesLoaded) {
-      setAutosetOptions(Object.keys(autosetAssets).filter(name => imageCache.current[name]).sort());
-    }
-  }, [imagesLoaded]); 
 
   // Sync tilesetRef for Preview (Supports both Image and Canvas)
   const tilesetRef = useRef<HTMLImageElement | HTMLCanvasElement>(null);
@@ -504,6 +497,7 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
       // FIX: Always show Source Image for AutoSets (Visual Preference)
       // The user wants to see the original 3x4 tileset, not the generated 47-tile strip.
       if (activeTab === 'autoset') return autosetAssets[activeAsset];
+      if (activeTab === 'animations') return animationAssets[activeAsset];
 
       const cached = imageCache.current[activeAsset];
       if (cached instanceof HTMLCanvasElement) {
@@ -513,7 +507,7 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
           // Easier: Just use toDataURL() for the palette preview. It's small.
           return cached.toDataURL();
       }
-      return activeTab === 'tileset' ? tilesetAssets[activeAsset] : autosetAssets[activeAsset];
+      return tilesetAssets[activeAsset];
   };
 
 
@@ -649,7 +643,7 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
 
     const getPaletteIndex = (tile: TileData): number => {
         if (tile.id === -1) return -1;
-        const key = `${tile.id}:${tile.set}`;
+        const key = `${tile.id}:${tile.set}:${tile.type}`;
         if (paletteMap.has(key)) return paletteMap.get(key)!;
         
         const newIndex = palette.length;
@@ -679,7 +673,7 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
   // Preload all assets (Moved to end to ensure renderCanvas is defined)
   useEffect(() => {
     let loadedCount = 0;
-    const totalAssets = Object.keys(tilesetAssets).length + Object.keys(autosetAssets).length;
+    const totalAssets = Object.keys(tilesetAssets).length + Object.keys(autosetAssets).length + Object.keys(animationAssets).length;
     
     // Helper to store image/canvas in cache
     const storeAsset = (name: string, asset: HTMLImageElement | HTMLCanvasElement) => {
@@ -722,6 +716,7 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
 
     Object.entries(tilesetAssets).forEach(([name, src]) => loadImg(name, src as string, false));
     Object.entries(autosetAssets).forEach(([name, src]) => loadImg(name, src as string, true));
+    Object.entries(animationAssets).forEach(([name, src]) => loadImg(name, src as string, false));
     
   }, []);
 
@@ -822,80 +817,110 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
                >
                  Autoset
                </button>
+               <button 
+                 className={`tab ${activeTab === 'animations' ? 'active' : ''}`}
+                 onClick={() => {
+                    setActiveTab('animations');
+                    setActiveAsset(''); // AnimationSelector handles selection
+                 }}
+               >
+                 Animation
+               </button>
              </div>
 
-             <div className="asset-selector">
-                <select 
-                  className="asset-select"
-                  value={activeAsset}
-                  onChange={(e) => setActiveAsset(e.target.value)}
-                >
-                  {activeTab === 'tileset' ? (
-                    tilesetOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)
-                  ) : (
-                    autosetOptions.length > 0 ? 
-                      autosetOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)
-                      : <option disabled>No Autosets</option>
-                  )}
-                </select>
-             </div>
+             {activeTab !== 'animations' ? (
+                <>
+                  <div className="asset-selector">
+                      <select 
+                        className="asset-select"
+                        value={activeAsset}
+                        onChange={(e) => setActiveAsset(e.target.value)}
+                      >
+                        {activeTab === 'tileset' && tilesetOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                        {activeTab === 'autoset' && (autosetOptions.length > 0 ? 
+                            autosetOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)
+                            : <option disabled>No Autosets</option>)}
+                      </select>
+                  </div>
 
-              {activeAsset && (activeTab === 'tileset' ? tilesetAssets[activeAsset] : autosetAssets[activeAsset]) && (
-               <>
-                <div className="palette-wrapper">
-                 <img 
-                   src={getPaletteSource() || ''}
-                   className="palette-image"
-                  onMouseDown={(e) => {
-                     e.preventDefault(); // Prevent native drag
-                     const rect = e.currentTarget.getBoundingClientRect();
-                     const x = Math.floor((e.clientX - rect.left) / TILE_SIZE);
-                     const y = Math.floor((e.clientY - rect.top) / TILE_SIZE);
-                     setIsSelecting(true);
-                     setSelectionStart({ x, y });
-                     setSelection({ x, y, w: 1, h: 1 });
-                  }}
-                  onMouseMove={(e) => {
-                     if (!isSelecting) return;
-                     const rect = e.currentTarget.getBoundingClientRect();
-                     // Clamp to image bounds? Native mouse can go outside, but let's stick to simple logic
-                     const currentX = Math.floor((e.clientX - rect.left) / TILE_SIZE);
-                     const currentY = Math.floor((e.clientY - rect.top) / TILE_SIZE);
-                     
-                     const startX = selectionStart.x;
-                     const startY = selectionStart.y;
-                     
-                     const minX = Math.min(startX, currentX);
-                     const minY = Math.min(startY, currentY);
-                     const maxX = Math.max(startX, currentX);
-                     const maxY = Math.max(startY, currentY);
-                     
-                     setSelection({
-                       x: minX,
-                       y: minY,
-                       w: maxX - minX + 1,
-                       h: maxY - minY + 1
-                     });
-                  }}
-                  onMouseUp={() => {}} // Handled globally
-                  alt="Palette"
-                />
-                 {activeAsset && (
-                    <div 
-                      className="tile-selection-highlight" 
-                      style={{
-                        left: selection.x * TILE_SIZE,
-                        top: selection.y * TILE_SIZE,
-                        width: selection.w * TILE_SIZE,
-                        height: selection.h * TILE_SIZE
+                  {activeAsset && (
+                    activeTab === 'tileset' ? tilesetAssets[activeAsset] : 
+                    autosetAssets[activeAsset]
+                  ) && (
+                  <>
+                    <div className="palette-wrapper">
+                    <img 
+                      src={getPaletteSource() || ''}
+                      className="palette-image"
+                      onMouseDown={(e) => {
+                        e.preventDefault(); // Prevent native drag
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const x = Math.floor((e.clientX - rect.left) / TILE_SIZE);
+                        const y = Math.floor((e.clientY - rect.top) / TILE_SIZE);
+                        setIsSelecting(true);
+                        setSelectionStart({ x, y });
+                        setSelection({ x, y, w: 1, h: 1 });
                       }}
+                      onMouseMove={(e) => {
+                        if (!isSelecting) return;
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        // Clamp to image bounds? Native mouse can go outside, but let's stick to simple logic
+                        const currentX = Math.floor((e.clientX - rect.left) / TILE_SIZE);
+                        const currentY = Math.floor((e.clientY - rect.top) / TILE_SIZE);
+                        
+                        const startX = selectionStart.x;
+                        const startY = selectionStart.y;
+                        
+                        const minX = Math.min(startX, currentX);
+                        const minY = Math.min(startY, currentY);
+                        const maxX = Math.max(startX, currentX);
+                        const maxY = Math.max(startY, currentY);
+                        
+                        setSelection({
+                          x: minX,
+                          y: minY,
+                          w: maxX - minX + 1,
+                          h: maxY - minY + 1
+                        });
+                      }}
+                      onMouseUp={() => {}} // Handled globally
+                      alt="Palette"
                     />
-                  )}
-               </div>
-                <div className="selected-tile-preview">
-                    Selection: {selection.w}x{selection.h} at ({selection.x}, {selection.y})
-                </div>
+                    {activeAsset && (
+                        <div 
+                          className="tile-selection-highlight" 
+                          style={{
+                            left: selection.x * TILE_SIZE,
+                            top: selection.y * TILE_SIZE,
+                            width: selection.w * TILE_SIZE,
+                            height: selection.h * TILE_SIZE
+                          }}
+                        />
+                      )}
+                  </div>
+                    <div className="selected-tile-preview">
+                        Selection: {selection.w}x{selection.h} at ({selection.x}, {selection.y})
+                    </div>
+                  </>
+                )}
               </>
+             ) : (
+                <AnimationSelector 
+                    onSelect={(set, startId) => {
+                        setActiveAsset(set);
+                        const asset = imageCache.current[set];
+                        const tilesPerRow = asset ? Math.floor(asset.width / TILE_SIZE) : 1;
+                        setSelection({
+                            x: startId % tilesPerRow,
+                            y: Math.floor(startId / tilesPerRow),
+                            w: 1,
+                            h: 1
+                        });
+                    }}
+                    activeAsset={activeAsset}
+                    activeId={selection.y * (imageCache.current[activeAsset] ? Math.floor(imageCache.current[activeAsset].width / TILE_SIZE) : 1) + selection.x}
+                    imageCache={imageCache.current}
+                />
              )}
         </div>
       </div>
