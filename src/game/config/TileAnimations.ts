@@ -14,4 +14,13 @@ export const TILE_ANIMATIONS: TileAnimationData[] = [
   { tileset: 'Waterfall.png', startId: 0, frameCount: 3, duration: 150 },
   { tileset: 'Waterfall crest.png', startId: 0, frameCount: 3, duration: 150 },
   { tileset: 'Waterfall bottom.png', startId: 0, frameCount: 3, duration: 150 },
+
+  // New Environmental Animations
+  { tileset: 'Black.png', startId: 0, frameCount: 4, duration: 250 },
+  { tileset: 'Seaweed dark.png', startId: 0, frameCount: 4, duration: 250 },
+  { tileset: 'Seaweed light.png', startId: 0, frameCount: 4, duration: 250 },
+  { tileset: 'Water current east.png', startId: 0, frameCount: 8, duration: 150 },
+  { tileset: 'Water current north.png', startId: 0, frameCount: 8, duration: 150 },
+  { tileset: 'Water current south.png', startId: 0, frameCount: 8, duration: 150 },
+  { tileset: 'Water current west.png', startId: 0, frameCount: 8, duration: 150 },
 ];
