@@ -630,7 +630,7 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
       }
   };
 
-  const handleExport = () => {
+  const handlePlay = () => {
     onPlay(getMapData());
   };
 
@@ -717,7 +717,7 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
         <h2>Level Editor</h2>
         
         <div className="controls-group main-controls">
-             <button onClick={handleExport} className="control-btn play-btn" title="Play Map">▶ Play</button>
+             <button onClick={handlePlay} className="control-btn play-btn" title="Play Map">▶ Play</button>
              <button onClick={onExit} className="control-btn exit-btn" title="Exit Editor">✖ Exit</button>
         </div>
         

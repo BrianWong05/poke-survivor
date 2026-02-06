@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { HashRouter, Routes, Route, useNavigate, useParams } from 'react-router-dom';
+import { HashRouter, Routes, Route, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { GameCanvas } from '@/components/GameCanvas';
 import { HUD } from '@/components/HUD';
 import { CharacterSelect } from '@/components/CharacterSelect';
@@ -11,6 +11,7 @@ function GamePage() {
   const { characterId } = useParams<{ characterId: string }>();
   const navigate = useNavigate();
 
+  const location = useLocation();
   const [score, setScore] = useState(0);
   const [level, setLevel] = useState(1);
   const [xp, setXP] = useState(0);
@@ -18,7 +19,7 @@ function GamePage() {
   const [time, setTime] = useState(0);
   const [isGameOver, setIsGameOver] = useState(false);
   const [gameKey] = useState(0);
-  const [customMapData] = useState<CustomMapData | undefined>(undefined);
+  const [customMapData] = useState<CustomMapData | undefined>(location.state?.customMapData);
 
   const handleScoreUpdate = useCallback((newScore: number) => {
     setScore(newScore);
@@ -43,8 +44,8 @@ function GamePage() {
   }, [navigate]);
 
   const handleBackToEditor = useCallback(() => {
-    navigate('/editor');
-  }, [navigate]);
+    navigate('/editor', { state: { customMapData } });
+  }, [navigate, customMapData]);
 
   if (!characterId) {
     navigate('/');
@@ -101,10 +102,13 @@ function CharacterSelectPage() {
 function LevelEditorPage() {
   const navigate = useNavigate();
 
+  const location = useLocation();
+  const initialData = location.state?.customMapData;
+
   const handlePlay = useCallback((_data: CustomMapData) => {
     // For now, navigate to game with default character
     // In future, could pass map data via state or context
-    navigate('/game/pikachu');
+    navigate('/game/pikachu', { state: { customMapData: _data } });
   }, [navigate]);
 
   const handleExit = useCallback(() => {
@@ -115,6 +119,7 @@ function LevelEditorPage() {
     <LevelEditor
       onPlay={handlePlay}
       onExit={handleExit}
+      initialData={initialData}
     />
   );
 }
