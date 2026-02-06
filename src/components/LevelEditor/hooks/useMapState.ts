@@ -1,25 +1,51 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import type { TileData, CustomMapData } from '@/game/types/map';
 import { DEFAULT_WIDTH, DEFAULT_HEIGHT, EMPTY_TILE } from '@/components/LevelEditor/constants';
-import type { MapSize, EditorState } from '@/components/LevelEditor/types';
+import type { MapSize, EditorState, LayerData } from '@/components/LevelEditor/types';
+
+let layerCounter = 0;
+const generateLayerId = () => `layer-${Date.now()}-${++layerCounter}`;
+
+const createEmptyGrid = (width: number, height: number): TileData[][] =>
+  Array(height).fill(0).map(() => Array(width).fill(0).map(() => ({ ...EMPTY_TILE })));
+
+const createDefaultLayers = (width: number, height: number): LayerData[] => [
+  { id: generateLayerId(), name: 'Ground', tiles: createEmptyGrid(width, height), visible: true, collision: false },
+  { id: generateLayerId(), name: 'Objects', tiles: createEmptyGrid(width, height), visible: true, collision: true },
+];
+
+const normalizeGrid = (grid: (number | TileData)[][], palette?: TileData[]): TileData[][] => {
+  return grid.map(row => row.map(cell => {
+    if (typeof cell === 'number') {
+      if (cell === -1) return { ...EMPTY_TILE };
+      if (palette) {
+        const tile = palette[cell];
+        return tile ? { ...tile } : { ...EMPTY_TILE };
+      }
+      return { id: cell, set: 'Outside.png', type: 'tileset' as const };
+    }
+    return cell;
+  }));
+};
+
+const hydrateLayersFromData = (data: CustomMapData): LayerData[] => {
+  if (data.layers && data.layers.length > 0) {
+    return data.layers.map(sl => ({
+      id: sl.id,
+      name: sl.name,
+      tiles: normalizeGrid(sl.tiles, data.palette),
+      visible: true,
+      collision: sl.collision,
+    }));
+  }
+  // Legacy: construct from ground/objects
+  return [
+    { id: generateLayerId(), name: 'Ground', tiles: normalizeGrid(data.ground, data.palette), visible: true, collision: false },
+    { id: generateLayerId(), name: 'Objects', tiles: normalizeGrid(data.objects, data.palette), visible: true, collision: true },
+  ];
+};
 
 export const useMapState = (initialData?: CustomMapData) => {
-  
-  const normalizeGrid = useCallback((grid: (number | TileData)[][], palette?: TileData[]): TileData[][] => {
-    return grid.map(row => row.map(cell => {
-      if (typeof cell === 'number') {
-        if (cell === -1) return { ...EMPTY_TILE };
-        // If palette exists, look up the tile, otherwise assume tileset
-        if (palette) {
-            const tile = palette[cell];
-            return tile ? { ...tile } : { ...EMPTY_TILE };
-        }
-        return { id: cell, set: 'Outside.png', type: 'tileset' };
-      }
-      return cell;
-    }));
-  }, []);
-
   const [mapSize, setMapSize] = useState<MapSize>({
     width: initialData?.width || DEFAULT_WIDTH,
     height: initialData?.height || DEFAULT_HEIGHT
@@ -27,30 +53,25 @@ export const useMapState = (initialData?: CustomMapData) => {
 
   const [spawnPoint, setSpawnPoint] = useState<{ x: number, y: number } | null>(initialData?.spawnPoint || null);
 
-  const [groundLayer, setGroundLayer] = useState<TileData[][]>(() => 
-    initialData?.ground 
-      ? normalizeGrid(initialData.ground, initialData.palette) 
-      : Array(initialData?.height || DEFAULT_HEIGHT).fill(0).map(() => Array(initialData?.width || DEFAULT_WIDTH).fill({ ...EMPTY_TILE }))
+  const [layers, setLayers] = useState<LayerData[]>(() =>
+    initialData ? hydrateLayersFromData(initialData) : createDefaultLayers(DEFAULT_WIDTH, DEFAULT_HEIGHT)
   );
 
-  const [objectLayer, setObjectLayer] = useState<TileData[][]>(() => 
-    initialData?.objects 
-      ? normalizeGrid(initialData.objects, initialData.palette) 
-      : Array(initialData?.height || DEFAULT_HEIGHT).fill(0).map(() => Array(initialData?.width || DEFAULT_WIDTH).fill({ ...EMPTY_TILE }))
-  );
+  const [currentLayerId, setCurrentLayerId] = useState<string>(() => layers[0]?.id ?? '');
 
   // Sync initialData if it changes (e.g. returning from play test)
   useEffect(() => {
     if (initialData) {
-      setMapSize({ 
-        width: initialData.width || DEFAULT_WIDTH, 
-        height: initialData.height || DEFAULT_HEIGHT 
+      setMapSize({
+        width: initialData.width || DEFAULT_WIDTH,
+        height: initialData.height || DEFAULT_HEIGHT
       });
       setSpawnPoint(initialData.spawnPoint || null);
-      setGroundLayer(normalizeGrid(initialData.ground, initialData.palette));
-      setObjectLayer(normalizeGrid(initialData.objects, initialData.palette));
+      const newLayers = hydrateLayersFromData(initialData);
+      setLayers(newLayers);
+      setCurrentLayerId(newLayers[0]?.id ?? '');
     }
-  }, [initialData, normalizeGrid]);
+  }, [initialData]);
 
   // History
   const [history, setHistory] = useState<EditorState[]>([]);
@@ -58,8 +79,7 @@ export const useMapState = (initialData?: CustomMapData) => {
 
   const saveHistory = useCallback(() => {
     const currentState: EditorState = {
-      groundLayer: groundLayer.map(r => [...r]),
-      objectLayer: objectLayer.map(r => [...r]),
+      layers: layers.map(l => ({ ...l, tiles: l.tiles.map(r => [...r]) })),
       mapSize,
       spawnPoint
     };
@@ -69,60 +89,144 @@ export const useMapState = (initialData?: CustomMapData) => {
       return next;
     });
     setRedoStack([]);
-  }, [groundLayer, objectLayer, mapSize, spawnPoint]);
+  }, [layers, mapSize, spawnPoint]);
 
   const undo = useCallback(() => {
     if (history.length === 0) return;
     const last = history[history.length - 1];
-    const current: EditorState = { groundLayer, objectLayer, mapSize, spawnPoint };
-    
+    const current: EditorState = {
+      layers: layers.map(l => ({ ...l, tiles: l.tiles.map(r => [...r]) })),
+      mapSize,
+      spawnPoint
+    };
+
     setRedoStack(prev => [...prev, current]);
     setHistory(prev => prev.slice(0, -1));
-    
-    setGroundLayer(last.groundLayer);
-    setObjectLayer(last.objectLayer);
+
+    setLayers(last.layers);
     setMapSize(last.mapSize);
     setSpawnPoint(last.spawnPoint);
-  }, [history, groundLayer, objectLayer, mapSize, spawnPoint]);
+    // Ensure currentLayerId is valid after undo
+    setCurrentLayerId(prev => {
+      if (last.layers.some(l => l.id === prev)) return prev;
+      return last.layers[0]?.id ?? '';
+    });
+  }, [history, layers, mapSize, spawnPoint]);
 
   const redo = useCallback(() => {
     if (redoStack.length === 0) return;
     const next = redoStack[redoStack.length - 1];
-    const current: EditorState = { groundLayer, objectLayer, mapSize, spawnPoint };
+    const current: EditorState = {
+      layers: layers.map(l => ({ ...l, tiles: l.tiles.map(r => [...r]) })),
+      mapSize,
+      spawnPoint
+    };
 
     setHistory(prev => [...prev, current]);
     setRedoStack(prev => prev.slice(0, -1));
 
-    setGroundLayer(next.groundLayer);
-    setObjectLayer(next.objectLayer);
+    setLayers(next.layers);
     setMapSize(next.mapSize);
     setSpawnPoint(next.spawnPoint);
-  }, [redoStack, groundLayer, objectLayer, mapSize, spawnPoint]);
+    setCurrentLayerId(prev => {
+      if (next.layers.some(l => l.id === prev)) return prev;
+      return next.layers[0]?.id ?? '';
+    });
+  }, [redoStack, layers, mapSize, spawnPoint]);
 
   const resizeMap = useCallback((w: number, h: number) => {
     const newW = Math.max(5, Math.min(100, w));
     const newH = Math.max(5, Math.min(100, h));
     setMapSize({ width: newW, height: newH });
 
-    const resizeLayer = (layer: TileData[][]) => Array(newH).fill(0).map((_, y) => 
-      Array(newW).fill(0).map((_, x) => 
-        (y < layer.length && x < layer[0].length) ? layer[y][x] : { ...EMPTY_TILE }
+    setLayers(prev => prev.map(layer => ({
+      ...layer,
+      tiles: Array(newH).fill(0).map((_, y) =>
+        Array(newW).fill(0).map((_, x) =>
+          (y < layer.tiles.length && x < layer.tiles[0].length) ? layer.tiles[y][x] : { ...EMPTY_TILE }
+        )
       )
-    );
-
-    setGroundLayer(prev => resizeLayer(prev));
-    setObjectLayer(prev => resizeLayer(prev));
+    })));
   }, []);
+
+  // Layer management
+  const addLayer = useCallback(() => {
+    const newLayer: LayerData = {
+      id: generateLayerId(),
+      name: `Layer ${layers.length + 1}`,
+      tiles: createEmptyGrid(mapSize.width, mapSize.height),
+      visible: true,
+      collision: false,
+    };
+    setLayers(prev => [...prev, newLayer]);
+    setCurrentLayerId(newLayer.id);
+  }, [layers.length, mapSize]);
+
+  const removeLayer = useCallback((id: string) => {
+    setLayers(prev => {
+      if (prev.length <= 1) return prev;
+      const idx = prev.findIndex(l => l.id === id);
+      if (idx === -1) return prev;
+      const next = prev.filter(l => l.id !== id);
+      // Adjust active layer if needed
+      setCurrentLayerId(curr => {
+        if (curr !== id) return curr;
+        const nearestIdx = Math.min(idx, next.length - 1);
+        return next[nearestIdx]?.id ?? '';
+      });
+      return next;
+    });
+  }, []);
+
+  const renameLayer = useCallback((id: string, name: string) => {
+    setLayers(prev => prev.map(l => l.id === id ? { ...l, name } : l));
+  }, []);
+
+  const reorderLayer = useCallback((id: string, direction: 'up' | 'down') => {
+    setLayers(prev => {
+      const idx = prev.findIndex(l => l.id === id);
+      if (idx === -1) return prev;
+      const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+      if (targetIdx < 0 || targetIdx >= prev.length) return prev;
+      const next = [...prev];
+      [next[idx], next[targetIdx]] = [next[targetIdx], next[idx]];
+      return next;
+    });
+  }, []);
+
+  const toggleLayerVisibility = useCallback((id: string) => {
+    setLayers(prev => prev.map(l => l.id === id ? { ...l, visible: !l.visible } : l));
+  }, []);
+
+  const toggleLayerCollision = useCallback((id: string) => {
+    setLayers(prev => prev.map(l => l.id === id ? { ...l, collision: !l.collision } : l));
+  }, []);
+
+  // Computed: current layer tiles
+  const currentLayerTiles = useMemo(() => {
+    const layer = layers.find(l => l.id === currentLayerId);
+    return layer?.tiles ?? createEmptyGrid(mapSize.width, mapSize.height);
+  }, [layers, currentLayerId, mapSize]);
+
+  // Setter: update current layer's tile grid
+  const setCurrentLayerTiles = useCallback((updater: TileData[][] | ((prev: TileData[][]) => TileData[][])) => {
+    setLayers(prev => prev.map(l => {
+      if (l.id !== currentLayerId) return l;
+      const newTiles = typeof updater === 'function' ? updater(l.tiles) : updater;
+      return { ...l, tiles: newTiles };
+    }));
+  }, [currentLayerId]);
 
   // Hydration Method
   const loadFromData = useCallback((data: CustomMapData) => {
     if (data.width && data.height) {
-        setMapSize({ width: data.width, height: data.height });
-        setSpawnPoint(data.spawnPoint || null);
-        setGroundLayer(normalizeGrid(data.ground, data.palette));
-        setObjectLayer(normalizeGrid(data.objects, data.palette));
+      setMapSize({ width: data.width, height: data.height });
+      setSpawnPoint(data.spawnPoint || null);
+      const newLayers = hydrateLayersFromData(data);
+      setLayers(newLayers);
+      setCurrentLayerId(newLayers[0]?.id ?? '');
     }
-  }, [normalizeGrid]);
+  }, []);
 
   // Keyboard Shortcuts
   useEffect(() => {
@@ -142,12 +246,15 @@ export const useMapState = (initialData?: CustomMapData) => {
   }, [undo, redo]);
 
   return {
-    groundLayer, setGroundLayer,
-    objectLayer, setObjectLayer,
+    layers, setLayers,
+    currentLayerId, setCurrentLayerId,
+    currentLayerTiles, setCurrentLayerTiles,
     mapSize, resizeMap,
     spawnPoint, setSpawnPoint,
     history, redoStack,
     saveHistory, undo, redo,
-    loadFromData // Exported for use in index.tsx
+    addLayer, removeLayer, renameLayer, reorderLayer,
+    toggleLayerVisibility, toggleLayerCollision,
+    loadFromData,
   };
 };

@@ -5,8 +5,8 @@ import type { CustomMapData, TileData } from '@/game/types/map';
 
 export class MapManager {
   private scene: Phaser.Scene;
-  private groundLayer?: Phaser.Tilemaps.TilemapLayer;
-  private objectsLayer?: Phaser.Tilemaps.TilemapLayer;
+  private phaserLayers: Phaser.Tilemaps.TilemapLayer[] = [];
+  private collisionLayers: Phaser.Tilemaps.TilemapLayer[] = [];
   private tileAnimator: TileAnimator;
   private readonly MAP_WIDTH = 3200;
   private readonly MAP_HEIGHT = 3200;
@@ -25,12 +25,18 @@ export class MapManager {
   }
 
   public update(delta: number): void {
-    if (this.groundLayer) this.tileAnimator.update(delta, this.groundLayer);
-    if (this.objectsLayer) this.tileAnimator.update(delta, this.objectsLayer);
+    for (const layer of this.phaserLayers) {
+      this.tileAnimator.update(delta, layer);
+    }
   }
 
   public getObjectsLayer(): Phaser.Tilemaps.TilemapLayer | undefined {
-    return this.objectsLayer;
+    // Return the first collision layer for backward compatibility
+    return this.collisionLayers[0];
+  }
+
+  public getCollisionLayers(): Phaser.Tilemaps.TilemapLayer[] {
+    return this.collisionLayers;
   }
 
   private createDefaultMap(): void {
@@ -51,7 +57,7 @@ export class MapManager {
       this.MAP_HEIGHT,
       'grid_bg'
     );
-    
+
     this.scene.physics.world.setBounds(0, 0, this.MAP_WIDTH, this.MAP_HEIGHT);
   }
 
@@ -77,12 +83,15 @@ export class MapManager {
       return;
     }
 
-    this.groundLayer = map.createBlankLayer('Ground', tilesetObjects) || undefined;
-    this.objectsLayer = map.createBlankLayer('Objects', tilesetObjects) || undefined;
-
     this.setupTileAnimations(tilesetGidMap);
-    this.populateLayers(data, tilesetGidMap);
-    this.setupCollision();
+
+    if (data.layers && data.layers.length > 0) {
+      // New multi-layer format
+      this.populateFromLayers(data, map, tilesetObjects, tilesetGidMap);
+    } else {
+      // Legacy two-layer format
+      this.populateLegacyLayers(data, map, tilesetObjects, tilesetGidMap);
+    }
   }
 
   private collectTilesets(data: CustomMapData): Set<string> {
@@ -130,56 +139,93 @@ export class MapManager {
     });
   }
 
-  private populateLayers(data: CustomMapData, tilesetGidMap: Map<string, number>): void {
-    const { width, height, ground, objects } = data;
+  private resolveGid(cell: number | TileData, palette: TileData[] | undefined, tilesetGidMap: Map<string, number>): number {
+    if (typeof cell === 'number' && cell === -1) return -1;
+    if (typeof cell !== 'number' && cell.id === -1) return -1;
 
-    const resolveGid = (cell: number | TileData): number => {
-      if (typeof cell === 'number' && cell === -1) return -1;
-      if (typeof cell !== 'number' && cell.id === -1) return -1;
+    let set: string = 'Outside.png';
+    let localId: number = 0;
 
-      let set: string = 'Outside.png';
-      let localId: number = 0;
-
-      if (data.palette && typeof cell === 'number') {
-        const p = data.palette[cell];
-        if (!p) return -1;
-        set = p.set;
-        localId = p.id;
-      } else if (typeof cell !== 'number') {
-        set = cell.set;
-        localId = cell.id;
-      } else {
-        localId = cell;
-      }
-
-      const firstGid = tilesetGidMap.get(set);
-      return firstGid !== undefined ? firstGid + localId : -1;
-    };
-
-    if (this.groundLayer) {
-      for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-          const gid = resolveGid(ground[y][x]);
-          if (gid !== -1) this.groundLayer.putTileAt(gid, x, y);
-        }
-      }
-      this.groundLayer.setDepth(-10);
+    if (palette && typeof cell === 'number') {
+      const p = palette[cell];
+      if (!p) return -1;
+      set = p.set;
+      localId = p.id;
+    } else if (typeof cell !== 'number') {
+      set = cell.set;
+      localId = cell.id;
+    } else {
+      localId = cell;
     }
 
-    if (this.objectsLayer) {
-      for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-          const gid = resolveGid(objects[y][x]);
-          if (gid !== -1) this.objectsLayer.putTileAt(gid, x, y);
-        }
-      }
-      this.objectsLayer.setDepth(0);
-    }
+    const firstGid = tilesetGidMap.get(set);
+    return firstGid !== undefined ? firstGid + localId : -1;
   }
 
-  private setupCollision(): void {
-    if (this.objectsLayer) {
-      this.objectsLayer.setCollisionByExclusion([-1]);
+  private populateFromLayers(
+    data: CustomMapData,
+    map: Phaser.Tilemaps.Tilemap,
+    tilesetObjects: Phaser.Tilemaps.Tileset[],
+    tilesetGidMap: Map<string, number>
+  ): void {
+    const { width, height } = data;
+
+    data.layers!.forEach((serializedLayer, index) => {
+      const phaserLayer = map.createBlankLayer(serializedLayer.name, tilesetObjects);
+      if (!phaserLayer) return;
+
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const gid = this.resolveGid(serializedLayer.tiles[y][x], data.palette, tilesetGidMap);
+          if (gid !== -1) phaserLayer.putTileAt(gid, x, y);
+        }
+      }
+
+      // Depth: first layer is -10, subsequent layers increment by 1
+      phaserLayer.setDepth(-10 + index);
+
+      this.phaserLayers.push(phaserLayer);
+
+      if (serializedLayer.collision) {
+        phaserLayer.setCollisionByExclusion([-1]);
+        this.collisionLayers.push(phaserLayer);
+      }
+    });
+  }
+
+  private populateLegacyLayers(
+    data: CustomMapData,
+    map: Phaser.Tilemaps.Tilemap,
+    tilesetObjects: Phaser.Tilemaps.Tileset[],
+    tilesetGidMap: Map<string, number>
+  ): void {
+    const { width, height, ground, objects } = data;
+
+    const groundLayer = map.createBlankLayer('Ground', tilesetObjects) || undefined;
+    const objectsLayer = map.createBlankLayer('Objects', tilesetObjects) || undefined;
+
+    if (groundLayer) {
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const gid = this.resolveGid(ground[y][x], data.palette, tilesetGidMap);
+          if (gid !== -1) groundLayer.putTileAt(gid, x, y);
+        }
+      }
+      groundLayer.setDepth(-10);
+      this.phaserLayers.push(groundLayer);
+    }
+
+    if (objectsLayer) {
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const gid = this.resolveGid(objects[y][x], data.palette, tilesetGidMap);
+          if (gid !== -1) objectsLayer.putTileAt(gid, x, y);
+        }
+      }
+      objectsLayer.setDepth(0);
+      objectsLayer.setCollisionByExclusion([-1]);
+      this.phaserLayers.push(objectsLayer);
+      this.collisionLayers.push(objectsLayer);
     }
   }
 }

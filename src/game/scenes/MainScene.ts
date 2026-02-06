@@ -198,9 +198,9 @@ export class MainScene extends Phaser.Scene {
   }
 
   private initializePhysicsCollisions(): void {
-    const objectsLayer = this.mapManager.getObjectsLayer();
-    if (objectsLayer) {
-      this.physics.add.collider(this.player, objectsLayer);
+    const collisionLayers = this.mapManager.getCollisionLayers();
+    for (const layer of collisionLayers) {
+      this.physics.add.collider(this.player, layer);
     }
 
     this.combatManager.setupCollisions(this.enemySpawner, this.projectiles, this.hazardGroup);

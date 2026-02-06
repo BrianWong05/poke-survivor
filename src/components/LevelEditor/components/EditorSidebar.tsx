@@ -1,17 +1,27 @@
 import React from 'react';
 import { AnimationSelector } from '@/components/LevelEditor/AnimationSelector';
-import type { ToolType, LayerType, AssetTab, MapSize, SelectionState } from '@/components/LevelEditor/types';
+import { LayerPanel } from '@/components/LevelEditor/components/LayerPanel';
+import type { ToolType, AssetTab, MapSize, SelectionState, LayerData } from '@/components/LevelEditor/types';
 import { TILE_SIZE } from '@/components/LevelEditor/constants';
 
 interface SidebarProps {
   // Map State
   mapSize: MapSize;
   onResize: (w: number, h: number) => void;
-  currentLayer: LayerType;
-  onLayerChange: (l: LayerType) => void;
   activeTool: ToolType;
   onToolChange: (t: ToolType) => void;
-  
+
+  // Layers
+  layers: LayerData[];
+  currentLayerId: string;
+  onSelectLayer: (id: string) => void;
+  onAddLayer: () => void;
+  onRemoveLayer: (id: string) => void;
+  onRenameLayer: (id: string, name: string) => void;
+  onReorderLayer: (id: string, direction: 'up' | 'down') => void;
+  onToggleVisibility: (id: string) => void;
+  onToggleCollision: (id: string) => void;
+
   // History & IO
   canUndo: boolean;
   canRedo: boolean;
@@ -28,7 +38,7 @@ interface SidebarProps {
   activeAsset: string;
   onAssetChange: (a: string) => void;
   assetOptions: { tilesets: string[], autosets: string[] };
-  
+
   // Palette
   paletteImageSource: string | undefined;
   selection: SelectionState;
@@ -37,8 +47,10 @@ interface SidebarProps {
 }
 
 export const EditorSidebar: React.FC<SidebarProps> = (props) => {
-  const { 
-    mapSize, onResize, currentLayer, onLayerChange, activeTool, onToolChange,
+  const {
+    mapSize, onResize, activeTool, onToolChange,
+    layers, currentLayerId, onSelectLayer, onAddLayer, onRemoveLayer,
+    onRenameLayer, onReorderLayer, onToggleVisibility, onToggleCollision,
     canUndo, canRedo, onUndo, onRedo, onSave, onLoad, onPlay, onExit,
     activeTab, onTabChange, activeAsset, onAssetChange, assetOptions,
     paletteImageSource, selection, onPaletteSelection, imageCache
@@ -50,19 +62,18 @@ export const EditorSidebar: React.FC<SidebarProps> = (props) => {
     const x = Math.floor((e.clientX - rect.left) / TILE_SIZE);
     const y = Math.floor((e.clientY - rect.top) / TILE_SIZE);
     onPaletteSelection({ x, y, w: 1, h: 1 });
-    // Note: Full drag selection logic requires state in parent or local hook, simplified here for atomic rendering
   };
 
   return (
     <div className="sidebar">
       <h2>Level Editor</h2>
-      
+
       {/* Main Controls */}
       <div className="controls-group main-controls">
         <button onClick={onPlay} className="control-btn play-btn">▶ Play</button>
         <button onClick={onExit} className="control-btn exit-btn">✖ Exit</button>
       </div>
-      
+
       {/* IO Controls */}
       <div className="controls-group io-controls">
         <button onClick={onLoad} className="control-btn load-btn">📂 Load</button>
@@ -79,29 +90,24 @@ export const EditorSidebar: React.FC<SidebarProps> = (props) => {
       <div className="map-settings">
         <div className="settings-row">
           <label>W:</label>
-          <input 
-            type="number" 
-            className="dim-input" 
-            value={mapSize.width} 
-            onChange={(e) => onResize(parseInt(e.target.value) || 10, mapSize.height)} 
+          <input
+            type="number"
+            className="dim-input"
+            value={mapSize.width}
+            onChange={(e) => onResize(parseInt(e.target.value) || 10, mapSize.height)}
           />
           <label>H:</label>
-          <input 
-            type="number" 
-            className="dim-input" 
-            value={mapSize.height} 
-            onChange={(e) => onResize(mapSize.width, parseInt(e.target.value) || 10)} 
+          <input
+            type="number"
+            className="dim-input"
+            value={mapSize.height}
+            onChange={(e) => onResize(mapSize.width, parseInt(e.target.value) || 10)}
           />
         </div>
-        
-        <div className="settings-row">
-           <button className={`layer-btn ${currentLayer === 0 ? 'active' : ''}`} onClick={() => onLayerChange(0)}>Ground</button>
-           <button className={`layer-btn ${currentLayer === 1 ? 'active' : ''}`} onClick={() => onLayerChange(1)}>Objects</button>
-        </div>
-        
+
         <div className="settings-row" style={{ marginTop: '0.5rem' }}>
            {(['brush', 'fill', 'eraser', 'spawn'] as ToolType[]).map(tool => (
-             <button 
+             <button
                key={tool}
                className={`layer-btn ${activeTool === tool ? 'active' : ''}`}
                onClick={() => onToolChange(tool)}
@@ -113,11 +119,24 @@ export const EditorSidebar: React.FC<SidebarProps> = (props) => {
          </div>
       </div>
 
+      {/* Layer Panel */}
+      <LayerPanel
+        layers={layers}
+        currentLayerId={currentLayerId}
+        onSelectLayer={onSelectLayer}
+        onAddLayer={onAddLayer}
+        onRemoveLayer={onRemoveLayer}
+        onRenameLayer={onRenameLayer}
+        onReorderLayer={onReorderLayer}
+        onToggleVisibility={onToggleVisibility}
+        onToggleCollision={onToggleCollision}
+      />
+
       {/* Palette */}
       <div className="palette-container">
          <div className="tab-container">
            {(['tileset', 'autoset', 'animations'] as AssetTab[]).map(tab => (
-             <button 
+             <button
                 key={tab}
                 className={`tab ${activeTab === tab ? 'active' : ''}`}
                 onClick={() => onTabChange(tab)}
@@ -139,14 +158,14 @@ export const EditorSidebar: React.FC<SidebarProps> = (props) => {
 
               {paletteImageSource && (
                 <div className="palette-wrapper">
-                  <img 
-                    src={paletteImageSource} 
-                    className="palette-image" 
+                  <img
+                    src={paletteImageSource}
+                    className="palette-image"
                     onMouseDown={handlePaletteMouseDown}
-                    alt="Palette" 
+                    alt="Palette"
                   />
-                  <div 
-                    className="tile-selection-highlight" 
+                  <div
+                    className="tile-selection-highlight"
                     style={{
                       left: selection.x * TILE_SIZE,
                       top: selection.y * TILE_SIZE,
@@ -158,7 +177,7 @@ export const EditorSidebar: React.FC<SidebarProps> = (props) => {
               )}
             </>
          ) : (
-            <AnimationSelector 
+            <AnimationSelector
                onSelect={(set, startId) => {
                    onAssetChange(set);
                    const asset = imageCache[set];
@@ -166,7 +185,7 @@ export const EditorSidebar: React.FC<SidebarProps> = (props) => {
                    onPaletteSelection({ x: startId % cols, y: Math.floor(startId / cols), w: 1, h: 1 });
                }}
                activeAsset={activeAsset}
-               activeId={0} // Ideally passed from parent state
+               activeId={0}
                imageCache={imageCache}
             />
          )}

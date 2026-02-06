@@ -73,30 +73,29 @@ The "Brush" tool SHALL allow precise single-tile placement.
 - **THEN** the `selectedTileId` SHALL be placed at each grid position the pointer passes over
 
 ### Requirement: Multi-Layer Editing
-The editor SHALL support two editable layers: Ground (layer 0) and Objects/Collision (layer 1).
+The editor SHALL support a dynamic collection of editable layers, each with configurable name, visibility, and collision properties.
 
 #### Scenario: Default layer
-- **WHEN** the Level Editor scene is launched
-- **THEN** the Ground layer (index 0) SHALL be the active editing layer
+- **WHEN** the Level Editor scene is launched with a new map
+- **THEN** the "Ground" layer SHALL be the active editing layer
 
-#### Scenario: Switch to Objects layer
-- **WHEN** the user presses the '2' key
-- **THEN** the Objects layer (index 1) SHALL become the active editing layer
-- **AND** the UI SHALL display "Editing Objects" or equivalent indicator
+#### Scenario: Switch active layer
+- **WHEN** the user clicks on a layer in the layer panel
+- **THEN** that layer SHALL become the active editing layer
+- **AND** the layer panel SHALL visually indicate the selected layer
 
-#### Scenario: Switch to Ground layer
-- **WHEN** the user presses the '1' key
-- **THEN** the Ground layer (index 0) SHALL become the active editing layer
-- **AND** the UI SHALL display "Editing Ground" or equivalent indicator
+#### Scenario: Layer indicator shows active layer name
+- **WHEN** the Level Editor scene is active
+- **THEN** the layer panel SHALL highlight the currently active layer by name
 
 ---
 
 ### Requirement: Layer Indicator UI
-The editor SHALL display text indicating which layer is currently being edited.
+The editor SHALL display a layer management panel indicating which layer is currently being edited, with controls for managing all layers.
 
 #### Scenario: Layer indicator visibility
 - **WHEN** the Level Editor scene is active
-- **THEN** a UI text element SHALL be visible showing the current layer name (e.g., "Ground" or "Objects")
+- **THEN** a layer panel SHALL be visible in the sidebar showing all layers with the active layer highlighted
 
 ---
 
@@ -113,9 +112,9 @@ The editor SHALL display a marker on the map canvas showing the current tile pos
 The user SHALL be able to export the current map and launch the game scene for playtesting.
 
 #### Scenario: Press P to play
-- **WHEN** the user presses the 'P' key
-- **THEN** the system SHALL extract tile data from both layers
-- **AND** the system SHALL start the GameScene (or MainScene) passing the custom map data
+- **WHEN** the user presses the 'P' key or clicks "Play"
+- **THEN** the system SHALL extract tile data from all layers
+- **AND** the system SHALL start the GameScene passing the custom map data with the full layers array
 
 ---
 

@@ -4,12 +4,20 @@ export interface TileData {
   type: 'tileset' | 'autoset' | 'animations';
 }
 
+export interface SerializedLayer {
+  id: string;
+  name: string;
+  tiles: number[][]; // Palette indices
+  collision: boolean;
+}
+
 export interface CustomMapData {
   width: number;
   height: number;
   tileSize: number;
   palette?: TileData[]; // Palette of unique tiles
-  ground: (number | TileData)[][]; // If palette exists, these are indices. If not, TileData objects (legacy/editor state)
-  objects: (number | TileData)[][];
+  ground: (number | TileData)[][]; // Legacy field, kept for backward compatibility
+  objects: (number | TileData)[][]; // Legacy field, kept for backward compatibility
+  layers?: SerializedLayer[]; // New multi-layer format
   spawnPoint?: { x: number; y: number }; // Optional grid coordinates for player spawn
 }

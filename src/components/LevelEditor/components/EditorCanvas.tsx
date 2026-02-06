@@ -1,25 +1,24 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import type { TileData } from '@/game/types/map';
-import type { MapSize, ToolType, SelectionState, AssetTab } from '@/components/LevelEditor/types';
+import type { MapSize, ToolType, SelectionState, AssetTab, LayerData } from '@/components/LevelEditor/types';
 import { TILE_SIZE } from '@/components/LevelEditor/constants';
 
 interface EditorCanvasProps {
   mapSize: MapSize;
-  groundLayer: TileData[][];
-  objectLayer: TileData[][];
+  layers: LayerData[];
   spawnPoint: { x: number, y: number } | null;
   activeTool: ToolType;
   activeAsset: string;
   activeTab: AssetTab;
   selection: SelectionState;
   imageCache: Record<string, HTMLImageElement | HTMLCanvasElement>;
-  
+
   onPaint: (x: number, y: number, isDragging: boolean) => void;
   onDragEnd: (start: {x: number, y: number}, end: {x: number, y: number}) => void;
 }
 
 export const EditorCanvas: React.FC<EditorCanvasProps> = ({
-  mapSize, groundLayer, objectLayer, spawnPoint, activeTool, activeAsset, activeTab, selection, imageCache,
+  mapSize, layers, spawnPoint, activeTool, activeAsset, activeTab, selection, imageCache,
   onPaint, onDragEnd
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -35,7 +34,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     const tilesPerRow = Math.floor(asset.width / TILE_SIZE);
     const srcX = (tile.id % tilesPerRow) * TILE_SIZE;
     const srcY = Math.floor(tile.id / tilesPerRow) * TILE_SIZE;
-    
+
     ctx.globalAlpha = alpha;
     ctx.drawImage(asset, srcX, srcY, TILE_SIZE, TILE_SIZE, x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
     ctx.globalAlpha = 1.0;
@@ -51,9 +50,11 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     ctx.fillStyle = '#1a1a1a';
     ctx.fillRect(0, 0, mapSize.width * TILE_SIZE, mapSize.height * TILE_SIZE);
 
-    // Layers
-    groundLayer.forEach((row, y) => row.forEach((tile, x) => drawTile(ctx, tile, x, y, 1.0)));
-    objectLayer.forEach((row, y) => row.forEach((tile, x) => drawTile(ctx, tile, x, y, 1.0)));
+    // Render layers in order, skipping hidden ones
+    for (const layer of layers) {
+      if (!layer.visible) continue;
+      layer.tiles.forEach((row, y) => row.forEach((tile, x) => drawTile(ctx, tile, x, y, 1.0)));
+    }
 
     // Spawn
     if (spawnPoint) {
@@ -79,7 +80,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
        const minY = Math.min(dragStart.current.y, dragCurrent.current.y);
        const maxX = Math.max(dragStart.current.x, dragCurrent.current.x);
        const maxY = Math.max(dragStart.current.y, dragCurrent.current.y);
-       
+
        const w = (maxX - minX + 1) * TILE_SIZE;
        const h = (maxY - minY + 1) * TILE_SIZE;
 
@@ -89,11 +90,9 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
          ctx.strokeStyle = '#ff0000';
          ctx.strokeRect(minX * TILE_SIZE, minY * TILE_SIZE, w, h);
        } else if (activeTool === 'brush') {
-          // Brush preview at current cursor only
           const previewX = dragCurrent.current.x;
           const previewY = dragCurrent.current.y;
-          // Simple preview logic (omitted complex repeating pattern for brevity)
-          const tile: TileData = { id: (selection.y * 100) + selection.x, set: activeAsset, type: activeTab }; // ID logic is simplified
+          const tile: TileData = { id: (selection.y * 100) + selection.x, set: activeAsset, type: activeTab };
           drawTile(ctx, tile, previewX, previewY, 0.5);
        } else {
          // Box Select Preview
@@ -102,7 +101,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
        }
     }
 
-  }, [mapSize, groundLayer, objectLayer, spawnPoint, activeTool, selection, activeAsset, activeTab, drawTile]);
+  }, [mapSize, layers, spawnPoint, activeTool, selection, activeAsset, activeTab, drawTile]);
 
   useEffect(() => { render(); }, [render]);
 
@@ -122,7 +121,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     const rect = e.currentTarget.getBoundingClientRect();
     const x = Math.floor((e.clientX - rect.left) / TILE_SIZE);
     const y = Math.floor((e.clientY - rect.top) / TILE_SIZE);
-    
+
     if (x !== dragCurrent.current.x || y !== dragCurrent.current.y) {
       dragCurrent.current = { x, y };
       if (activeTool === 'brush' || activeTool === 'eraser') onPaint(x, y, true);

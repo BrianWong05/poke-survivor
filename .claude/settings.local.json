@@ -1,7 +1,16 @@
 {
   "permissions": {
     "allow": [
-      "Bash(node -e:*)"
+      "Bash(node -e:*)",
+      "Bash(openspec new change:*)",
+      "Bash(openspec status:*)",
+      "Bash(openspec instructions proposal:*)",
+      "Bash(openspec instructions design:*)",
+      "Bash(openspec instructions specs:*)",
+      "Bash(openspec instructions tasks:*)",
+      "Bash(openspec instructions apply:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx vite build:*)"
     ]
   }
 }

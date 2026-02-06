@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import type { CustomMapData, TileData } from '@/game/types/map';
-import { updateAutoTileGrid } from '@/components/LevelEditor/utils'; // Keep existing utility for now
+import { updateAutoTileGrid } from '@/components/LevelEditor/utils';
 import { compressMapData } from '@/components/LevelEditor/utils/mapCompression';
 
 // Components
@@ -16,7 +16,7 @@ import { useMapPersistence } from '@/components/LevelEditor/hooks/useMapPersiste
 
 // Constants & Types
 import { TILE_SIZE, EMPTY_TILE } from '@/components/LevelEditor/constants';
-import type { ToolType, LayerType, AssetTab, SelectionState } from '@/components/LevelEditor/types';
+import type { ToolType, AssetTab, SelectionState } from '@/components/LevelEditor/types';
 import './styles.css';
 
 interface LevelEditorProps {
@@ -32,12 +32,11 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
   const persistence = useMapPersistence();
 
   // Local UI State
-  const [currentLayer, setCurrentLayer] = useState<LayerType>(0);
   const [activeTool, setActiveTool] = useState<ToolType>('brush');
   const [activeTab, setActiveTab] = useState<AssetTab>('tileset');
   const [activeAsset, setActiveAsset] = useState<string>('Outside.png');
   const [selection, setSelection] = useState<SelectionState>({ x: 0, y: 0, w: 1, h: 1 });
-  
+
   // Modals
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showLoadModal, setShowLoadModal] = useState(false);
@@ -46,27 +45,27 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
 
   const handlePaint = useCallback((x: number, y: number, isDragging: boolean) => {
     if (x < 0 || x >= mapState.mapSize.width || y < 0 || y >= mapState.mapSize.height) return;
-    
+
     // Save history only on the start of a stroke
     if (!isDragging) mapState.saveHistory();
 
-    const updateLayer = (prev: TileData[][]) => {
+    mapState.setCurrentLayerTiles((prev: TileData[][]) => {
       let newGrid = prev.map(row => [...row]);
-      
+
       if (activeTool === 'eraser') {
         newGrid[y][x] = { ...EMPTY_TILE };
       } else if (activeTool === 'brush') {
          const asset = imageCache.current[activeAsset];
          const tilesPerRow = asset ? Math.floor(asset.width / TILE_SIZE) : 1;
-         
+
          for(let dy=0; dy < selection.h; dy++) {
            for(let dx=0; dx < selection.w; dx++) {
-             const tx = x + dx; 
+             const tx = x + dx;
              const ty = y + dy;
              if(tx < mapState.mapSize.width && ty < mapState.mapSize.height) {
                 const sourceId = (selection.y + dy) * tilesPerRow + (selection.x + dx);
                 newGrid[ty][tx] = { id: sourceId, set: activeAsset, type: activeTab };
-                
+
                 if (activeTab === 'autoset') {
                   newGrid = updateAutoTileGrid(newGrid, tx, ty, activeAsset);
                 }
@@ -75,18 +74,15 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
          }
       }
       return newGrid;
-    };
-
-    if (currentLayer === 0) mapState.setGroundLayer(updateLayer);
-    else mapState.setObjectLayer(updateLayer);
-  }, [activeTool, activeAsset, activeTab, selection, currentLayer, mapState, imageCache]);
+    });
+  }, [activeTool, activeAsset, activeTab, selection, mapState, imageCache]);
 
   const handleDragEnd = useCallback((start: {x:number, y:number}, end: {x:number, y:number}) => {
     if (activeTool === 'spawn') {
       mapState.setSpawnPoint({ x: start.x, y: start.y });
       return;
     }
-    
+
     if (activeTool === 'fill') {
       mapState.saveHistory();
       const minX = Math.min(start.x, end.x);
@@ -94,7 +90,7 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
       const minY = Math.min(start.y, end.y);
       const maxY = Math.max(start.y, end.y);
 
-      const updateLayer = (prev: TileData[][]) => {
+      mapState.setCurrentLayerTiles((prev: TileData[][]) => {
         let newGrid = prev.map(row => [...row]);
         const asset = imageCache.current[activeAsset];
         const tilesPerRow = asset ? Math.floor(asset.width / TILE_SIZE) : 1;
@@ -107,7 +103,7 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
              newGrid[y][x] = { id: sourceId, set: activeAsset, type: activeTab };
           }
         }
-        
+
         // Post-fill autoset update
         if (activeTab === 'autoset') {
            for (let y = minY; y <= maxY; y++) {
@@ -117,17 +113,14 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
            }
         }
         return newGrid;
-      };
-
-      if (currentLayer === 0) mapState.setGroundLayer(updateLayer);
-      else mapState.setObjectLayer(updateLayer);
+      });
     }
-  }, [activeTool, activeAsset, activeTab, selection, currentLayer, mapState, imageCache]);
+  }, [activeTool, activeAsset, activeTab, selection, mapState, imageCache]);
 
   const getPaletteSource = () => {
      if (!activeAsset || !imagesLoaded) return undefined;
      if (activeTab === 'autoset') return assets.autosets[activeAsset] as string;
-     
+
      const cached = imageCache.current[activeAsset];
      if (cached instanceof HTMLCanvasElement) return cached.toDataURL();
      if (cached instanceof HTMLImageElement) return cached.src;
@@ -138,8 +131,7 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
     return compressMapData(
       mapState.mapSize,
       TILE_SIZE,
-      mapState.groundLayer,
-      mapState.objectLayer,
+      mapState.layers,
       mapState.spawnPoint
     );
   }, [mapState]);
@@ -171,8 +163,8 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
   const handleLoad = async (name: string) => {
     const data = await persistence.loadMap(name);
     if (data) {
-      mapState.saveHistory(); 
-      mapState.loadFromData(data); // Uses the hydration method from Step 9
+      mapState.saveHistory();
+      mapState.loadFromData(data);
       setShowLoadModal(false);
     } else {
       alert('Failed to load map.');
@@ -181,13 +173,20 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
 
   return (
     <div className="level-editor-container">
-      <EditorSidebar 
+      <EditorSidebar
         mapSize={mapState.mapSize}
         onResize={mapState.resizeMap}
-        currentLayer={currentLayer}
-        onLayerChange={setCurrentLayer}
         activeTool={activeTool}
         onToolChange={setActiveTool}
+        layers={mapState.layers}
+        currentLayerId={mapState.currentLayerId}
+        onSelectLayer={mapState.setCurrentLayerId}
+        onAddLayer={mapState.addLayer}
+        onRemoveLayer={mapState.removeLayer}
+        onRenameLayer={mapState.renameLayer}
+        onReorderLayer={mapState.reorderLayer}
+        onToggleVisibility={mapState.toggleLayerVisibility}
+        onToggleCollision={mapState.toggleLayerCollision}
         canUndo={mapState.history.length > 0}
         canRedo={mapState.redoStack.length > 0}
         onUndo={mapState.undo}
@@ -213,8 +212,7 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
       <div className="main-area">
         <EditorCanvas
            mapSize={mapState.mapSize}
-           groundLayer={mapState.groundLayer}
-           objectLayer={mapState.objectLayer}
+           layers={mapState.layers}
            spawnPoint={mapState.spawnPoint}
            activeTool={activeTool}
            activeAsset={activeAsset}
