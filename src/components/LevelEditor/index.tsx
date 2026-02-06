@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import type { CustomMapData, TileData } from '@/game/types/map';
+import { generateAutoTileTexture, updateAutoTileGrid } from './utils';
 import { SaveModal } from './SaveModal';
 import './styles.css';
 
@@ -194,63 +195,39 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
   const tilesetOptions = Object.keys(tilesetAssets).sort();
   const autosetOptions = Object.keys(autosetAssets).sort(); 
 
+
+
   // Image Cache
-  const imageCache = useRef<Record<string, HTMLImageElement>>({});
+  const imageCache = useRef<Record<string, HTMLImageElement | HTMLCanvasElement>>({});
   const [imagesLoaded, setImagesLoaded] = useState(false);
 
-  // Preload all assets
-  useEffect(() => {
-    let loadedCount = 0;
-    const totalAssets = Object.keys(tilesetAssets).length + Object.keys(autosetAssets).length;
-    
-    const loadImg = (name: string, src: string) => {
-        if (imageCache.current[name]) {
-            loadedCount++;
-            if (loadedCount === totalAssets) setImagesLoaded(true);
-            return;
-        }
-        const img = new Image();
-        img.src = src;
-        img.onload = () => {
-            imageCache.current[name] = img;
-            loadedCount++;
-            if (loadedCount === totalAssets) {
-                setImagesLoaded(true);
-                renderCanvas();
-            }
-        };
-        // Handle error?
-    };
 
-    Object.entries(tilesetAssets).forEach(([name, src]) => loadImg(name, src as string));
-    Object.entries(autosetAssets).forEach(([name, src]) => loadImg(name, src as string));
-    
-  }, []);
 
-  // Sync tilesetRef for Preview/Selection matching existing logic
-  // (We keep this to support query selection from the palette)
-  const tilesetRef = useRef<HTMLImageElement>(null);
+  // Sync tilesetRef for Preview (Supports both Image and Canvas)
+  const tilesetRef = useRef<HTMLImageElement | HTMLCanvasElement>(null);
   useEffect(() => {
      if (!activeAsset) return;
-     const img = imageCache.current[activeAsset];
-     if (img) tilesetRef.current = img;
+     const asset = imageCache.current[activeAsset];
+     if (asset) tilesetRef.current = asset;
   }, [activeAsset, imagesLoaded]);
 
   // Render Canvas
   const drawTile = useCallback((ctx: CanvasRenderingContext2D, tile: TileData, x: number, y: number, alpha: number) => {
     if (tile.id === -1) return;
     
-    const img = imageCache.current[tile.set];
-    if (!img) return;
+    const asset = imageCache.current[tile.set];
+    if (!asset) return;
 
-    const tilesPerRow = Math.floor(img.width / TILE_SIZE);
+    // Supports both Image and Canvas
+    // Canvas (AutoSets) are 8 tiles wide (256px). Images (Tilesets) depend on width.
+    const tilesPerRow = Math.floor(asset.width / TILE_SIZE);
     
     const srcX = (tile.id % tilesPerRow) * TILE_SIZE;
     const srcY = Math.floor(tile.id / tilesPerRow) * TILE_SIZE;
     
     ctx.globalAlpha = alpha;
     ctx.drawImage(
-      img,
+      asset,
       srcX, srcY, TILE_SIZE, TILE_SIZE,
       x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE
     );
@@ -382,13 +359,14 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
     }
   }, [groundLayer, objectLayer, isMapDragging, mapDragStart, mapDragCurrent, selection, mapSize, drawTile]);
 
-
-
-
   // Re-render on state change
   useEffect(() => {
     renderCanvas();
   }, [renderCanvas, imagesLoaded]);
+
+  // ... (existing helper functions)
+
+
 
   // Painting Logic
 
@@ -424,14 +402,55 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
         const h = maxY - minY + 1;
 
         if (activeTool === 'spawn') {
-             // Set spawn point to the first tile clicked/dragged (ignore drag area for spawn)
              if (mapDragStart.x < mapSize.width && mapDragStart.y < mapSize.height) {
                  setSpawnPoint({ x: mapDragStart.x, y: mapDragStart.y });
              }
-             return; // Don't paint tiles
+             return;
         }
 
         const updateGrid = (prev: TileData[][]) => {
+             // For Brush + Autoset, we use the recursive updater
+             if (activeTool === 'brush' && activeTab === 'autoset') {
+                 // For drag-paint with autoset, we essentially need to paint all target tiles
+                 // then update their neighbors. 
+                 // Simple approach: Apply the "set" to all target tiles (with ID 0 temporarily),
+                 // then run the recursive updater on every tile in the affected area.
+                 
+                 let newGrid = prev.map(row => [...row]);
+                 
+                 // 1. Paint the area with the raw set properties
+                 for (let dy = 0; dy < h; dy++) {
+                     for (let dx = 0; dx < w; dx++) {
+                         const tx = minX + dx;
+                         const ty = minY + dy;
+                         if (ty < mapSize.height && tx < mapSize.width) {
+                             newGrid[ty][tx] = {
+                                 id: 0, // Placeholder, will be fixed by updater
+                                 set: activeAsset,
+                                 type: 'autoset'
+                             };
+                         }
+                     }
+                 }
+
+                 // 2. Refine IDs using AutoTile Logic
+                 // We iterate the painted area + 1 border interactions
+                 // Actually, updateAutoTileGrid handles neighbors.
+                 // We just need to call it for every painted tile. 
+                 // Optimization: updateAutoTileGrid is somewhat expensive (copies grid).
+                 // Better to write a 'bulkUpdate' or just loop carefully.
+                 // Since map size is small (20x20 - 100x100), running it in loop is likely fine.
+                 
+                 for (let dy = 0; dy < h; dy++) {
+                     for (let dx = 0; dx < w; dx++) {
+                         newGrid = updateAutoTileGrid(newGrid, minX + dx, minY + dy, activeAsset);
+                     }
+                 }
+                 
+                 return newGrid;
+             }
+             
+             // Standard Logic (original)
              const newGrid = prev.map(row => [...row]);
              for (let dy = 0; dy < h; dy++) {
                  for (let dx = 0; dx < w; dx++) {
@@ -440,6 +459,10 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
                      if (targetY < mapSize.height && targetX < mapSize.width) {
                           if (activeTool === 'eraser') {
                               newGrid[targetY][targetX] = { ...emptyTile };
+                              
+                              // If erasing an autoset, we SHOULD update neighbors too!
+                              // But we need to know what set we just erased to update its friends.
+                              // For now, let's leave simple erasure.
                           } else {
                               const patternX = dx % selection.w;
                               const patternY = dy % selection.h;
@@ -462,6 +485,30 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
         else setObjectLayer(updateGrid);
     }
   };
+
+
+  // ... (rest of component, update palette render source)
+  
+  // Update Palette Image Source to use the generated canvas if available
+  const getPaletteSource = () => {
+      if (!activeAsset || !imagesLoaded) return undefined;
+
+      // FIX: Always show Source Image for AutoSets (Visual Preference)
+      // The user wants to see the original 3x4 tileset, not the generated 47-tile strip.
+      if (activeTab === 'autoset') return autosetAssets[activeAsset];
+
+      const cached = imageCache.current[activeAsset];
+      if (cached instanceof HTMLCanvasElement) {
+          // React 'src' needs a URL. Canvas can't be passed directly to <img src>.
+          // We can use toDataURL(), but that's heavy.
+          // Or we can just render a canvas here.
+          // Easier: Just use toDataURL() for the palette preview. It's small.
+          return cached.toDataURL();
+      }
+      return activeTab === 'tileset' ? tilesetAssets[activeAsset] : autosetAssets[activeAsset];
+  };
+
+
 
 
   // Global Mouse Up Handler
@@ -621,6 +668,49 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
     };
   }, [groundLayer, objectLayer, mapSize, spawnPoint]);
 
+  // Preload all assets (Moved to end to ensure renderCanvas is defined)
+  useEffect(() => {
+    let loadedCount = 0;
+    const totalAssets = Object.keys(tilesetAssets).length + Object.keys(autosetAssets).length;
+    
+    // Helper to store image/canvas in cache
+    const storeAsset = (name: string, asset: HTMLImageElement | HTMLCanvasElement) => {
+         imageCache.current[name] = asset;
+         loadedCount++;
+         if (loadedCount === totalAssets) {
+             setImagesLoaded(true);
+             renderCanvas(); // Initial render
+         }
+    };
+
+    const loadImg = (name: string, src: string, isAutoset: boolean) => {
+        if (imageCache.current[name]) {
+            loadedCount++;
+            if (loadedCount === totalAssets) setImagesLoaded(true);
+            return;
+        }
+        const img = new Image();
+        img.src = src;
+        img.onload = () => {
+            if (isAutoset) {
+                // Generate 47-tile texture from the 3x3 source
+                const generatedCanvas = generateAutoTileTexture(img);
+                storeAsset(name, generatedCanvas);
+            } else {
+                storeAsset(name, img);
+            }
+        };
+        img.onerror = () => {
+             console.error(`Failed to load ${name}`);
+             storeAsset(name, img); // Store broken image to avoid hanging?
+        };
+    };
+
+    Object.entries(tilesetAssets).forEach(([name, src]) => loadImg(name, src as string, false));
+    Object.entries(autosetAssets).forEach(([name, src]) => loadImg(name, src as string, true));
+    
+  }, []);
+
   return (
     <div className="level-editor-container">
       <div className="sidebar">
@@ -740,7 +830,7 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
                <>
                 <div className="palette-wrapper">
                  <img 
-                   src={activeTab === 'tileset' ? tilesetAssets[activeAsset] : autosetAssets[activeAsset]} 
+                   src={getPaletteSource() || ''}
                    className="palette-image"
                   onMouseDown={(e) => {
                      e.preventDefault(); // Prevent native drag

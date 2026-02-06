@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { AutoTileGenerator } from '@/game/utils/AutoTileGenerator';
 
 interface SpriteAnimation {
   key: string;
@@ -100,12 +101,18 @@ export class Preloader extends Phaser.Scene {
         const filename = path.split('/').pop() || '';
         this.load.image(filename, (autosets[path] as any).default);
     }
+    
+    // Load specific autotile source
+    this.load.image('cave_raw', 'assets/Autotiles/Dirt.png');
 
     // Load manifest first as JSON
     this.load.json('manifest', 'assets/manifest.json');
   }
 
   create(): void {
+    // Generate AutoTiles
+    AutoTileGenerator.generate(this, 'cave_raw', 'cave_auto');
+
     // Get manifest data
     this.manifest = this.cache.json.get('manifest') as SpriteManifestEntry[];
 
@@ -114,6 +121,7 @@ export class Preloader extends Phaser.Scene {
       this.startAppropriateScene();
       return;
     }
+
 
     // Store manifest in registry for other scenes to access
     this.registry.set('spriteManifest', this.manifest);
