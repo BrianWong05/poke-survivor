@@ -182,7 +182,7 @@ export class EnemySpawner {
    * Spawn a single enemy at a random position around the player.
    */
   private spawnEnemy(): void {
-    if (!this.isActive) return;
+    if (!this.isActive || !this.player) return;
 
     const wave = WAVE_CONFIG[this.currentWaveIndex];
 

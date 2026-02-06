@@ -14,12 +14,10 @@ import { EnemySpawner } from '@/game/systems/EnemySpawner';
 import { ENEMY_STATS, EnemyType, EnemyTier } from '@/game/entities/enemies';
 import { LootManager } from '@/game/systems/LootManager';
 import type { CustomMapData } from '@/game/types/map';
-
 import { Player } from '@/game/entities/Player';
 
-// New Systems
-import { TileAnimator } from '@/game/utils/TileAnimator';
-import { TILE_ANIMATIONS } from '@/game/config/TileAnimations';
+// Specialized Systems
+import { MapManager } from '@/game/systems/MapManager';
 import { TextureManager } from '@/game/systems/TextureManager';
 import { InputManager } from '@/game/systems/InputManager';
 import { CombatManager } from '@/game/systems/CombatManager';
@@ -27,19 +25,23 @@ import { UIManager } from '@/game/systems/UIManager';
 import { DevDebugSystem } from '@/game/systems/DevDebugSystem';
 import { InventoryDisplay } from '@/game/ui/InventoryDisplay';
 
-interface SpriteAnimation {
-  key: string;
-  path: string;
-  frameWidth: number;
-  frameHeight: number;
-  frameCount: number;
-  directions: number;
+/** Extended Window interface for debugging */
+declare global {
+  interface Window {
+    gameScene?: MainScene;
+  }
 }
 
-interface SpriteManifestEntry {
-  id: string;
-  name: string;
-  animations: SpriteAnimation[];
+/** Interface for grouping game loop state */
+interface GameSessionState {
+  score: number;
+  survivalTime: number;
+  lastTimeUpdate: number;
+  gameOver: boolean;
+  isLevelUpPending: boolean;
+  currentDirection: DirectionName;
+  usePlaceholderGraphics: boolean;
+  cullFrameCounter: number;
 }
 
 export class MainScene extends Phaser.Scene {
@@ -49,6 +51,7 @@ export class MainScene extends Phaser.Scene {
   private characterState!: CharacterState;
 
   // Systems
+  private mapManager!: MapManager;
   private textureManager!: TextureManager;
   private inputManager!: InputManager;
   private combatManager!: CombatManager;
@@ -59,421 +62,251 @@ export class MainScene extends Phaser.Scene {
   private lootManager!: LootManager;
 
   // Groups
-  private enemies!: Phaser.Physics.Arcade.Group; // Legacy support
+  private enemies!: Phaser.Physics.Arcade.Group;
   private projectiles!: Phaser.Physics.Arcade.Group;
   private xpGems!: Phaser.Physics.Arcade.Group;
   private hazardGroup!: Phaser.Physics.Arcade.Group;
 
-  // Custom Map Layer
-  private objectsTilemapLayer?: Phaser.Tilemaps.TilemapLayer;
-  private groundTilemapLayer?: Phaser.Tilemaps.TilemapLayer;
-  private tileAnimator!: TileAnimator;
-
-  // Game Loop State
-  private score = 0;
-  private survivalTime = 0;
-  private lastTimeUpdate = 0;
+  // Timers & Callbacks
   private fireTimer!: Phaser.Time.TimerEvent;
-  private gameOver = false;
-  private isLevelUpPending = false;
-  
-  // Callbacks
   private callbacks!: GameCallbacks;
   
-  // Visuals
-  private manifest: SpriteManifestEntry[] = [];
-  private currentDirection: DirectionName = 'down';
-  private usePlaceholderGraphics = false;
-  private cullFrameCounter = 0;
+  // UI Elements
+  private inventoryDisplay!: InventoryDisplay;
+
+  // Session State
+  private session: GameSessionState = {
+    score: 0,
+    survivalTime: 0,
+    lastTimeUpdate: 0,
+    gameOver: false,
+    isLevelUpPending: false,
+    currentDirection: 'down',
+    usePlaceholderGraphics: false,
+    cullFrameCounter: 0,
+  };
 
   constructor() {
     super({ key: 'MainScene' });
   }
 
-  // Map size constants for large world
-  private readonly MAP_WIDTH = 3200;
-  private readonly MAP_HEIGHT = 3200;
+  /**
+   * Scene Lifecycle: Create
+   */
+  public create(data?: { customMapData?: CustomMapData }): void {
+    this.initializeEnvironment();
+    this.initializeSystems(data);
+    this.initializePlayerAndGroups(data);
+    this.initializePhysicsCollisions();
+    this.setupEventListeners();
+    this.setupTimers();
+    this.initializeUI();
+    this.setupCamera(data);
+  }
 
-  create(data?: { customMapData?: CustomMapData }): void {
-    // Expose scene globally for DevConsole
-    (window as any).gameScene = this;
-
-    // 1. Initialization
+  private initializeEnvironment(): void {
+    window.gameScene = this;
     this.callbacks = this.registry.get('callbacks') as GameCallbacks;
+    
     const selectedCharacterId = this.registry.get('selectedCharacter') as string || 'pikachu';
     this.characterConfig = getCharacter(selectedCharacterId);
     this.characterState = createCharacterState(this.characterConfig);
     this.registry.set('characterState', this.characterState);
 
-    this.manifest = this.registry.get('spriteManifest') as SpriteManifestEntry[] || [];
-    this.usePlaceholderGraphics = this.manifest.length === 0;
+    const manifest = this.registry.get('spriteManifest') || [];
+    this.session.usePlaceholderGraphics = manifest.length === 0;
+  }
 
-    // 2. Set Physics Bounds (Player can't walk off edge)
-    // Default bounds, may be overridden by custom map
-    this.physics.world.setBounds(0, 0, this.MAP_WIDTH, this.MAP_HEIGHT);
+  private initializeSystems(data?: { customMapData?: CustomMapData }): void {
+    this.mapManager = new MapManager(this);
+    this.mapManager.create(data?.customMapData || this.registry.get('customMapData'));
 
-    // 3. Create Map (Custom or Default)
-    const registryMapData = this.registry.get('customMapData') as CustomMapData | undefined;
-    const mapData = data?.customMapData || registryMapData;
-    
-    if (mapData) {
-      this.createCustomMap(mapData);
-    } else {
-      this.createDefaultMap();
-    }
-
-    // 5. Systems Setup
     this.textureManager = new TextureManager(this);
     this.textureManager.createTextures();
     
     this.experienceManager = new ExperienceManager();
-    
-    // 6. Create Player & Groups (after background so player renders on top)
-    this.createPlayer();
+    this.inputManager = new InputManager(this);
+  }
+
+  private initializePlayerAndGroups(data?: { customMapData?: CustomMapData }): void {
+    this.createPlayer(data);
     this.createGroups();
 
-    // 4b. Setup Custom Map Collision (requires player to exist)
-    if (this.objectsTilemapLayer && this.player) {
-        this.physics.add.collider(this.player, this.objectsTilemapLayer);
-        console.log('[MainScene] Player-Objects collider added after player creation.');
-    }
-
-    // 4. Advanced Systems Construction (Dependencies on groups/player)
     this.lootManager = new LootManager(this.xpGems);
-    
-    // UI Manager
-    this.uiManager = new UIManager(
-        this, 
-        this.callbacks, 
-        this.experienceManager, 
-        this.characterState
-    );
+    this.uiManager = new UIManager(this, this.callbacks, this.experienceManager, this.characterState);
 
-    // Combat Manager
     this.combatManager = new CombatManager(
-        this,
-        this.player,
-        this.characterConfig,
-        this.characterState,
-        this.lootManager,
-        this.callbacks,
-        () => this.gameOver,
-        () => this.handleGameOver()
+      this,
+      this.player,
+      this.characterConfig,
+      this.characterState,
+      this.lootManager,
+      this.callbacks,
+      () => this.session.gameOver,
+      () => this.handleGameOver()
     );
 
-
-
-    // Debug System
     this.debugSystem = new DevDebugSystem(
-        this,
-        this.player,
-        this.characterState,
-        this.experienceManager,
-        this.combatManager,
-        this.uiManager,
-        this.enemySpawner.getEnemyGroup() as Phaser.Physics.Arcade.Group,
-        this.enemies,
-        () => this.gameOver
+      this,
+      this.player,
+      this.characterState,
+      this.experienceManager,
+      this.combatManager,
+      this.uiManager,
+      this.enemySpawner.getEnemyGroup() as Phaser.Physics.Arcade.Group,
+      this.enemies,
+      () => this.session.gameOver
     );
-
-    // Input Manager
-    this.inputManager = new InputManager(this);
-    this.inputManager.setup(() => this.uiManager.togglePause(() => {
-        // Handle visual pause state logic if needed
-        this.combatManager.healPlayer(0); 
-    }));
-
-    // 5. Setup Collisions
-    this.combatManager.setupCollisions(
-        this.enemySpawner,
-        this.projectiles,
-        this.hazardGroup
-    );
-     
-    /* Magnetism now handled by distance check in update for better precision */
-
-    // XP Actual Collection (Inner Zone - Player Body)
-    this.physics.add.overlap(
-        this.player,
-        this.xpGems,
-        this.handleXPCollection.bind(this) as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback,
-        undefined,
-        this
-    );
-
-    // 6. Event Listeners
-    this.setupEventListeners();
-    this.initializePassive();
-    this.startTimers();
-
-    // Initial UI Sync
-    this.callbacks.onScoreUpdate(this.score);
-    this.uiManager.updateLevelUI();
-    
-    // Wire up debug fire timer ref
-    this.debugSystem.setMainWeaponTimerRef(
-        () => this.fireTimer,
-        (t) => { this.fireTimer = t; }
-    );
-
-    // Initialize Inventory Display (Top-Left, under HP bar)
-    // Adjust y to be below floating HP bar or health area.
-    this.inventoryDisplay = new InventoryDisplay(this, 20, 80);
-    this.inventoryDisplay.setScrollFactor(0); // Fix to screen (HUD)
-    this.inventoryDisplay.setDepth(100); // Ensure on top
-    this.updateInventoryUI(); // Initial draw
-
-    // Listen for inventory changes (from DevTools or internal logic)
-    this.events.on('inventory-updated', () => this.updateInventoryUI());
-
-    // 7. Setup Camera - Dynamic Bounds for Centering
-    const viewportWidth = this.scale.width;
-    const viewportHeight = this.scale.height;
-    
-    // Determine current absolute map size
-    let currentMapWidth = this.MAP_WIDTH;
-    let currentMapHeight = this.MAP_HEIGHT;
-    
-    // Check if using custom map
-    const loadedMapData = data?.customMapData || this.registry.get('customMapData') as CustomMapData | undefined;
-    if (loadedMapData) {
-        currentMapWidth = loadedMapData.width * loadedMapData.tileSize;
-        currentMapHeight = loadedMapData.height * loadedMapData.tileSize;
-    }
-
-    // Calculate centered bounds if map < viewport
-    let camX = 0;
-    let camY = 0;
-    let camW = currentMapWidth;
-    let camH = currentMapHeight;
-
-    if (currentMapWidth < viewportWidth) {
-        const diff = viewportWidth - currentMapWidth;
-        camX = -diff / 2;
-        camW = currentMapWidth + diff;
-    }
-
-    if (currentMapHeight < viewportHeight) {
-        const diff = viewportHeight - currentMapHeight;
-        camY = -diff / 2;
-        camH = currentMapHeight + diff;
-    }
-    
-    this.cameras.main.setBounds(camX, camY, camW, camH);
-    // Follow already started in createPlayer
   }
 
-  private inventoryDisplay!: InventoryDisplay;
+  private createPlayer(data?: { customMapData?: CustomMapData }): void {
+    const mapData = data?.customMapData || this.registry.get('customMapData') as CustomMapData | undefined;
+    let spawnX = this.physics.world.bounds.centerX;
+    let spawnY = this.physics.world.bounds.centerY;
 
-  // Call this whenever the player levels up or gets an item
-  public updateInventoryUI(): void {
-      if (this.player && this.inventoryDisplay) {
-          this.inventoryDisplay.refresh(this.player);
-      }
-  }
-
-  private createPlayer(): void {
-    // Calculate center of the map based on physics bounds
-    const centerX = this.physics.world.bounds.centerX;
-    const centerY = this.physics.world.bounds.centerY;
-
-    // Create player
-    let startX = centerX;
-    let startY = centerY;
-
-    const mapData = this.registry.get('customMapData') as CustomMapData | undefined;
-    // Note: data argument in create() might also have mapData, handle precedence if needed.
-    // For now assuming registry is main source if loaded from editor.
-    
-    if (mapData && mapData.spawnPoint) {
-        startX = mapData.spawnPoint.x * mapData.tileSize + mapData.tileSize / 2;
-        startY = mapData.spawnPoint.y * mapData.tileSize + mapData.tileSize / 2;
+    if (mapData?.spawnPoint) {
+      spawnX = mapData.spawnPoint.x * mapData.tileSize + mapData.tileSize / 2;
+      spawnY = mapData.spawnPoint.y * mapData.tileSize + mapData.tileSize / 2;
     }
 
-    const spriteKey = this.usePlaceholderGraphics ? 'player' : this.characterConfig.spriteKey;
-    this.player = new Player(this, startX, startY, spriteKey);
-    // Center camera immediately on player spawn, without smoothing first
-    this.cameras.main.centerOn(this.player.x, this.player.y);
-    this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+    const spriteKey = this.session.usePlaceholderGraphics ? 'player' : this.characterConfig.spriteKey;
+    this.player = new Player(this, spawnX, spawnY, spriteKey);
     this.player.setExperienceManager(this.experienceManager);
-    // Initialize stats from configuration
     this.player.setHealth(this.characterConfig.stats.maxHP, this.characterConfig.stats.maxHP);
 
-    // Enable collision with world bounds
     const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
     playerBody.setCollideWorldBounds(true);
 
-    if (!this.usePlaceholderGraphics) {
+    if (!this.session.usePlaceholderGraphics) {
       this.player.play(`${this.characterConfig.spriteKey}-idle-down`);
       this.player.setScale(2);
     }
   }
 
   private createGroups(): void {
-    this.enemies = this.physics.add.group({
-      classType: Phaser.Physics.Arcade.Sprite,
-      maxSize: 200,
-      runChildUpdate: false,
-    });
-
+    this.enemies = this.physics.add.group({ classType: Phaser.Physics.Arcade.Sprite, maxSize: 200 });
     this.enemySpawner = new EnemySpawner(this, this.player, this.experienceManager);
-
-    this.projectiles = this.physics.add.group({
-      classType: Phaser.Physics.Arcade.Sprite,
-      maxSize: 50,
-      runChildUpdate: false,
-    });
-
-    this.xpGems = this.physics.add.group({
-      classType: Phaser.Physics.Arcade.Sprite,
-      maxSize: 100,
-      runChildUpdate: false,
-    });
-
-    this.hazardGroup = this.physics.add.group({
-      classType: Phaser.Physics.Arcade.Sprite,
-      maxSize: 50,
-      runChildUpdate: false,
-    });
+    this.projectiles = this.physics.add.group({ classType: Phaser.Physics.Arcade.Sprite, maxSize: 50 });
+    this.xpGems = this.physics.add.group({ classType: Phaser.Physics.Arcade.Sprite, maxSize: 100 });
+    this.hazardGroup = this.physics.add.group({ classType: Phaser.Physics.Arcade.Sprite, maxSize: 50 });
 
     this.registry.set('enemiesGroup', this.enemySpawner.getEnemyGroup());
     this.registry.set('legacyEnemiesGroup', this.enemies);
     this.registry.set('projectilesGroup', this.projectiles);
     this.registry.set('xpGemsGroup', this.xpGems);
     this.registry.set('hazardGroup', this.hazardGroup);
-    
-    this.registry.set('rattataPool', this.enemySpawner.getRattataPool());
-    this.registry.set('geodudePool', this.enemySpawner.getGeodudePool());
-    this.registry.set('zubatPool', this.enemySpawner.getZubatPool());
+  }
+
+  private initializePhysicsCollisions(): void {
+    const objectsLayer = this.mapManager.getObjectsLayer();
+    if (objectsLayer) {
+      this.physics.add.collider(this.player, objectsLayer);
+    }
+
+    this.combatManager.setupCollisions(this.enemySpawner, this.projectiles, this.hazardGroup);
+
+    this.physics.add.overlap(
+      this.player,
+      this.xpGems,
+      this.handleXPCollection.bind(this) as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback,
+      undefined,
+      this
+    );
   }
 
   private setupEventListeners(): void {
-    this.events.on('spawn-xp', (x: number, y: number) => {
-      this.lootManager.drop(x, y, EnemyTier.TIER_1);
-    });
+    this.events.on('spawn-xp', (x: number, y: number) => this.lootManager.drop(x, y, EnemyTier.TIER_1));
 
-    this.events.on('spawn-aoe-damage', (x: number, y: number, radius: number, damage: number, isFinal: boolean = false) => {
-      // Apply player might modifier unless strictly final
+    this.events.on('spawn-aoe-damage', (x: number, y: number, radius: number, damage: number, isFinal = false) => {
       const finalDamage = isFinal ? damage : (damage * this.player.might);
       this.combatManager.applyAOEDamage(x, y, radius, finalDamage, this.enemies);
       this.combatManager.applyAOEDamage(x, y, radius, finalDamage, this.enemySpawner.getEnemyGroup() as Phaser.Physics.Arcade.Group);
     });
 
-    this.events.on('damage-enemy', (enemy: Phaser.Physics.Arcade.Sprite, damage: number, isFinal: boolean = false) => {
-      // Apply player might modifier unless strictly final
+    this.events.on('damage-enemy', (enemy: Phaser.Physics.Arcade.Sprite, damage: number, isFinal = false) => {
       const finalDamage = isFinal ? damage : (damage * this.player.might);
       this.combatManager.damageEnemy(enemy, finalDamage);
     });
 
-    this.events.on('hp-update', (hp: number) => {
-      this.characterState.currentHP = hp;
-    });
-
-    this.events.on('max-hp-change', () => {
-        // Just internal update if needed, but characterState.currentHP is usually used
-    });
-
-    this.events.on('player:heal', (amount: number) => {
-      this.combatManager.healPlayer(amount);
-    });
+    this.events.on('hp-update', (hp: number) => { this.characterState.currentHP = hp; });
+    this.events.on('player:heal', (amount: number) => this.combatManager.healPlayer(amount));
 
     this.events.on('enemy:death', (x: number, y: number, enemyType: EnemyType) => {
       const stats = ENEMY_STATS[enemyType];
-      if (stats) {
-        this.lootManager.drop(x, y, stats.tier);
-      }
+      if (stats) this.lootManager.drop(x, y, stats.tier);
     });
 
-    // Level Editor shortcut (E key)
     this.input.keyboard?.on('keydown-E', () => {
-      if (!(this as any).isDevConsoleOpen && !this.gameOver) {
-        this.scene.start('LevelEditorScene');
-      }
+      if (!this.session.gameOver) this.scene.start('LevelEditorScene');
     });
+
+    this.inputManager.setup(() => this.uiManager.togglePause(() => this.combatManager.healPlayer(0)));
+    this.events.on('inventory-updated', () => this.updateInventoryUI());
   }
 
-  private initializePassive(): void {
-    const ctx = this.getCharacterContext();
-    if (this.characterConfig.passive.onInit) {
-      this.characterConfig.passive.onInit(ctx);
-    }
-  }
-
-  private startTimers(): void {
-    this.fireTimer = this.time.addEvent({
-      delay: this.characterState.activeWeapon.cooldownMs,
-      callback: () => this.fireWeapon(),
-      callbackScope: this,
-      loop: true,
-    });
+  private setupTimers(): void {
+    this.restartMainWeaponTimer();
     this.enemySpawner.start();
-  }
-
-  // Exposed for Timers/Systems but kept private if possible
-  private fireWeapon(): void {
-    if (this.gameOver) return;
-    if (this.player.getData('canControl') === false) return;
-    const ctx = this.getCharacterContext();
-    // Clamp level to max 8 for weapon stats
-    const weaponCtx = { ...ctx, level: Math.min(ctx.level, 8) };
-    this.characterState.activeWeapon.fire(weaponCtx);
-  }
-
-  private triggerUltimate(): void {
-    if (this.gameOver) return;
-    if (this.characterState.ultimateCooldownRemaining > 0) return;
-    if (this.characterState.isUltimateActive) return;
-
-    const ctx = this.getCharacterContext();
-    const ultimate = this.characterConfig.ultimate;
-
-    ultimate.execute(ctx);
-    this.characterState.isUltimateActive = true;
-
-    if (ultimate.durationMs && ultimate.durationMs > 0) {
-      this.time.delayedCall(ultimate.durationMs, () => {
-        if (ultimate.onEnd) {
-          ultimate.onEnd(this.getCharacterContext());
-        }
-        this.characterState.isUltimateActive = false;
-      });
-    } else {
-      this.characterState.isUltimateActive = false;
+    
+    if (this.characterConfig.passive.onInit) {
+      this.characterConfig.passive.onInit(this.getCharacterContext());
     }
-
-    this.characterState.ultimateCooldownRemaining = ultimate.cooldownMs;
   }
 
-  private getCharacterContext(): CharacterContext {
-    return {
-      scene: this,
-      player: this.player,
-      stats: this.characterConfig.stats,
-      currentHP: this.characterState.currentHP,
-      level: this.characterState.weaponLevel,  // Use weaponLevel for weapon power
-      xp: this.characterState.xp,
-    };
+  private initializeUI(): void {
+    this.callbacks.onScoreUpdate(this.session.score);
+    this.uiManager.updateLevelUI();
+
+    this.inventoryDisplay = new InventoryDisplay(this, 20, 80);
+    this.inventoryDisplay.setScrollFactor(0).setDepth(100);
+    this.updateInventoryUI();
+
+    this.debugSystem.setMainWeaponTimerRef(
+      () => this.fireTimer,
+      (t) => { this.fireTimer = t; }
+    );
+  }
+
+  private setupCamera(data?: { customMapData?: CustomMapData }): void {
+    const viewportWidth = this.scale.width;
+    const viewportHeight = this.scale.height;
+    
+    const mapData = data?.customMapData || this.registry.get('customMapData') as CustomMapData | undefined;
+    const mapW = mapData ? mapData.width * mapData.tileSize : 3200;
+    const mapH = mapData ? mapData.height * mapData.tileSize : 3200;
+
+    const camX = mapW < viewportWidth ? -(viewportWidth - mapW) / 2 : 0;
+    const camY = mapH < viewportHeight ? -(viewportHeight - mapH) / 2 : 0;
+    const camW = mapW < viewportWidth ? viewportWidth : mapW;
+    const camH = mapH < viewportHeight ? viewportHeight : mapH;
+
+    this.cameras.main.setBounds(camX, camY, camW, camH);
+    this.cameras.main.centerOn(this.player.x, this.player.y);
+    this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+  }
+
+  public updateInventoryUI(): void {
+    if (this.player && this.inventoryDisplay) {
+      this.inventoryDisplay.refresh(this.player);
+    }
   }
 
   private handleGameOver(): void {
-    this.gameOver = true;
+    this.session.gameOver = true;
     this.uiManager.setGameOver(true);
     if (this.fireTimer) this.fireTimer.remove();
     this.enemySpawner.stop();
     this.player.setVelocity(0, 0);
     this.callbacks.onGameOver();
     
-    // Stop all game visuals immediately
-    if (this.physics.world) this.physics.pause();
+    this.physics.pause();
     this.anims.pauseAll();
     this.tweens.pauseAll();
     this.time.paused = true;
   }
 
-  /* Removed handleXPMagnetism as it is now handled by distance check in update */
-
   private handleXPCollection(
-    _playerObj: Phaser.Types.Physics.Arcade.GameObjectWithBody | Phaser.Tilemaps.Tile,
+    _playerObj: unknown,
     candyObj: Phaser.Types.Physics.Arcade.GameObjectWithBody | Phaser.Tilemaps.Tile
   ): void {
     const candy = candyObj as Phaser.Physics.Arcade.Sprite;
@@ -485,131 +318,79 @@ export class MainScene extends Phaser.Scene {
     const xpValue = (candy.getData('xpValue') as number) || 1;
     const isRareCandy = candy.getData('lootType') === 'rare-candy'; 
 
-    let canLevelUp = false;
+    const canLevelUp = isRareCandy 
+      ? this.experienceManager.addInstantLevel() 
+      : this.player.gainExperience(xpValue);
     
-    // Rare Candy just gives Instant Level now
-    if (isRareCandy) {
-        canLevelUp = this.experienceManager.addInstantLevel();
-    } else {
-        canLevelUp = this.player.gainExperience(xpValue);
-    }
-    
-    this.score += xpValue;
-    this.callbacks.onScoreUpdate(this.score);
+    this.session.score += xpValue;
+    this.callbacks.onScoreUpdate(this.session.score);
     this.uiManager.updateLevelUI();
     this.updateInventoryUI();
 
-    // Check for Automatic Evolution on Level Up
     if (canLevelUp) {
-         // Try to evolve immediately upon reaching criteria
-         const evolved = this.player.checkAndApplyEvolution(this.experienceManager.currentLevel);
-         if (evolved) {
-             console.log('[MainScene] Auto-evolution triggered!');
-         }
-         
-         if (!this.isLevelUpPending) {
-             this.startLevelUpSequence();
-         }
+      this.player.checkAndApplyEvolution(this.experienceManager.currentLevel);
+      if (!this.session.isLevelUpPending) {
+        this.startLevelUpSequence();
+      }
     }
   }
 
-  /**
-   * Centralized Level Up Sequence
-   * Handles visual effects, pausing, scene launching, and recursive checks
-   */
   public startLevelUpSequence(): void {
-      if (this.isLevelUpPending) return;
-      
-      this.isLevelUpPending = true;
-      this.uiManager.setLevelUpPending(true);
-      
-      this.cameras.main.flash(500, 255, 255, 255, false, (_camera: Phaser.Cameras.Scene2D.Camera, progress: number) => {
-        if (progress === 1) {
-          if (!this.sys || !this.sys.isActive()) return;
+    if (this.session.isLevelUpPending) return;
+    
+    this.session.isLevelUpPending = true;
+    this.uiManager.setLevelUpPending(true);
+    
+    this.cameras.main.flash(500, 255, 255, 255, false, (_camera: unknown, progress: number) => {
+      if (progress === 1 && this.sys?.isActive()) {
+        const activeWeaponIds = this.debugSystem.getActiveWeaponIds?.() || [];
+        this.scene.pause('MainScene');
+            
+        this.scene.launch('LevelUpScene', {
+          player: this.player,
+          characterState: this.characterState,
+          activeWeaponIds,
+          onComplete: () => {
+            this.scene.resume('MainScene');
+            this.experienceManager.processLevelUp();
 
-           // Get list of active debug weapon IDs
-           const activeWeaponIds = this.debugSystem.getActiveWeaponIds ? 
-             this.debugSystem.getActiveWeaponIds() : [];
-           
-           // Pause the entire MainScene
-           this.scene.pause('MainScene');
-              
-           this.scene.launch('LevelUpScene', {
-             player: this.player,
-             characterState: this.characterState,
-             activeWeaponIds,
-             onComplete: () => {
-               // Resume MainScene
-               this.scene.resume('MainScene');
-               
-               // On Resume - check for more pending levels
-               // Always commit the level we just finished selecting for
-               this.experienceManager.processLevelUp();
-
-               if (this.experienceManager.hasPendingLevelUp) {
-                 // Reset flag momentarily to allow re-entry
-                 this.isLevelUpPending = false; 
-                 // Recursively start next sequence immediately
-                 this.startLevelUpSequence();
-               } else {
-                 this.isLevelUpPending = false;
-                 this.uiManager.setLevelUpPending(false);
-               }
-             },
-             onWeaponUpgrade: () => this.handleWeaponLevelUp(),
-             onNewWeapon: (config: import('@/game/entities/characters/types').WeaponConfig) => this.handleNewWeapon(config)
-           });
-        }
-      });
+            this.session.isLevelUpPending = false;
+            if (this.experienceManager.hasPendingLevelUp) {
+              this.startLevelUpSequence();
+            } else {
+              this.uiManager.setLevelUpPending(false);
+            }
+          },
+          onWeaponUpgrade: () => this.handleWeaponLevelUp(),
+          onNewWeapon: (config: WeaponConfig) => this.handleNewWeapon(config)
+        });
+      }
+    });
   }
 
-  /**
-   * Handle weapon level up when player selects weapon upgrade
-   */
   private handleWeaponLevelUp(): void {
-    // Increment weapon level (this is what drives weapon power)
     this.characterState.weaponLevel++;
     this.applyWeaponEvolution();
-    
-    console.log(`[MainScene] Weapon leveled up to Lv.${this.characterState.weaponLevel}`);
     this.updateInventoryUI();
   }
 
-  /**
-   * Check and apply weapon evolution based on current weaponLevel
-   */
   public applyWeaponEvolution(): void {
     const evolutionLevel = this.characterConfig.weapon.evolutionLevel ?? 5;
     const currentWeaponLevel = this.characterState.weaponLevel;
 
-    if (!this.characterState.isEvolved && 
-        currentWeaponLevel >= evolutionLevel && 
-        this.characterConfig.weapon.evolution) {
-      
+    if (!this.characterState.isEvolved && currentWeaponLevel >= evolutionLevel && this.characterConfig.weapon.evolution) {
       this.characterState.activeWeapon = this.characterConfig.weapon.evolution;
       this.characterState.isEvolved = true;
-      
       this.restartMainWeaponTimer();
-      
-      console.log(`[MainScene] Weapon evolved to ${this.characterState.activeWeapon.name}!`);
     } else if (this.characterState.isEvolved && currentWeaponLevel < evolutionLevel) {
-        // DevConsole De-evolution support
-        this.characterState.activeWeapon = this.characterConfig.weapon;
-        this.characterState.isEvolved = false;
-        this.restartMainWeaponTimer();
-        console.log(`[MainScene] Weapon de-evolved to ${this.characterState.activeWeapon.name}`);
+      this.characterState.activeWeapon = this.characterConfig.weapon;
+      this.characterState.isEvolved = false;
+      this.restartMainWeaponTimer();
     }
   }
 
-  /**
-   * Restarts the main weapon fire timer with current weapon's cooldown.
-   * Useful when weapon evolves or stats change.
-   */
   public restartMainWeaponTimer(): void {
-    if (this.fireTimer) {
-        this.fireTimer.remove();
-    }
-    
+    if (this.fireTimer) this.fireTimer.remove();
     this.fireTimer = this.time.addEvent({
       delay: this.characterState.activeWeapon.cooldownMs,
       callback: () => this.fireWeapon(),
@@ -618,14 +399,13 @@ export class MainScene extends Phaser.Scene {
     });
   }
 
-  /**
-   * Handle acquiring a new weapon when player selects it from level-up pool
-   */
   private handleNewWeapon(config: WeaponConfig): void {
-    // Add the new weapon via DevDebugSystem (same system used by DevConsole)
-    this.debugSystem.debugAddWeapon(config, this.gameOver);
-    console.log(`[MainScene] Acquired new weapon: ${config.name}`);
+    this.debugSystem.debugAddWeapon(config, this.session.gameOver);
     this.updateInventoryUI();
+  }
+
+  public setJoystickVector(x: number, y: number): void {
+    this.inputManager.setJoystickVector(x, y);
   }
 
   /**
@@ -646,352 +426,188 @@ export class MainScene extends Phaser.Scene {
    * Calculates difference and grants levels if target > current.
    */
   public cheatSetLevel(targetLevel: number): void {
-      const currentLevel = this.experienceManager.currentLevel;
-      if (targetLevel > currentLevel) {
-          const diff = targetLevel - currentLevel;
-          this.cheatGrantLevels(diff);
-      } else {
-          console.log(`[Cheat] Target level ${targetLevel} is not higher than current ${currentLevel}. Ignoring.`);
+    const currentLevel = this.experienceManager.currentLevel;
+    if (targetLevel > currentLevel) {
+      const diff = targetLevel - currentLevel;
+      this.cheatGrantLevels(diff);
+    } else {
+      console.log(`[Cheat] Target level ${targetLevel} is not higher than current ${currentLevel}. Ignoring.`);
+    }
+  }
+
+  private fireWeapon(): void {
+    if (this.session.gameOver || this.player.getData('canControl') === false) return;
+    const ctx = this.getCharacterContext();
+    const weaponCtx = { ...ctx, level: Math.min(ctx.level, 8) };
+    this.characterState.activeWeapon.fire(weaponCtx);
+  }
+
+  private triggerUltimate(): void {
+    if (this.session.gameOver || this.characterState.ultimateCooldownRemaining > 0 || this.characterState.isUltimateActive) return;
+
+    const ctx = this.getCharacterContext();
+    const ultimate = this.characterConfig.ultimate;
+
+    ultimate.execute(ctx);
+    this.characterState.isUltimateActive = true;
+
+    if (ultimate.durationMs && ultimate.durationMs > 0) {
+      this.time.delayedCall(ultimate.durationMs, () => {
+        if (ultimate.onEnd) ultimate.onEnd(this.getCharacterContext());
+        this.characterState.isUltimateActive = false;
+      });
+    } else {
+      this.characterState.isUltimateActive = false;
+    }
+
+    this.characterState.ultimateCooldownRemaining = ultimate.cooldownMs;
+  }
+
+  private getCharacterContext(): CharacterContext {
+    return {
+      scene: this,
+      player: this.player,
+      stats: this.characterConfig.stats,
+      currentHP: this.characterState.currentHP,
+      level: this.characterState.weaponLevel,
+      xp: this.characterState.xp,
+    };
+  }
+
+  /**
+   * Scene Lifecycle: Update
+   */
+  public update(_time: number, delta: number): void {
+    if (this.session.gameOver || this.time.paused) return;
+
+    this.updateGameTime(delta);
+    this.updateMapAndSpawner(delta);
+    this.handleInputAndMovement(delta);
+    this.updateEntities(delta);
+    this.handlePassives(delta);
+  }
+
+  private updateGameTime(delta: number): void {
+    this.session.survivalTime += delta;
+    if (this.session.survivalTime - this.session.lastTimeUpdate >= 1000) {
+      this.session.lastTimeUpdate = this.session.survivalTime;
+      this.callbacks.onTimeUpdate?.(this.session.survivalTime);
+    }
+
+    this.session.cullFrameCounter++;
+    if (this.session.cullFrameCounter >= 60) {
+      this.session.cullFrameCounter = 0;
+      this.cullExcessCandies();
+    }
+  }
+
+  private updateMapAndSpawner(delta: number): void {
+    this.mapManager.update(delta);
+    this.enemySpawner.update(delta);
+  }
+
+  private handleInputAndMovement(_delta: number): void {
+    if (this.inputManager.isUltimateTriggered()) this.triggerUltimate();
+
+    const canControl = this.player.getData('canControl') !== false;
+    let finalVelocity = { x: 0, y: 0 };
+
+    if (canControl) {
+      const inputVector = this.inputManager.getMovementVector();
+      const speed = this.player.characterConfig.stats.speed * this.player.moveSpeedMultiplier;
+      finalVelocity = { x: inputVector.x * speed, y: inputVector.y * speed };
+      this.player.setVelocity(finalVelocity.x, finalVelocity.y);
+    }
+
+    this.updatePlayerAnimations(finalVelocity, canControl);
+  }
+
+  private updatePlayerAnimations(velocity: { x: number, y: number }, canControl: boolean): void {
+    if (this.session.usePlaceholderGraphics || !canControl) return;
+
+    const isMoving = velocity.x !== 0 || velocity.y !== 0;
+    const animState = isMoving ? 'walk' : 'idle';
+
+    if (isMoving) {
+      const direction = getDirectionFromVelocity(velocity.x, velocity.y);
+      if (direction.includes('left')) this.player.setData('horizontalFacing', 'left');
+      else if (direction.includes('right')) this.player.setData('horizontalFacing', 'right');
+      
+      if (direction !== this.session.currentDirection) {
+        this.session.currentDirection = direction;
+        this.player.setData('facingDirection', direction);
       }
+    }
+
+    this.player.play(`${this.player.characterConfig.spriteKey}-${animState}-${this.session.currentDirection}`, true);
+  }
+
+  private updateEntities(_delta: number): void {
+    // Enemy AI & Gem Magnetism
+    this.enemySpawner.getEnemyGroup().getChildren().forEach(child => this.updateEnemyAI(child as Phaser.Physics.Arcade.Sprite));
+    this.xpGems.getChildren().forEach(child => this.updateGemMagnetism(child as Phaser.Physics.Arcade.Sprite));
+    
+    if (this.characterState.ultimateCooldownRemaining > 0) {
+      this.characterState.ultimateCooldownRemaining -= _delta;
+    }
+  }
+
+  private updateEnemyAI(enemy: Phaser.Physics.Arcade.Sprite): void {
+    if (!enemy.active || enemy.getData('stunned') || (enemy as any).isKnockedBack) {
+      if (enemy.active && enemy.getData('stunned')) enemy.setVelocity(0, 0);
+      return;
+    }
+
+    const angle = Phaser.Math.Angle.Between(enemy.x, enemy.y, this.player.x, this.player.y);
+    const vx = Math.cos(angle) * 80;
+    const vy = Math.sin(angle) * 80;
+    enemy.setVelocity(vx, vy);
+
+    if (!this.session.usePlaceholderGraphics) {
+      const spriteName = enemy.getData('spriteName');
+      if (spriteName) {
+        const dir = getDirectionFromVelocity(vx, vy);
+        if (dir !== enemy.getData('currentDirection')) {
+          enemy.setData('currentDirection', dir);
+          enemy.play(`${spriteName}-walk-${dir}`);
+        }
+      }
+    }
+  }
+
+  private updateGemMagnetism(gem: Phaser.Physics.Arcade.Sprite): void {
+    if (!gem.active) return;
+    if (!gem.getData('isMagnetized')) {
+      if (Phaser.Math.Distance.Between(gem.x, gem.y, this.player.x, this.player.y) <= this.player.magnetRadius) {
+        gem.setData('isMagnetized', true);
+      }
+    }
+    if (gem.getData('isMagnetized')) {
+      const angle = Phaser.Math.Angle.Between(gem.x, gem.y, this.player.x, this.player.y);
+      gem.setVelocity(Math.cos(angle) * 400, Math.sin(angle) * 400);
+    }
+  }
+
+  private handlePassives(delta: number): void {
+    if (this.characterConfig.passive.onUpdate) {
+      this.characterConfig.passive.onUpdate(this.getCharacterContext(), delta);
+    }
   }
 
   private cullExcessCandies(): void {
     const MAX_CANDIES = 300;
     const CULL_COUNT = 50;
-    
-    const activeCandies = this.xpGems.getChildren().filter(
-      (child) => (child as Phaser.Physics.Arcade.Sprite).active
-    ) as Phaser.Physics.Arcade.Sprite[];
+    const activeCandies = (this.xpGems.getChildren() as Phaser.Physics.Arcade.Sprite[]).filter(c => c.active);
     
     if (activeCandies.length <= MAX_CANDIES) return;
     
-    activeCandies.sort((a, b) => {
-      const distA = Phaser.Math.Distance.Between(this.player.x, this.player.y, a.x, a.y);
-      const distB = Phaser.Math.Distance.Between(this.player.x, this.player.y, b.x, b.y);
-      return distB - distA;
-    });
+    activeCandies.sort((a, b) => 
+      Phaser.Math.Distance.Between(this.player.x, this.player.y, b.x, b.y) - 
+      Phaser.Math.Distance.Between(this.player.x, this.player.y, a.x, a.y)
+    );
     
     for (let i = 0; i < CULL_COUNT && i < activeCandies.length; i++) {
-      activeCandies[i].setActive(false);
-      activeCandies[i].setVisible(false);
-    }
-  }
-
-  public setJoystickVector(x: number, y: number): void {
-      this.inputManager.setJoystickVector(x, y);
-  }
-
-  // Proxy Debug Methods removed - usage moved to debugSystem directly
-
-
-  update(_time: number, delta: number): void {
-    // We access internal isPaused via UIManager implicitly by checking scene pause state? 
-    // Actually UIManager manages a local isPaused flag but toggles Scene pause.
-    // If scene is paused, update() shouldn't run usually (if scene.pause() is called).
-    // But we manually check flags too.
-    if (this.gameOver || this.time.paused) return;
-
-    this.survivalTime += delta;
-    if (this.survivalTime - this.lastTimeUpdate >= 1000) {
-      this.lastTimeUpdate = this.survivalTime;
-      if (this.callbacks.onTimeUpdate) {
-        this.callbacks.onTimeUpdate(this.survivalTime);
-      }
-    }
-
-    this.cullFrameCounter++;
-    if (this.cullFrameCounter >= 60) {
-      this.cullFrameCounter = 0;
-      this.cullExcessCandies();
-    }
-
-    this.enemySpawner.update(delta);
-
-    // Update Tile Animations
-    if (this.tileAnimator) {
-        if (this.groundTilemapLayer) this.tileAnimator.update(delta, this.groundTilemapLayer);
-        if (this.objectsTilemapLayer) this.tileAnimator.update(delta, this.objectsTilemapLayer);
-    }
-
-    if (this.characterState.ultimateCooldownRemaining > 0) {
-      this.characterState.ultimateCooldownRemaining -= delta;
-    }
-
-    // Input Handling
-    if (this.inputManager.isUltimateTriggered()) {
-      this.triggerUltimate();
-    }
-
-    const canControl = this.player.getData('canControl') !== false;
-    
-    // Pinball Mode
-    if (this.player.getData('pinballMode')) {
-         // This logic is specific to Blastoise Ultimate. 
-         // Could be moved to Player class or config, but fine here for now.
-         const body = this.player.body as Phaser.Physics.Arcade.Body;
-         if (this.player.x <= 0 || this.player.x >= this.scale.width) body.velocity.x *= -1;
-         if (this.player.y <= 0 || this.player.y >= this.scale.height) body.velocity.y *= -1;
-
-         this.enemySpawner.getEnemyGroup().getChildren().forEach((child) => {
-            const enemy = child as Phaser.Physics.Arcade.Sprite;
-            if (!enemy.active) return;
-            if (Phaser.Math.Distance.Between(this.player.x, this.player.y, enemy.x, enemy.y) <= 40) {
-               this.combatManager.damageEnemy(enemy, this.characterConfig.stats.baseDamage * 2);
-            }
-         });
-    }
-
-    // Movement
-    let finalVelocity = { x: 0, y: 0 };
-    if (canControl) {
-        const inputVector = this.inputManager.getMovementVector();
-        const speedMultiplier = this.player.moveSpeedMultiplier;
-        // Use player.characterConfig to ensure evolved stats are used
-        const speed = this.player.characterConfig.stats.speed * speedMultiplier;
-        finalVelocity = { x: inputVector.x * speed, y: inputVector.y * speed };
-        this.player.setVelocity(finalVelocity.x, finalVelocity.y);
-    }
-
-    // Animation
-    if (!this.usePlaceholderGraphics && canControl) {
-      const isMoving = finalVelocity.x !== 0 || finalVelocity.y !== 0;
-      const animState = isMoving ? 'walk' : 'idle';
-      if (isMoving) {
-        const direction = getDirectionFromVelocity(finalVelocity.x, finalVelocity.y);
-        
-        // Update horizontal facing preference
-        if (direction.includes('left')) {
-            this.player.setData('horizontalFacing', 'left');
-        } else if (direction.includes('right')) {
-            this.player.setData('horizontalFacing', 'right');
-        }
-        
-        if (direction !== this.currentDirection) {
-          this.currentDirection = direction;
-          this.player.setData('facingDirection', direction); // Sync explicit direction too
-        }
-      }
-      this.player.play(`${this.player.characterConfig.spriteKey}-${animState}-${this.currentDirection}`, true);
-    }
-
-    // Enemy AI
-    this.enemySpawner.getEnemyGroup().getChildren().forEach((child) => {
-       const enemy = child as Phaser.Physics.Arcade.Sprite;
-       if (!enemy.active || enemy.getData('stunned')) {
-           if (enemy.active) enemy.setVelocity(0, 0);
-           return;
-       }
-
-       // CRITICAL FIX: Respect Knockback State
-       if ((enemy as any).isKnockedBack) return;
-
-       const angle = Phaser.Math.Angle.Between(enemy.x, enemy.y, this.player.x, this.player.y);
-       const enemySpeed = 80;
-       const vx = Math.cos(angle) * enemySpeed;
-       const vy = Math.sin(angle) * enemySpeed;
-       enemy.setVelocity(vx, vy);
-
-       if (!this.usePlaceholderGraphics) {
-          const spriteName = enemy.getData('spriteName');
-          if (spriteName) {
-             const newDirection = getDirectionFromVelocity(vx, vy);
-             if (newDirection !== enemy.getData('currentDirection')) {
-                 enemy.setData('currentDirection', newDirection);
-                 enemy.play(`${spriteName}-walk-${newDirection}`);
-             }
-          }
-       }
-    });
-
-    // Magnetized XP Gems movement
-    this.xpGems.getChildren().forEach((child) => {
-        const gem = child as Phaser.Physics.Arcade.Sprite;
-        if (!gem.active) return;
-
-        // Precise Distance Check for Magnetism trigger
-        if (!gem.getData('isMagnetized')) {
-            const dist = Phaser.Math.Distance.Between(gem.x, gem.y, this.player.x, this.player.y);
-            if (dist <= this.player.magnetRadius) {
-                gem.setData('isMagnetized', true);
-            }
-        }
-
-        // Movement logic for magnetized gems
-        if (gem.getData('isMagnetized')) {
-            const angle = Phaser.Math.Angle.Between(gem.x, gem.y, this.player.x, this.player.y);
-            const speed = 400; // Suck in speed
-            gem.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
-        }
-    });
-
-    // Passive update
-    if (this.characterConfig.passive.onUpdate) {
-      const ctx = this.getCharacterContext();
-      this.characterConfig.passive.onUpdate(ctx, delta);
-    }
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Map Generation
-  // ─────────────────────────────────────────────────────────────────────────────
-  private createDefaultMap(): void {
-    // This creates a 64x64 green grid pattern in memory
-    if (!this.textures.exists('grid_bg')) {
-      const graphics = this.add.graphics();
-      graphics.fillStyle(0x228b22); // Forest Green base
-      graphics.fillRect(0, 0, 64, 64);
-      graphics.lineStyle(2, 0x006400); // Darker Green lines
-      graphics.strokeRect(0, 0, 64, 64);
-      graphics.generateTexture('grid_bg', 64, 64);
-      graphics.destroy();
-    }
-
-    // Add the Background as a TileSprite (Repeating pattern)
-    // Note: MAP_WIDTH/HEIGHT are constants on the class
-    this.add.tileSprite(this.MAP_WIDTH / 2, this.MAP_HEIGHT / 2, this.MAP_WIDTH, this.MAP_HEIGHT, 'grid_bg');
-  }
-
-  private createCustomMap(data: CustomMapData): void {
-    const { width, height, tileSize, ground, objects } = data;
-    const mapWidthPixels = width * tileSize;
-    const mapHeightPixels = height * tileSize;
-    
-    // Update Physics Bounds to match custom map
-    this.physics.world.setBounds(0, 0, mapWidthPixels, mapHeightPixels);
-    
-    // Create Tilemap
-    const map = this.make.tilemap({
-        tileWidth: tileSize,
-        tileHeight: tileSize,
-        width,
-        height
-    });
-    
-    // 1. Collect all unique tilesets needed
-    const usedTilesets = new Set<string>();
-    if (data.palette) {
-        data.palette.forEach(p => usedTilesets.add(p.set));
-    } else {
-        // Legacy/Editor Fallback: Scan layers for unique tilesets
-        const scanLayer = (layer: (number | import('@/game/types/map').TileData)[][]) => {
-            layer.forEach(row => row.forEach(cell => {
-                if (typeof cell !== 'number' && cell.set) {
-                    usedTilesets.add(cell.set);
-                }
-            }));
-        };
-        scanLayer(ground);
-        scanLayer(objects);
-
-        if (usedTilesets.size === 0) {
-            usedTilesets.add('Outside.png'); // Default fallback
-        }
-    }
-
-    // 2. Add Tilesets to map & Build GID Map
-    const tilesetObjects: Phaser.Tilemaps.Tileset[] = [];
-    const tilesetGidMap = new Map<string, number>();
-    
-    // Manually manage GID offsets to prevent overlaps (GID 0 is empty)
-    let currentGidOffset = 1;
-
-    usedTilesets.forEach(filename => {
-       // Note: Preloader loads keys matching filenames
-       // We explicitly provide the firstGid to ensure unique ranges
-       const tileset = map.addTilesetImage(filename, filename, undefined, undefined, undefined, undefined, currentGidOffset);
-       if (tileset) {
-           tilesetObjects.push(tileset);
-           tilesetGidMap.set(filename, tileset.firstgid);
-           // Increment offset by the number of tiles in this set
-           currentGidOffset += tileset.total;
-       } else {
-           console.warn(`[MainScene] Tileset ${filename} not found!`);
-       }
-    });
-
-    if (tilesetObjects.length === 0) {
-        // Ultimate fallback
-        this.createDefaultMap();
-        return;
-    }
-
-    // 3. Create Layers (Passing ALL tilesets allows multi-tileset layers)
-    const groundLayer = map.createBlankLayer('Ground', tilesetObjects);
-    const objectsLayer = map.createBlankLayer('Objects', tilesetObjects);
-
-    // 4. Setup Tile Animations
-    this.tileAnimator = new TileAnimator();
-    TILE_ANIMATIONS.forEach(anim => {
-        const firstGid = tilesetGidMap.get(anim.tileset);
-        if (firstGid !== undefined) {
-            this.tileAnimator.addAnimation(anim.tileset, firstGid + anim.startId, anim.frameCount, anim.duration);
-        }
-    });
-
-    // 5. Helper to resolve GID from Map Cell
-    const resolveGid = (cell: number | import('@/game/types/map').TileData): number => {
-        // Handle -1
-        if (typeof cell === 'number' && cell === -1) return -1;
-        if (typeof cell !== 'number' && cell.id === -1) return -1;
-
-        let set: string = 'editor-tileset';
-        let localId: number = 0;
-
-        if (data.palette && typeof cell === 'number') {
-            // New Compressed Format: cell is index into palette
-            const p = data.palette[cell];
-            if (!p) return -1;
-            set = p.set;
-            localId = p.id;
-        } else if (typeof cell !== 'number') {
-            // Uncompressed Object Format
-            set = cell.set;
-            localId = cell.id;
-        } else {
-             // Legacy Number Format (assumes editor-tileset / Outside.png)
-             // But wait, if Preloader loads it as 'Outside.png', 'editor-tileset' might fail lookup if we changed keys.
-             // Preloader step 2 kept 'editor-tileset' key? 
-             // Correction: Preloader now loads explicit files. 'editor-tileset' was the old key.
-             // If legacy map uses uncompressed numbers, it assumes 'Outside.png' basically.
-             // Let's assume 'Outside.png' for legacy numbers.
-             set = 'Outside.png';
-             localId = cell;
-        }
-
-        const firstGid = tilesetGidMap.get(set);
-        if (firstGid === undefined) return -1; 
-        
-        return firstGid + localId;
-    };
-
-    if (groundLayer) {
-        for (let y = 0; y < height; y++) {
-            for (let x = 0; x < width; x++) {
-                const cell = ground[y][x];
-                const gid = resolveGid(cell);
-                if (gid !== -1) groundLayer.putTileAt(gid, x, y);
-            }
-        }
-        groundLayer.setDepth(-10);
-        this.groundTilemapLayer = groundLayer;
-    }
-    
-    if (objectsLayer) {
-        for (let y = 0; y < height; y++) {
-            for (let x = 0; x < width; x++) {
-                const cell = objects[y][x];
-                const gid = resolveGid(cell);
-                if (gid !== -1) objectsLayer.putTileAt(gid, x, y);
-            }
-        }
-        objectsLayer.setDepth(0);
-
-        // Enable physics collision for all non-empty tiles
-        objectsLayer.setCollisionByExclusion([-1]);
-        console.log('[MainScene] Collision enabled for Objects layer. Tiles with collision: ', objectsLayer.getTilesWithin().filter(t => t.collides).length);
-        
-        // Store reference for collider setup in create() (after player exists)
-        this.objectsTilemapLayer = objectsLayer;
+      activeCandies[i].setActive(false).setVisible(false);
     }
   }
 }
