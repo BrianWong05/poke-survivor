@@ -35,15 +35,9 @@ for (let i = 0; i < 16; i++) {
     const sw = (i&4)?1:0;
     const nw = (i&8)?1:0;
 
-    // Special Case: The Cross (All corners missing).
-    // User requested "No Dot", so we force this specific case to be Solid.
-    if (i === 0) {
-        add(1, 1, 1, 1, 1, 1, 1, 1);
-    } else {
-        // Otherwise (Loop corners, etc.), respect the missing diagonals
-        // so Inner Corners render correctly.
-        add(1, 1, 1, 1, ne, se, sw, nw);
-    }
+    // Otherwise (Loop corners, etc.), respect the missing diagonals
+    // so Inner Corners render correctly.
+    add(1, 1, 1, 1, ne, se, sw, nw);
 }
 
 // 32-35: L-Shapes with missing corner (Inner Corner)
@@ -165,5 +159,8 @@ export function getAutoTileId(n: boolean, ne: boolean, e: boolean, se: boolean, 
     if (w) val |= W;
     if (nw) val |= NW;
     
-    return BITMASK_TO_INDEX[val];
+    const result = BITMASK_TO_INDEX[val];
+    // Debug logging for T-junctions
+    // if (n&&e&&s&&w) console.log(`Mask: ${val.toString(2)} -> Index: ${result}`);
+    return result;
 }

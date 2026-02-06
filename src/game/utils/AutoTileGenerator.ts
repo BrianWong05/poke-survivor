@@ -9,7 +9,8 @@ export class AutoTileGenerator {
         BL_CORNER: { x: 0, y: 6 }, BR_CORNER: { x: 4, y: 6 },
         TOP_EDGE:  { x: 2, y: 2 }, BOT_EDGE:  { x: 2, y: 6 },
         LEFT_EDGE: { x: 0, y: 4 }, RIGHT_EDGE:{ x: 4, y: 4 },
-        CENTER:    { x: 2, y: 4 }
+        CENTER:    { x: 2, y: 4 },
+        INNER_CORNER: { x: 4, y: 0 } // Inner corner tile in Dirt.png
     };
 
     static generate(scene: Phaser.Scene, sourceKey: string, newKey: string) {
@@ -48,7 +49,6 @@ export class AutoTileGenerator {
     }
     
     private static drawQuad(rt: Phaser.GameObjects.RenderTexture, key: string, dx: number, dy: number, quad: string, vert: boolean, horiz: boolean, diag: boolean) {
-        const MINI = 16;
         let src = this.SRC.CENTER; // Default
 
         // Logic: "If I have a Vertical Neighbor but No Horizontal, I am a Vertical Edge"
@@ -70,11 +70,7 @@ export class AutoTileGenerator {
             // Connected Orthogonally (vert & horiz true)
             if (!diag) {
                 // Inner Corner! (Missing diagonal neighbor)
-                // Draw the Outer Corner graphic to create the "Inverse" corner effect
-                if (quad === 'TL') src = this.SRC.TL_CORNER;
-                if (quad === 'TR') src = this.SRC.TR_CORNER;
-                if (quad === 'BL') src = this.SRC.BL_CORNER;
-                if (quad === 'BR') src = this.SRC.BR_CORNER;
+                src = this.SRC.INNER_CORNER;
             } else {
                 // Full Center
                 src = this.SRC.CENTER;
@@ -87,38 +83,20 @@ export class AutoTileGenerator {
         if (quad === 'TR' || quad === 'BR') sx += 1;
         if (quad === 'BL' || quad === 'BR') sy += 1;
 
-        // Phaser RT Draw does not support 8 arguments (crop).
-        // Workaround: Create a temp image, crop it, draw it, destroy it.
-        // This is inefficient but runs only once at startup.
-        
-        // 1. Create a temporary image object
-        const stamp = rt.scene.make.image({ x: 0, y: 0, key: key, add: false });
-        
-        // 2. Crop the 16x16 mini-block
-        stamp.setCrop(sx * MINI, sy * MINI, MINI, MINI);
-        
-        // 3. Position it (Origin is Center by default, set to Top-Left)
-        stamp.setOrigin(0, 0);
-        
-        // 4. Draw to Render Texture
-        // Notes: 
-        // - rt.draw(stamp, dx, dy) draws stamp at (dx, dy) relative to RT origin
-        // - We need to adjust for the crop offset because specific Phaser versions draw the whole frame texture
-        //   ignoring crop when blitting to RT.
-        //   SAFE METHOD: Use the Frame directly if possible, or simple standard draw.
-        //   Actually, `rt.draw` with a Cropped Image Object WORKS in modern Phaser 3.
-        
-        // If the crop is ignored, we might see the whole image. 
-        // An alternative is using `drawFrame` but we don't have frames.
-        // Let's rely on setCrop working with the Image Game Object.
-        
-        // Correction: setCrop changes the texture UVs. rt.draw respects that.
-        // However, we MUST subtract the crop offset from the position if Phaser tries to be "smart"
-        // But usually setting origin(0,0) and pos(dx,dy) works.
-        
-        rt.draw(stamp, dx, dy);
-        
-        stamp.destroy();
+        this.blit(rt, key, dx, dy, sx, sy);
+    }
+
+    private static blit(rt: Phaser.GameObjects.RenderTexture, key: string, dx: number, dy: number, sx: number, sy: number) {
+        const MINI = 16;
+        const frameName = `mini_${sx}_${sy}`;
+        const texture = rt.scene.textures.get(key);
+
+        // Add a 16x16 frame for this mini-tile if it doesn't exist yet
+        if (!texture.has(frameName)) {
+            texture.add(frameName, 0, sx * MINI, sy * MINI, MINI, MINI);
+        }
+
+        rt.drawFrame(key, frameName, dx, dy);
     }
 
     // --- HELPER: Defines the shape of the 47 tiles ---

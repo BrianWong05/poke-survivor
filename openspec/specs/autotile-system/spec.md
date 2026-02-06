@@ -29,3 +29,10 @@ Placing a tile updates the appearance of its neighbors to ensure smooth connecti
 - **WHEN** a tile is placed at (x, y)
 - **THEN** the system must recalculate the bitmask and update the tile index for the placed tile
 - **AND** recursively update the 8 surrounding neighbors to reflect the new adjacency.
+
+### Requirement: Inner Corner Intersection Rendering
+The auto-tile system must be capable of rendering proper intersections for cross paths using dedicated "Inner Corner" graphics where available, specifically distinguishing this case from the solid center block used for fully filled areas.
+
+#### Scenario: Cross Path (Intersection)
+- **WHEN** a tile is connected orthogonally (North, South, East, West) but is missing a diagonal neighbor (e.g., North-West)
+- **THEN** only that specific quadrant should render as an "Inner Corner" (using the tile at `x:4, y:0` in Dirt.png), creating a concave corner effect instead of a solid fill.

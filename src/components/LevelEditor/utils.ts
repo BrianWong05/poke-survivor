@@ -7,7 +7,8 @@ const SRC = {
     BL_CORNER: { x: 0, y: 6 }, BR_CORNER: { x: 4, y: 6 },
     TOP_EDGE:  { x: 2, y: 2 }, BOT_EDGE:  { x: 2, y: 6 },
     LEFT_EDGE: { x: 0, y: 4 }, RIGHT_EDGE:{ x: 4, y: 4 },
-    CENTER:    { x: 2, y: 4 }
+    CENTER:    { x: 2, y: 4 },
+    INNER_CORNER: { x: 4, y: 0 }
 };
 
 export const generateAutoTileTexture = (sourceImg: HTMLImageElement): HTMLCanvasElement => {
@@ -85,12 +86,8 @@ const drawQuad = (
     } else {
         // Connected Orthogonally
         if (!diag) {
-             // Inner Corner! (Missing diagonal)
-             // Use Outer Corner graphic to create the "Inverse" corner effect
-             if (quad === 'TL') src = SRC.TL_CORNER;
-             if (quad === 'TR') src = SRC.TR_CORNER;
-             if (quad === 'BL') src = SRC.BL_CORNER;
-             if (quad === 'BR') src = SRC.BR_CORNER;
+             // Inner Corner! (Missing diagonal neighbor)
+             src = SRC.INNER_CORNER;
         } else {
              // Full Center
              src = SRC.CENTER;

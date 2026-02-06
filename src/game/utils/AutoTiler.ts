@@ -10,7 +10,7 @@ export class AutoTiler {
   ) {
     for (let dx = -1; dx <= 1; dx++) {
       for (let dy = -1; dy <= 1; dy++) {
-        this.refreshSingleTile(layer, x + dx, y + dy);
+        this.refreshSingleTile(layer, x + dx, y + dy, _tileTypeIndex);
       }
     }
   }
@@ -18,18 +18,23 @@ export class AutoTiler {
   private static refreshSingleTile(
     layer: Phaser.Tilemaps.TilemapLayer,
     x: number,
-    y: number
+    y: number,
+    baseIndex: number
   ) {
     const tile = layer.getTileAt(x, y);
     // Only update if this tile exists and is part of the same "Auto Tile Set"
     // For now, we assume ANY tile is part of the set.
     // In a real app, you'd check: if (tile.properties.type !== 'ground') return;
     if (!tile) return;
+    
+    // Check if the tile is within the autotile range of this set
+    // (Assuming 47 tiles standard)
+    if (tile.index < baseIndex || tile.index >= baseIndex + 47) return;
 
     const check = (cx: number, cy: number) => {
       const t = layer.getTileAt(cx, cy);
-      // Return true if neighbor exists (is not empty)
-      return !!t;
+      // Return true if neighbor exists AND is part of the same set
+      return !!t && (t.index >= baseIndex && t.index < baseIndex + 47);
     };
 
     const autoId = getAutoTileId(
