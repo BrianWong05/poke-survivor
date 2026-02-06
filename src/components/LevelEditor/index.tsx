@@ -376,7 +376,7 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
     if (x < 0 || x >= mapSize.width || y < 0 || y >= mapSize.height) return;
 
     const updateGrid = (prev: TileData[][]) => {
-      const newGrid = prev.map(row => [...row]);
+      let newGrid = prev.map(row => [...row]);
       if (activeTool === 'eraser') {
         newGrid[y][x] = { ...emptyTile };
       } else if (activeTool === 'brush') {
@@ -393,6 +393,10 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
                 set: activeAsset,
                 type: activeTab
               };
+
+              if (activeTab === 'autoset') {
+                newGrid = updateAutoTileGrid(newGrid, tx, ty, activeAsset);
+              }
             }
           }
         }
@@ -500,33 +504,16 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
                      const targetX = minX + dx;
                      const targetY = minY + dy;
                      if (targetY < mapSize.height && targetX < mapSize.width) {
-                          if (activeTool === 'eraser') {
-                              newGrid[targetY][targetX] = { ...emptyTile };
-                          } else {
-                              const patternX = dx % selection.w;
-                              const patternY = dy % selection.h;
-                              const tilesPerRow = tilesetRef.current ? Math.floor(tilesetRef.current.width / TILE_SIZE) : 1;
-                              const sourceId = (selection.y + patternY) * tilesPerRow + (selection.x + patternX);
-                              
-                              newGrid[targetY][targetX] = {
-                                  id: sourceId,
-                                  set: activeAsset,
-                                  type: activeTab
-                              };
-
-                              // If using 'brush' with 'autoset', we just place the tile without recursive neighbors update
-                              // However, if we want it to look "half-smart", we could run updateAutoTileGrid ONCE for this tile.
-                              // But the request says "brush function should be rename to fill, and create a brush function"
-                              // and the brush should be "strictly single-tile".
-                              // To be "strictly single-tile" for autotiles, we should probably still run the autotile ID calculation 
-                              // for THIS tile based on its current neighbors, but NOT update neighbors.
-                              if (activeTool === 'brush' && activeTab === 'autoset') {
-                                  // updateAutoTileGrid usually returns a new grid with recursive updates.
-                                  // We'll stick to the simplest interpretation for now: it places the tile as-is.
-                                  // But wait, the user expects 'brush' to work for single tiles.
-                                  // If I place tile ID 0 from an autoset, it might look wrong if it doesn't check neighbors.
-                              }
-                          }
+                         const patternX = dx % selection.w;
+                         const patternY = dy % selection.h;
+                         const tilesPerRow = tilesetRef.current ? Math.floor(tilesetRef.current.width / TILE_SIZE) : 1;
+                         const sourceId = (selection.y + patternY) * tilesPerRow + (selection.x + patternX);
+                         
+                         newGrid[targetY][targetX] = {
+                             id: sourceId,
+                             set: activeAsset,
+                             type: activeTab
+                         };
                      }
                  }
              }
