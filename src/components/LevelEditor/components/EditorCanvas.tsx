@@ -6,6 +6,7 @@ import { TILE_SIZE } from '@/components/LevelEditor/constants';
 interface EditorCanvasProps {
   mapSize: MapSize;
   layers: LayerData[];
+  currentLayerId: string;
   spawnPoint: { x: number, y: number } | null;
   activeTool: ToolType;
   activeAsset: string;
@@ -19,7 +20,7 @@ interface EditorCanvasProps {
 }
 
 export const EditorCanvas: React.FC<EditorCanvasProps> = ({
-  mapSize, layers, spawnPoint, activeTool, activeAsset, activeTab, selection, imageCache, imagesLoaded,
+  mapSize, layers, currentLayerId, spawnPoint, activeTool, activeAsset, activeTab, selection, imageCache, imagesLoaded,
   onPaint, onDragEnd
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -51,10 +52,11 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     ctx.fillStyle = '#1a1a1a';
     ctx.fillRect(0, 0, mapSize.width * TILE_SIZE, mapSize.height * TILE_SIZE);
 
-    // Render layers in order, skipping hidden ones
+    // Render layers in order, skipping hidden ones; dim non-active layers
     for (const layer of layers) {
       if (!layer.visible) continue;
-      layer.tiles.forEach((row, y) => row.forEach((tile, x) => drawTile(ctx, tile, x, y, 1.0)));
+      const alpha = layer.id === currentLayerId ? 1.0 : 0.4;
+      layer.tiles.forEach((row, y) => row.forEach((tile, x) => drawTile(ctx, tile, x, y, alpha)));
     }
 
     // Spawn
@@ -86,6 +88,13 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
        const h = (maxY - minY + 1) * TILE_SIZE;
 
        if (activeTool === 'eraser') {
+         const ex = dragCurrent.current.x;
+         const ey = dragCurrent.current.y;
+         ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+         ctx.fillRect(ex * TILE_SIZE, ey * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+         ctx.strokeStyle = '#ff0000';
+         ctx.strokeRect(ex * TILE_SIZE, ey * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+       } else if (activeTool === 'area-eraser') {
          ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
          ctx.fillRect(minX * TILE_SIZE, minY * TILE_SIZE, w, h);
          ctx.strokeStyle = '#ff0000';
@@ -102,7 +111,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
        }
     }
 
-  }, [mapSize, layers, spawnPoint, activeTool, selection, activeAsset, activeTab, drawTile, imagesLoaded]);
+  }, [mapSize, layers, currentLayerId, spawnPoint, activeTool, selection, activeAsset, activeTab, drawTile, imagesLoaded]);
 
   useEffect(() => { render(); }, [render]);
 

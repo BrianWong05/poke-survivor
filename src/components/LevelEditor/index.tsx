@@ -75,11 +75,30 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
       }
       return newGrid;
     });
-  }, [activeTool, activeAsset, activeTab, selection, mapState, imageCache]);
+  }, [activeTool, activeAsset, activeTab, selection, mapState.mapSize, mapState.currentLayerId, mapState.saveHistory, mapState.setCurrentLayerTiles, imageCache]);
 
   const handleDragEnd = useCallback((start: {x:number, y:number}, end: {x:number, y:number}) => {
     if (activeTool === 'spawn') {
       mapState.setSpawnPoint({ x: start.x, y: start.y });
+      return;
+    }
+
+    if (activeTool === 'area-eraser') {
+      mapState.saveHistory();
+      const minX = Math.max(0, Math.min(start.x, end.x));
+      const maxX = Math.min(mapState.mapSize.width - 1, Math.max(start.x, end.x));
+      const minY = Math.max(0, Math.min(start.y, end.y));
+      const maxY = Math.min(mapState.mapSize.height - 1, Math.max(start.y, end.y));
+
+      mapState.setCurrentLayerTiles((prev: TileData[][]) => {
+        const newGrid = prev.map(row => [...row]);
+        for (let y = minY; y <= maxY; y++) {
+          for (let x = minX; x <= maxX; x++) {
+            newGrid[y][x] = { ...EMPTY_TILE };
+          }
+        }
+        return newGrid;
+      });
       return;
     }
 
@@ -115,7 +134,7 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
         return newGrid;
       });
     }
-  }, [activeTool, activeAsset, activeTab, selection, mapState, imageCache]);
+  }, [activeTool, activeAsset, activeTab, selection, mapState.currentLayerId, mapState.setSpawnPoint, mapState.saveHistory, mapState.setCurrentLayerTiles, imageCache]);
 
   const getPaletteSource = () => {
      if (!activeAsset || !imagesLoaded) return undefined;
@@ -213,6 +232,7 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
         <EditorCanvas
            mapSize={mapState.mapSize}
            layers={mapState.layers}
+           currentLayerId={mapState.currentLayerId}
            spawnPoint={mapState.spawnPoint}
            activeTool={activeTool}
            activeAsset={activeAsset}

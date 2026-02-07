@@ -106,16 +106,19 @@ export const EditorSidebar: React.FC<SidebarProps> = (props) => {
         </div>
 
         <div className="settings-row" style={{ marginTop: '0.5rem' }}>
-           {(['brush', 'fill', 'eraser', 'spawn'] as ToolType[]).map(tool => (
-             <button
-               key={tool}
-               className={`layer-btn ${activeTool === tool ? 'active' : ''}`}
-               onClick={() => onToolChange(tool)}
-               title={tool}
-             >
-               {tool === 'brush' ? '🖌' : tool === 'fill' ? '🪣' : tool === 'eraser' ? '⌫' : '📍'} {tool}
-             </button>
-           ))}
+           {(['brush', 'fill', 'eraser', 'area-eraser', 'spawn'] as ToolType[]).map(tool => {
+             const label = { brush: '🖌 brush', fill: '🪣 fill', eraser: '⌫ eraser', 'area-eraser': '🗑 area erase', spawn: '📍 spawn' }[tool];
+             return (
+               <button
+                 key={tool}
+                 className={`layer-btn ${activeTool === tool ? 'active' : ''}`}
+                 onClick={() => onToolChange(tool)}
+                 title={tool}
+               >
+                 {label}
+               </button>
+             );
+           })}
          </div>
       </div>
 

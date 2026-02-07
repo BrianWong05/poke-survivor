@@ -1,6 +1,6 @@
 import type { TileData } from '@/game/types/map';
 
-export type ToolType = 'brush' | 'fill' | 'eraser' | 'spawn';
+export type ToolType = 'brush' | 'fill' | 'eraser' | 'area-eraser' | 'spawn';
 export type AssetTab = 'tileset' | 'autoset' | 'animations';
 
 export interface SelectionState {
