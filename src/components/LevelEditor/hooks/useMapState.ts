@@ -136,8 +136,8 @@ export const useMapState = (initialData?: CustomMapData) => {
   }, [redoStack, layers, mapSize, spawnPoint]);
 
   const resizeMap = useCallback((w: number, h: number) => {
-    const newW = Math.max(5, Math.min(100, w));
-    const newH = Math.max(5, Math.min(100, h));
+    const newW = Math.max(5, w);
+    const newH = Math.max(5, h);
     setMapSize({ width: newW, height: newH });
 
     setLayers(prev => prev.map(layer => ({
