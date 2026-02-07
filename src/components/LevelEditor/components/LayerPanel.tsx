@@ -9,16 +9,19 @@ interface LayerPanelProps {
   onRemoveLayer: (id: string) => void;
   onRenameLayer: (id: string, name: string) => void;
   onReorderLayer: (id: string, direction: 'up' | 'down') => void;
+  onMoveLayer: (id: string, toIndex: number) => void;
   onToggleVisibility: (id: string) => void;
   onToggleCollision: (id: string) => void;
 }
 
 export const LayerPanel: React.FC<LayerPanelProps> = ({
   layers, currentLayerId, onSelectLayer, onAddLayer, onRemoveLayer,
-  onRenameLayer, onReorderLayer, onToggleVisibility, onToggleCollision
+  onRenameLayer, onReorderLayer, onMoveLayer, onToggleVisibility, onToggleCollision
 }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
+  const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
 
   const handleDoubleClick = (layer: LayerData) => {
     setEditingId(layer.id);
@@ -37,20 +40,45 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
     if (e.key === 'Escape') setEditingId(null);
   };
 
+  const handleDragStart = (idx: number) => {
+    setDraggedIdx(idx);
+  };
+
+  const handleDragOver = (e: React.DragEvent, idx: number) => {
+    e.preventDefault();
+    setDragOverIdx(idx);
+  };
+
+  const handleDrop = (targetIdx: number) => {
+    if (draggedIdx !== null && draggedIdx !== targetIdx) {
+      const draggedLayer = layers[draggedIdx];
+      onMoveLayer(draggedLayer.id, targetIdx);
+    }
+    setDraggedIdx(null);
+    setDragOverIdx(null);
+  };
+
   return (
-    <div className="layer-panel">
+    <div className="layer-panel" onDragLeave={() => setDragOverIdx(null)}>
       <div className="layer-panel-header">
         <span>Layers</span>
       </div>
       <div className="layer-list">
-        {[...layers].reverse().map((layer, _revIdx) => {
+        {[...layers].reverse().map((layer) => {
           const idx = layers.indexOf(layer);
           const isActive = layer.id === currentLayerId;
+          const isDragging = draggedIdx === idx;
+          const isDragOver = dragOverIdx === idx;
+
           return (
             <div
               key={layer.id}
-              className={`layer-row ${isActive ? 'active' : ''}`}
+              className={`layer-row ${isActive ? 'active' : ''} ${isDragging ? 'dragging' : ''} ${isDragOver ? 'drag-over' : ''}`}
               onClick={() => onSelectLayer(layer.id)}
+              draggable
+              onDragStart={() => handleDragStart(idx)}
+              onDragOver={(e) => handleDragOver(e, idx)}
+              onDrop={() => handleDrop(idx)}
             >
               <button
                 className={`layer-visibility-btn ${layer.visible ? '' : 'hidden-layer'}`}

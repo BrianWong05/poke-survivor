@@ -204,6 +204,7 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
         onRemoveLayer={mapState.removeLayer}
         onRenameLayer={mapState.renameLayer}
         onReorderLayer={mapState.reorderLayer}
+        onMoveLayer={mapState.moveLayer}
         onToggleVisibility={mapState.toggleLayerVisibility}
         onToggleCollision={mapState.toggleLayerCollision}
         canUndo={mapState.history.length > 0}

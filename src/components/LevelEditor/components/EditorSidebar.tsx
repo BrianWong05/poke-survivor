@@ -19,6 +19,7 @@ interface SidebarProps {
   onRemoveLayer: (id: string) => void;
   onRenameLayer: (id: string, name: string) => void;
   onReorderLayer: (id: string, direction: 'up' | 'down') => void;
+  onMoveLayer: (id: string, toIndex: number) => void;
   onToggleVisibility: (id: string) => void;
   onToggleCollision: (id: string) => void;
 
@@ -50,7 +51,7 @@ export const EditorSidebar: React.FC<SidebarProps> = (props) => {
   const {
     mapSize, onResize, activeTool, onToolChange,
     layers, currentLayerId, onSelectLayer, onAddLayer, onRemoveLayer,
-    onRenameLayer, onReorderLayer, onToggleVisibility, onToggleCollision,
+    onRenameLayer, onReorderLayer, onMoveLayer, onToggleVisibility, onToggleCollision,
     canUndo, canRedo, onUndo, onRedo, onSave, onLoad, onPlay, onExit,
     activeTab, onTabChange, activeAsset, onAssetChange, assetOptions,
     paletteImageSource, selection, onPaletteSelection, imageCache
@@ -131,6 +132,7 @@ export const EditorSidebar: React.FC<SidebarProps> = (props) => {
         onRemoveLayer={onRemoveLayer}
         onRenameLayer={onRenameLayer}
         onReorderLayer={onReorderLayer}
+        onMoveLayer={onMoveLayer}
         onToggleVisibility={onToggleVisibility}
         onToggleCollision={onToggleCollision}
       />

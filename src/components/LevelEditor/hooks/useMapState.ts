@@ -194,6 +194,19 @@ export const useMapState = (initialData?: CustomMapData) => {
     });
   }, []);
 
+  const moveLayer = useCallback((id: string, toIndex: number) => {
+    setLayers(prev => {
+      const fromIndex = prev.findIndex(l => l.id === id);
+      if (fromIndex === -1 || toIndex < 0 || toIndex >= prev.length || fromIndex === toIndex) {
+        return prev;
+      }
+      const next = [...prev];
+      const [movedLayer] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, movedLayer);
+      return next;
+    });
+  }, []);
+
   const toggleLayerVisibility = useCallback((id: string) => {
     setLayers(prev => prev.map(l => l.id === id ? { ...l, visible: !l.visible } : l));
   }, []);
@@ -253,7 +266,7 @@ export const useMapState = (initialData?: CustomMapData) => {
     spawnPoint, setSpawnPoint,
     history, redoStack,
     saveHistory, undo, redo,
-    addLayer, removeLayer, renameLayer, reorderLayer,
+    addLayer, removeLayer, renameLayer, reorderLayer, moveLayer,
     toggleLayerVisibility, toggleLayerCollision,
     loadFromData,
   };

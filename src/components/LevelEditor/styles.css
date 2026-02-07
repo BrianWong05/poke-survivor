@@ -120,6 +120,22 @@
   border-color: #4CAF50;
 }
 
+.layer-row.dragging {
+  opacity: 0.5;
+  background: #444;
+  border: 1px dashed #777;
+}
+
+.layer-row.drag-over {
+  border-top: 2px solid #4CAF50;
+  transform: translateY(2px);
+  background: #3d3d3d;
+}
+
+.layer-row {
+  transition: transform 0.15s ease, background 0.15s ease, border 0.1s ease;
+}
+
 .layer-visibility-btn {
   background: none;
   border: none;
