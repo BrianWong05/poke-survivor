@@ -246,8 +246,7 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
         imageCache={imageCache.current}
       />
 
-      <div className="flex-1 overflow-auto relative bg-black flex">
-        <div className="m-auto" style={{ padding: '20px' }}>
+      <div className="flex-1 overflow-auto relative bg-black grid place-items-center" style={{ padding: '20px' }}>
           <EditorCanvas
              mapSize={mapState.mapSize}
              layers={mapState.layers}
@@ -262,7 +261,6 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
              onPaint={handlePaint}
              onDragEnd={handleDragEnd}
           />
-        </div>
       </div>
 
       <LoadModal
