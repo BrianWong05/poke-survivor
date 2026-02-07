@@ -2,9 +2,7 @@
 
 ## Purpose
 The Editor Layers system provides dynamic layer management for the Level Editor, allowing users to create, configure, and organize multiple tile layers for richer map composition.
-
 ## Requirements
-
 ### Requirement: Layer Data Model
 Each layer SHALL be represented as an object with a unique ID, user-defined name, a 2D tile grid, a visibility flag, and a collision flag.
 
@@ -71,7 +69,11 @@ The editor SHALL allow the user to change the rendering order of layers.
 - **THEN** the layer SHALL swap position with the layer below it
 - **AND** the canvas SHALL re-render with the updated order
 
----
+#### Scenario: Drag and drop layer
+- **WHEN** the user drags a layer row and drops it at a new position in the list
+- **THEN** the layer SHALL be moved to the target position
+- **AND** the rendering order SHALL be updated accordingly
+- **AND** the canvas SHALL re-render with the updated order
 
 ### Requirement: Layer Visibility Toggle
 Each layer SHALL have a visibility toggle that controls whether it is rendered on the editor canvas.
@@ -189,3 +191,4 @@ When the map is resized, all layers SHALL be resized to match.
 - **WHEN** the user resizes the map to new dimensions W x H
 - **THEN** every layer's tile grid SHALL be resized to W x H
 - **AND** existing tile data within the new bounds SHALL be preserved
+
