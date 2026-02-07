@@ -224,7 +224,16 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
         onPlay={() => onPlay(constructMapData())}
         onExit={onExit}
         activeTab={activeTab}
-        onTabChange={(t) => { setActiveTab(t); if(t !== 'animations') setActiveAsset(''); }}
+        onTabChange={(t) => { 
+          setActiveTab(t); 
+          if(t === 'animations') {
+             setActiveAsset('');
+          } else {
+             const options = t === 'tileset' ? Object.keys(assets.tilesets) : Object.keys(assets.autosets);
+             const first = options.sort()[0] || '';
+             setActiveAsset(first);
+          }
+        }}
         activeAsset={activeAsset}
         onAssetChange={setActiveAsset}
         assetOptions={{

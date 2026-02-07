@@ -159,31 +159,6 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
                 >
                     <Trash2 size={14} />
                 </button>
-
-                {/* Hover actions */}
-                <div className="hidden group-hover:flex gap-0.5 absolute right-1 bg-[#1e1e1e] px-1 rounded-lg border border-zinc-700 shadow-xl z-10">
-                    <button
-                        className="p-1 text-zinc-500 hover:text-white rounded disabled:opacity-30"
-                        onClick={(e) => { e.stopPropagation(); onReorderLayer(layer.id, 'down'); }}
-                        disabled={idx === layers.length - 1} 
-                    >
-                        <MoveUp size={12} />
-                    </button>
-                    <button
-                        className="p-1 text-zinc-500 hover:text-white rounded disabled:opacity-30"
-                        onClick={(e) => { e.stopPropagation(); onReorderLayer(layer.id, 'up'); }}
-                        disabled={idx === 0}
-                    >
-                        <MoveDown size={12} />
-                    </button>
-                    <button
-                        className="p-1 text-zinc-600 hover:text-red-500 rounded disabled:opacity-30"
-                        onClick={(e) => handleDelete(e, layer.id, layer.name)}
-                        disabled={layers.length <= 1}
-                    >
-                        <Trash2 size={12} />
-                    </button>
-                </div>
               </div>
             </div>
           );
