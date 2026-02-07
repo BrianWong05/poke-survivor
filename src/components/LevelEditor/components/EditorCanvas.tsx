@@ -12,13 +12,14 @@ interface EditorCanvasProps {
   activeTab: AssetTab;
   selection: SelectionState;
   imageCache: Record<string, HTMLImageElement | HTMLCanvasElement>;
+  imagesLoaded: boolean;
 
   onPaint: (x: number, y: number, isDragging: boolean) => void;
   onDragEnd: (start: {x: number, y: number}, end: {x: number, y: number}) => void;
 }
 
 export const EditorCanvas: React.FC<EditorCanvasProps> = ({
-  mapSize, layers, spawnPoint, activeTool, activeAsset, activeTab, selection, imageCache,
+  mapSize, layers, spawnPoint, activeTool, activeAsset, activeTab, selection, imageCache, imagesLoaded,
   onPaint, onDragEnd
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -101,7 +102,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
        }
     }
 
-  }, [mapSize, layers, spawnPoint, activeTool, selection, activeAsset, activeTab, drawTile]);
+  }, [mapSize, layers, spawnPoint, activeTool, selection, activeAsset, activeTab, drawTile, imagesLoaded]);
 
   useEffect(() => { render(); }, [render]);
 

@@ -219,6 +219,7 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
            activeTab={activeTab}
            selection={selection}
            imageCache={imageCache.current}
+           imagesLoaded={imagesLoaded}
            onPaint={handlePaint}
            onDragEnd={handleDragEnd}
         />
