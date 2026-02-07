@@ -164,17 +164,19 @@ export const EditorSidebar: React.FC<SidebarProps> = (props) => {
            ))}
          </div>
 
-         {activeTab !== 'animations' ? (
-            <>
-              <div className="asset-selector">
-                <select className="asset-select" value={activeAsset} onChange={(e) => onAssetChange(e.target.value)}>
-                   {(activeTab === 'tileset' ? assetOptions.tilesets : assetOptions.autosets).map(opt => (
-                     <option key={opt} value={opt}>{opt}</option>
-                   ))}
-                </select>
-              </div>
+         {activeTab !== 'animations' && (
+            <div className="asset-selector">
+              <select className="asset-select" value={activeAsset} onChange={(e) => onAssetChange(e.target.value)}>
+                 {(activeTab === 'tileset' ? assetOptions.tilesets : assetOptions.autosets).map(opt => (
+                   <option key={opt} value={opt}>{opt}</option>
+                 ))}
+              </select>
+            </div>
+         )}
 
-              {paletteImageSource && (
+         <div className="palette-scroll-area">
+           {activeTab !== 'animations' ? (
+              paletteImageSource && (
                 <div className="palette-wrapper">
                   <img
                     src={paletteImageSource}
@@ -192,21 +194,21 @@ export const EditorSidebar: React.FC<SidebarProps> = (props) => {
                     }}
                   />
                 </div>
-              )}
-            </>
-         ) : (
-            <AnimationSelector
-               onSelect={(set, startId) => {
-                   onAssetChange(set);
-                   const asset = imageCache[set];
-                   const cols = asset ? Math.floor(asset.width / TILE_SIZE) : 1;
-                   onPaletteSelection({ x: startId % cols, y: Math.floor(startId / cols), w: 1, h: 1 });
-               }}
-               activeAsset={activeAsset}
-               activeId={0}
-               imageCache={imageCache}
-            />
-         )}
+              )
+           ) : (
+              <AnimationSelector
+                 onSelect={(set, startId) => {
+                     onAssetChange(set);
+                     const asset = imageCache[set];
+                     const cols = asset ? Math.floor(asset.width / TILE_SIZE) : 1;
+                     onPaletteSelection({ x: startId % cols, y: Math.floor(startId / cols), w: 1, h: 1 });
+                 }}
+                 activeAsset={activeAsset}
+                 activeId={0}
+                 imageCache={imageCache}
+              />
+           )}
+         </div>
       </div>
     </div>
   );
