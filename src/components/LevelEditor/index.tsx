@@ -246,7 +246,7 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
         imageCache={imageCache.current}
       />
 
-      <div className="flex-1 overflow-auto relative bg-black flex justify-center items-start p-10">
+      <div className="flex-1 overflow-auto relative bg-black flex justify-center items-center">
         <EditorCanvas
            mapSize={mapState.mapSize}
            layers={mapState.layers}
