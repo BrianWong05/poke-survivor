@@ -10,8 +10,8 @@ const createEmptyGrid = (width: number, height: number): TileData[][] =>
   Array(height).fill(0).map(() => Array(width).fill(0).map(() => ({ ...EMPTY_TILE })));
 
 const createDefaultLayers = (width: number, height: number): LayerData[] => [
-  { id: generateLayerId(), name: 'Ground', tiles: createEmptyGrid(width, height), visible: true, collision: false },
-  { id: generateLayerId(), name: 'Objects', tiles: createEmptyGrid(width, height), visible: true, collision: true },
+  { id: generateLayerId(), name: 'Ground', tiles: createEmptyGrid(width, height), visible: true, collision: false, locked: false },
+  { id: generateLayerId(), name: 'Objects', tiles: createEmptyGrid(width, height), visible: true, collision: true, locked: false },
 ];
 
 const normalizeGrid = (grid: (number | TileData)[][], palette?: TileData[]): TileData[][] => {
@@ -36,12 +36,13 @@ const hydrateLayersFromData = (data: CustomMapData): LayerData[] => {
       tiles: normalizeGrid(sl.tiles, data.palette),
       visible: true,
       collision: sl.collision,
+      locked: sl.locked ?? false,
     }));
   }
   // Legacy: construct from ground/objects
   return [
-    { id: generateLayerId(), name: 'Ground', tiles: normalizeGrid(data.ground, data.palette), visible: true, collision: false },
-    { id: generateLayerId(), name: 'Objects', tiles: normalizeGrid(data.objects, data.palette), visible: true, collision: true },
+    { id: generateLayerId(), name: 'Ground', tiles: normalizeGrid(data.ground, data.palette), visible: true, collision: false, locked: false },
+    { id: generateLayerId(), name: 'Objects', tiles: normalizeGrid(data.objects, data.palette), visible: true, collision: true, locked: false },
   ];
 };
 
@@ -157,6 +158,7 @@ export const useMapState = (initialData?: CustomMapData) => {
       tiles: createEmptyGrid(mapSize.width, mapSize.height),
       visible: true,
       collision: false,
+      locked: false,
     };
     setLayers(prev => [...prev, newLayer]);
     setCurrentLayerId(newLayer.id);
@@ -215,6 +217,10 @@ export const useMapState = (initialData?: CustomMapData) => {
     setLayers(prev => prev.map(l => l.id === id ? { ...l, collision: !l.collision } : l));
   }, []);
 
+  const toggleLayerLock = useCallback((id: string) => {
+    setLayers(prev => prev.map(l => l.id === id ? { ...l, locked: !l.locked } : l));
+  }, []);
+
   // Computed: current layer tiles
   const currentLayerTiles = useMemo(() => {
     const layer = layers.find(l => l.id === currentLayerId);
@@ -267,7 +273,7 @@ export const useMapState = (initialData?: CustomMapData) => {
     history, redoStack,
     saveHistory, undo, redo,
     addLayer, removeLayer, renameLayer, reorderLayer, moveLayer,
-    toggleLayerVisibility, toggleLayerCollision,
+    toggleLayerVisibility, toggleLayerCollision, toggleLayerLock,
     loadFromData,
   };
 };

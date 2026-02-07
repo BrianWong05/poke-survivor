@@ -9,6 +9,7 @@ export interface SerializedLayer {
   name: string;
   tiles: number[][]; // Palette indices
   collision: boolean;
+  locked?: boolean;
 }
 
 export interface CustomMapData {

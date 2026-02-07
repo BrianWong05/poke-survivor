@@ -44,6 +44,10 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
 
   const handlePaint = useCallback((x: number, y: number, isDragging: boolean) => {
     if (x < 0 || x >= mapState.mapSize.width || y < 0 || y >= mapState.mapSize.height) return;
+    
+    // Check if current layer is locked
+    const currentLayer = mapState.layers.find(l => l.id === mapState.currentLayerId);
+    if (currentLayer?.locked) return;
 
     // Save history only on the start of a stroke
     if (!isDragging) mapState.saveHistory();
@@ -74,9 +78,13 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
       }
       return newGrid;
     });
-  }, [activeTool, activeAsset, activeTab, selection, mapState.mapSize, mapState.currentLayerId, mapState.saveHistory, mapState.setCurrentLayerTiles, imageCache]);
+  }, [activeTool, activeAsset, activeTab, selection, mapState.mapSize, mapState.currentLayerId, mapState.layers, mapState.saveHistory, mapState.setCurrentLayerTiles, imageCache]);
 
   const handleDragEnd = useCallback((start: {x:number, y:number}, end: {x:number, y:number}) => {
+    // Check if current layer is locked (except for spawn tool which is global/meta)
+    const currentLayer = mapState.layers.find(l => l.id === mapState.currentLayerId);
+    if (activeTool !== 'spawn' && currentLayer?.locked) return;
+
     if (activeTool === 'spawn') {
       mapState.setSpawnPoint({ x: start.x, y: start.y });
       return;
@@ -133,7 +141,7 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
         return newGrid;
       });
     }
-  }, [activeTool, activeAsset, activeTab, selection, mapState.currentLayerId, mapState.setSpawnPoint, mapState.saveHistory, mapState.setCurrentLayerTiles, imageCache]);
+  }, [activeTool, activeAsset, activeTab, selection, mapState.currentLayerId, mapState.layers, mapState.setSpawnPoint, mapState.saveHistory, mapState.setCurrentLayerTiles, imageCache]);
 
   const getPaletteSource = () => {
      if (!activeAsset || !imagesLoaded) return undefined;
@@ -206,6 +214,7 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
         onMoveLayer={mapState.moveLayer}
         onToggleVisibility={mapState.toggleLayerVisibility}
         onToggleCollision={mapState.toggleLayerCollision}
+        onToggleLock={mapState.toggleLayerLock}
         canUndo={mapState.history.length > 0}
         canRedo={mapState.redoStack.length > 0}
         onUndo={mapState.undo}
@@ -228,7 +237,7 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
         imageCache={imageCache.current}
       />
 
-      <div className="flex-1 overflow-auto relative bg-black flex justify-center items-start p-8">
+      <div className="flex-1 overflow-auto relative bg-black flex justify-center items-start p-10">
         <EditorCanvas
            mapSize={mapState.mapSize}
            layers={mapState.layers}

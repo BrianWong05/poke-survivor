@@ -31,6 +31,7 @@ export const compressMapData = (
     name: layer.name,
     tiles: compressLayer(layer.tiles),
     collision: layer.collision,
+    locked: layer.locked,
   }));
 
   // Backward compatibility: populate ground/objects from first two layers

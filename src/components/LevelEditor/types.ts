@@ -21,6 +21,7 @@ export interface LayerData {
   tiles: TileData[][];
   visible: boolean;
   collision: boolean;
+  locked: boolean;
 }
 
 export interface EditorState {

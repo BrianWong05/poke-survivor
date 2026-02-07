@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Eye, EyeOff, Lock, Unlock, MoveUp, MoveDown, Trash2, Footprints } from 'lucide-react';
 import type { LayerData } from '@/components/LevelEditor/types';
 
 interface LayerPanelProps {
@@ -12,11 +13,12 @@ interface LayerPanelProps {
   onMoveLayer: (id: string, toIndex: number) => void;
   onToggleVisibility: (id: string) => void;
   onToggleCollision: (id: string) => void;
+  onToggleLock: (id: string) => void;
 }
 
 export const LayerPanel: React.FC<LayerPanelProps> = ({
   layers, currentLayerId, onSelectLayer, onAddLayer, onRemoveLayer,
-  onRenameLayer, onReorderLayer, onMoveLayer, onToggleVisibility, onToggleCollision
+  onRenameLayer, onReorderLayer, onMoveLayer, onToggleVisibility, onToggleCollision, onToggleLock
 }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
@@ -58,12 +60,17 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
     setDragOverIdx(null);
   };
 
+  const handleDelete = (e: React.MouseEvent, id: string, name: string) => {
+    e.stopPropagation();
+    if (layers.length <= 1) return;
+    if (window.confirm(`Are you sure you want to delete layer "${name}"?`)) {
+        onRemoveLayer(id);
+    }
+  };
+
   return (
-    <div className="bg-[#2a2a2a] border border-[#444] rounded p-2" onDragLeave={() => setDragOverIdx(null)}>
-      <div className="flex justify-between items-center mb-2 font-bold text-[0.85rem] text-[#ccc]">
-        <span>Layers</span>
-      </div>
-      <div className="flex flex-col gap-[2px] max-h-[200px] overflow-y-auto">
+    <div className="flex-1 flex flex-col gap-2 min-h-0" onDragLeave={() => setDragOverIdx(null)}>
+      <div className="flex-1 overflow-y-auto min-h-[80px] flex flex-col gap-1 pr-1 [ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {[...layers].reverse().map((layer) => {
           const idx = layers.indexOf(layer);
           const isActive = layer.id === currentLayerId;
@@ -73,80 +80,122 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
           return (
             <div
               key={layer.id}
-              className={`flex items-center gap-1 p-1 px-1.5 bg-[#333] border border-transparent rounded cursor-pointer text-[0.8rem] transition-[background,transform,border] duration-150 ${isActive ? 'bg-[#2a4a2a] border-[#4CAF50]' : 'hover:bg-[#3a3a3a]'} ${isDragging ? 'opacity-50 bg-[#444] border-dashed border-[#777]' : ''} ${isDragOver ? 'border-t-2 border-t-[#4CAF50] translate-y-0.5 bg-[#3d3d3d]' : ''}`}
+              className={`
+                group flex items-center justify-between px-3 h-9 rounded-lg cursor-pointer border border-transparent transition-all relative
+                ${isActive 
+                    ? 'bg-[#1e1e1e] border-zinc-700/50' 
+                    : 'bg-transparent text-zinc-400 hover:bg-[#1e1e1e]/40'
+                }
+                ${isDragging ? 'opacity-50 border-dashed border-zinc-500' : ''}
+                ${isDragOver ? 'border-t-2 border-t-green-500' : ''}
+              `}
               onClick={() => onSelectLayer(layer.id)}
               draggable
               onDragStart={() => handleDragStart(idx)}
               onDragOver={(e) => handleDragOver(e, idx)}
               onDrop={() => handleDrop(idx)}
             >
-              <button
-                className={`bg-none border-none cursor-pointer p-0 text-[0.8rem] min-w-[20px] text-center ${layer.visible ? 'text-[#aaa]' : 'text-[#555]'}`}
-                onClick={(e) => { e.stopPropagation(); onToggleVisibility(layer.id); }}
-                title={layer.visible ? 'Hide layer' : 'Show layer'}
-              >
-                {layer.visible ? '👁' : '—'}
-              </button>
-
-              {editingId === layer.id ? (
-                <input
-                  className="flex-1 bg-[#1a1a1a] border border-[#4CAF50] text-white p-0 px-1 text-[0.8rem] rounded outline-none"
-                  value={editName}
-                  onChange={e => setEditName(e.target.value)}
-                  onBlur={commitRename}
-                  onKeyDown={handleKeyDown}
-                  autoFocus
-                  onClick={e => e.stopPropagation()}
-                />
-              ) : (
-                <span
-                  className="flex-1 text-[#ddd] whitespace-nowrap overflow-hidden text-ellipsis select-none"
-                  onDoubleClick={(e) => { e.stopPropagation(); handleDoubleClick(layer); }}
+              {/* Left Side: Eye (Gold) + Name */}
+              <div className="flex items-center gap-3 overflow-hidden">
+                <div
+                  className={`flex items-center justify-center transition-colors ${layer.visible ? 'text-[#d97706]' : 'text-zinc-600'}`}
                 >
-                  {layer.name}
-                </span>
-              )}
+                  <Eye size={14} />
+                </div>
 
-              <button
-                className={`bg-none border cursor-pointer p-0 px-1 text-[0.7rem] font-bold rounded min-w-[18px] text-center ${layer.collision ? 'text-[#ff9800] border-[#ff9800]' : 'text-[#666] border-[#555]'}`}
-                onClick={(e) => { e.stopPropagation(); onToggleCollision(layer.id); }}
-                title={layer.collision ? 'Collision ON' : 'Collision OFF'}
-              >
-                {layer.collision ? 'C' : '·'}
-              </button>
-
-              <div className="flex flex-col gap-0">
-                <button
-                  className="bg-none border-none text-[#888] cursor-pointer p-0 text-[0.5rem] leading-none hover:text-white disabled:text-[#444] disabled:cursor-not-allowed"
-                  onClick={(e) => { e.stopPropagation(); onReorderLayer(layer.id, 'up'); }}
-                  disabled={idx === 0}
-                  title="Move down (render earlier)"
-                >
-                  ▼
-                </button>
-                <button
-                  className="bg-none border-none text-[#888] cursor-pointer p-0 text-[0.5rem] leading-none hover:text-white disabled:text-[#444] disabled:cursor-not-allowed"
-                  onClick={(e) => { e.stopPropagation(); onReorderLayer(layer.id, 'down'); }}
-                  disabled={idx === layers.length - 1}
-                  title="Move up (render later)"
-                >
-                  ▲
-                </button>
+                {editingId === layer.id ? (
+                  <input
+                    className="flex-1 min-w-0 bg-[#111] text-white px-1 py-0.5 text-xs rounded outline-none border border-green-600"
+                    value={editName}
+                    onChange={e => setEditName(e.target.value)}
+                    onBlur={commitRename}
+                    onKeyDown={handleKeyDown}
+                    autoFocus
+                    onClick={e => e.stopPropagation()}
+                  />
+                ) : (
+                  <span
+                    className={`text-xs truncate select-none ${isActive ? 'text-white font-medium' : 'text-zinc-500'}`}
+                    onDoubleClick={(e) => { e.stopPropagation(); handleDoubleClick(layer); }}
+                  >
+                    {layer.name}
+                  </span>
+                )}
               </div>
 
-              <button
-                className="bg-none border-none text-[#666] cursor-pointer p-0 px-0.5 text-[0.75rem] hover:text-[#e74c3c] disabled:text-[#444] disabled:cursor-not-allowed"
-                onClick={(e) => { e.stopPropagation(); onRemoveLayer(layer.id); }}
-                disabled={layers.length <= 1}
-                title="Delete layer"
-              >
-                ✕
-              </button>
+              {/* Right Side: Icons */}
+              <div className="flex items-center gap-2.5">
+                <button
+                    className={`p-1 rounded hover:bg-white/10 transition-colors ${layer.visible ? 'text-zinc-500' : 'text-zinc-700'}`}
+                    onClick={(e) => { e.stopPropagation(); onToggleVisibility(layer.id); }}
+                >
+                    {layer.visible ? <Eye size={14} /> : <EyeOff size={14} />}
+                </button>
+
+                <div className="text-zinc-700">
+                    <Lock size={14} />
+                </div>
+
+                <button
+                  className={`w-5 h-5 rounded flex items-center justify-center hover:bg-white/10 transition-colors ${layer.collision ? 'bg-[#3f3f46] text-white shadow-sm' : 'text-zinc-700'}`}
+                  onClick={(e) => { e.stopPropagation(); onToggleCollision(layer.id); }}
+                >
+                  <Footprints size={12} />
+                </button>
+
+                <button
+                  className={`p-1 rounded hover:bg-white/10 transition-colors ${layer.locked ? 'text-zinc-500' : 'text-zinc-700'}`}
+                  onClick={(e) => { e.stopPropagation(); onToggleLock(layer.id); }}
+                >
+                  {layer.locked ? <Lock size={14} /> : <Unlock size={14} />}
+                </button>
+
+                {/* Delete Button (Always Visible) */}
+                <button
+                    className={`p-1 rounded hover:bg-white/10 transition-colors text-zinc-700 hover:text-red-500 disabled:opacity-30 disabled:hover:text-zinc-700`}
+                    onClick={(e) => handleDelete(e, layer.id, layer.name)}
+                    disabled={layers.length <= 1}
+                    title="Delete Layer"
+                >
+                    <Trash2 size={14} />
+                </button>
+
+                {/* Hover actions */}
+                <div className="hidden group-hover:flex gap-0.5 absolute right-1 bg-[#1e1e1e] px-1 rounded-lg border border-zinc-700 shadow-xl z-10">
+                    <button
+                        className="p-1 text-zinc-500 hover:text-white rounded disabled:opacity-30"
+                        onClick={(e) => { e.stopPropagation(); onReorderLayer(layer.id, 'down'); }}
+                        disabled={idx === layers.length - 1} 
+                    >
+                        <MoveUp size={12} />
+                    </button>
+                    <button
+                        className="p-1 text-zinc-500 hover:text-white rounded disabled:opacity-30"
+                        onClick={(e) => { e.stopPropagation(); onReorderLayer(layer.id, 'up'); }}
+                        disabled={idx === 0}
+                    >
+                        <MoveDown size={12} />
+                    </button>
+                    <button
+                        className="p-1 text-zinc-600 hover:text-red-500 rounded disabled:opacity-30"
+                        onClick={(e) => handleDelete(e, layer.id, layer.name)}
+                        disabled={layers.length <= 1}
+                    >
+                        <Trash2 size={12} />
+                    </button>
+                </div>
+              </div>
             </div>
           );
         })}
       </div>
-      <button className="w-full p-1 mt-2 bg-[#333] border border-dashed border-[#555] text-[#aaa] cursor-pointer rounded text-[0.8rem] transition-all duration-150 hover:bg-[#3a3a3a] hover:border-[#4CAF50] hover:text-[#4CAF50]" onClick={onAddLayer}>+ Add Layer</button>
+      
+      <button 
+        className="w-full h-8 bg-transparent border border-[#2d2d2d] text-zinc-500 text-[11px] font-bold rounded-xl hover:border-zinc-400 hover:text-zinc-300 transition-all flex justify-center items-center gap-2 flex-shrink-0"
+        onClick={onAddLayer}
+      >
+        <span>+ ADD LAYER</span>
+      </button>
     </div>
   );
 };
