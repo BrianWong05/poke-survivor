@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { LayerPanel } from './LayerPanel';
 import { AnimationSelector } from '../AnimationSelector';
+import { ZoomControls } from './ZoomControls';
 import type { MapSize, ToolType, LayerData, SelectionState, AssetTab } from '../types';
 
 interface EditorSidebarProps {
@@ -51,6 +52,10 @@ interface EditorSidebarProps {
   selection: SelectionState;
   onPaletteSelection: (sel: SelectionState) => void;
   imageCache: Record<string, HTMLImageElement | HTMLCanvasElement>;
+  zoom: number;
+  onZoomIn: () => void;
+  onZoomOut: () => void;
+  onZoomReset: () => void;
 }
 
 export const EditorSidebar: React.FC<EditorSidebarProps> = ({
@@ -60,7 +65,8 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
   onSave, onLoad, onPlay, onExit,
   canUndo, canRedo, onUndo, onRedo,
   activeTab, onTabChange, activeAsset, onAssetChange, assetOptions,
-  paletteImageSource, selection, onPaletteSelection, imageCache
+  paletteImageSource, selection, onPaletteSelection, imageCache,
+  zoom, onZoomIn, onZoomOut, onZoomReset
 }) => {
   return (
     <div 
@@ -212,6 +218,24 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
              <span className="text-white text-xs font-bold">Save</span>
           </button>
         </div>
+      </div>
+
+      {/* VIEW Section */}
+      <div 
+        className="w-full bg-[#18181b] rounded-2xl flex flex-col shadow-lg"
+        style={{ padding: '16px', gap: '14px' }}
+      >
+        <div className="flex justify-between items-center text-zinc-400 text-[11px] font-bold tracking-wider px-1">
+          <span>VIEW</span>
+          <ChevronDown size={14} />
+        </div>
+
+        <ZoomControls 
+             zoom={zoom}
+             onZoomIn={onZoomIn}
+             onZoomOut={onZoomOut}
+             onZoomReset={onZoomReset}
+        />
       </div>
 
        {/* LAYERS Section */}

@@ -3,6 +3,10 @@ import type { TileData, CustomMapData } from '@/game/types/map';
 import { DEFAULT_WIDTH, DEFAULT_HEIGHT, EMPTY_TILE } from '@/components/LevelEditor/constants';
 import type { MapSize, EditorState, LayerData } from '@/components/LevelEditor/types';
 
+const MIN_ZOOM = 0.5;
+const MAX_ZOOM = 2.0;
+const ZOOM_STEP = 0.1;
+
 let layerCounter = 0;
 const generateLayerId = () => `layer-${Date.now()}-${++layerCounter}`;
 
@@ -59,6 +63,16 @@ export const useMapState = (initialData?: CustomMapData) => {
   );
 
   const [currentLayerId, setCurrentLayerId] = useState<string>(() => layers[0]?.id ?? '');
+  
+  // Zoom State
+  const [zoom, setZoomState] = useState(1.0);
+
+  const setZoom = useCallback((value: number | ((prev: number) => number)) => {
+    setZoomState(prev => {
+      const next = typeof value === 'function' ? value(prev) : value;
+      return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.round(next * 10) / 10));
+    });
+  }, []);
 
   // Sync initialData if it changes (e.g. returning from play test)
   useEffect(() => {
@@ -252,11 +266,20 @@ export const useMapState = (initialData?: CustomMapData) => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey) {
         if (e.shiftKey && e.key.toLowerCase() === 'z') {
-          e.preventDefault();
-          redo();
+           e.preventDefault();
+           redo();
         } else if (e.key === 'z') {
-          e.preventDefault();
-          undo();
+           e.preventDefault();
+           undo();
+        } else if (e.key === '=' || e.key === '+') {
+           e.preventDefault();
+           setZoom(z => z + ZOOM_STEP);
+        } else if (e.key === '-') {
+           e.preventDefault();
+           setZoom(z => z - ZOOM_STEP);
+        } else if (e.key === '0') {
+           e.preventDefault();
+           setZoom(1.0);
         }
       }
     };
@@ -275,5 +298,6 @@ export const useMapState = (initialData?: CustomMapData) => {
     addLayer, removeLayer, renameLayer, reorderLayer, moveLayer,
     toggleLayerVisibility, toggleLayerCollision, toggleLayerLock,
     loadFromData,
+    zoom, setZoom,
   };
 };

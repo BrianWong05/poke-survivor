@@ -244,9 +244,23 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
         selection={selection}
         onPaletteSelection={setSelection}
         imageCache={imageCache.current}
+        zoom={mapState.zoom}
+        onZoomIn={() => mapState.setZoom(z => z + 0.1)} // Using hardcoded step or export constant
+        onZoomOut={() => mapState.setZoom(z => z - 0.1)}
+        onZoomReset={() => mapState.setZoom(1.0)}
       />
 
-      <div className="flex-1 overflow-auto relative bg-black grid place-items-center" style={{ padding: '20px' }}>
+      <div 
+        className="flex-1 overflow-auto relative bg-black grid place-items-center" 
+        style={{ padding: '20px' }}
+        onWheel={(e) => {
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            if (e.deltaY < 0) mapState.setZoom(z => z + 0.1);
+            else mapState.setZoom(z => z - 0.1);
+          }
+        }}
+      >
           <EditorCanvas
              mapSize={mapState.mapSize}
              layers={mapState.layers}
@@ -260,6 +274,7 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
              imagesLoaded={imagesLoaded}
              onPaint={handlePaint}
              onDragEnd={handleDragEnd}
+             zoom={mapState.zoom}
           />
       </div>
 

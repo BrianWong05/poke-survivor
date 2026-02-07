@@ -17,11 +17,12 @@ interface EditorCanvasProps {
 
   onPaint: (x: number, y: number, isDragging: boolean) => void;
   onDragEnd: (start: {x: number, y: number}, end: {x: number, y: number}) => void;
+  zoom: number;
 }
 
 export const EditorCanvas: React.FC<EditorCanvasProps> = ({
   mapSize, layers, currentLayerId, spawnPoint, activeTool, activeAsset, activeTab, selection, imageCache, imagesLoaded,
-  onPaint, onDragEnd
+  onPaint, onDragEnd, zoom
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDragging = useRef(false);
@@ -117,8 +118,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
   const handleMouseDown = (e: React.MouseEvent) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    const x = Math.floor((e.clientX - rect.left) / TILE_SIZE);
-    const y = Math.floor((e.clientY - rect.top) / TILE_SIZE);
+    const x = Math.floor(((e.clientX - rect.left) / zoom) / TILE_SIZE);
+    const y = Math.floor(((e.clientY - rect.top) / zoom) / TILE_SIZE);
     isDragging.current = true;
     dragStart.current = { x, y };
     dragCurrent.current = { x, y };
@@ -129,8 +130,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDragging.current) return;
     const rect = e.currentTarget.getBoundingClientRect();
-    const x = Math.floor((e.clientX - rect.left) / TILE_SIZE);
-    const y = Math.floor((e.clientY - rect.top) / TILE_SIZE);
+    const x = Math.floor(((e.clientX - rect.left) / zoom) / TILE_SIZE);
+    const y = Math.floor(((e.clientY - rect.top) / zoom) / TILE_SIZE);
 
     if (x !== dragCurrent.current.x || y !== dragCurrent.current.y) {
       dragCurrent.current = { x, y };
@@ -150,7 +151,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
   return (
     <div className="shadow-[0_0_20px_rgba(0,0,0,0.5)]">
       <canvas
-        className="[image-rendering:pixelated] bg-[#1a1a1a] cursor-crosshair"
+        className="[image-rendering:pixelated] bg-[#1a1a1a] cursor-crosshair transform-origin-top-left"
+        style={{ transform: `scale(${zoom})`, transformOrigin: 'top left' }}
         ref={canvasRef}
         width={mapSize.width * TILE_SIZE}
         height={mapSize.height * TILE_SIZE}

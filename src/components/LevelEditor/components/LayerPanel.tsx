@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, Lock, Unlock, MoveUp, MoveDown, Trash2, Footprints } from 'lucide-react';
+import { Eye, EyeOff, Lock, Unlock, Trash2, Footprints } from 'lucide-react';
 import type { LayerData } from '@/components/LevelEditor/types';
 
 interface LayerPanelProps {
@@ -18,7 +18,7 @@ interface LayerPanelProps {
 
 export const LayerPanel: React.FC<LayerPanelProps> = ({
   layers, currentLayerId, onSelectLayer, onAddLayer, onRemoveLayer,
-  onRenameLayer, onReorderLayer, onMoveLayer, onToggleVisibility, onToggleCollision, onToggleLock
+  onRenameLayer, onMoveLayer, onToggleVisibility, onToggleCollision, onToggleLock
 }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');

@@ -564,6 +564,90 @@
             },
             {
               "type": "frame",
+              "id": "1qDlD",
+              "name": "VIEW Section",
+              "width": "fill_container",
+              "fill": "$bg_panel",
+              "cornerRadius": "$radius_xl",
+              "layout": "vertical",
+              "gap": 8,
+              "padding": 12,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "pzU0L",
+                  "name": "viewHeader",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "x2Nk3",
+                      "name": "viewLabel",
+                      "fill": "$fg_muted",
+                      "content": "VIEW",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "M3EL5",
+                  "name": "zoomControls",
+                  "width": "fill_container",
+                  "height": 40,
+                  "fill": "$bg_card",
+                  "cornerRadius": "$radius_l",
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "$border"
+                  },
+                  "padding": [
+                    0,
+                    12
+                  ],
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "IJ6gt",
+                      "name": "zoomOut",
+                      "width": 18,
+                      "height": 18,
+                      "iconFontName": "zoom-out",
+                      "iconFontFamily": "lucide",
+                      "fill": "$fg_primary"
+                    },
+                    {
+                      "type": "text",
+                      "id": "UvMDC",
+                      "name": "zoomText",
+                      "fill": "$fg_primary",
+                      "content": "100%",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "icon_font",
+                      "id": "QMl8R",
+                      "name": "zoomIn",
+                      "width": 18,
+                      "height": 18,
+                      "iconFontName": "zoom-in",
+                      "iconFontFamily": "lucide",
+                      "fill": "$fg_primary"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
               "id": "Af1Jz",
               "name": "LAYERS Section",
               "width": "fill_container",
