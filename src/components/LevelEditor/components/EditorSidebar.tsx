@@ -87,36 +87,49 @@ export const EditorSidebar: React.FC<SidebarProps> = (props) => {
         <button onClick={onRedo} disabled={!canRedo} className="control-btn redo-btn">↻ Redo</button>
       </div>
 
-      {/* Map Settings */}
-      <div className="map-settings">
-        <div className="settings-row">
-          <label>W:</label>
-          <input
-            type="number"
-            className="dim-input"
-            value={mapSize.width}
-            onChange={(e) => onResize(parseInt(e.target.value) || 10, mapSize.height)}
-          />
-          <label>H:</label>
-          <input
-            type="number"
-            className="dim-input"
-            value={mapSize.height}
-            onChange={(e) => onResize(mapSize.width, parseInt(e.target.value) || 10)}
-          />
+      {/* Map Settings & Tools */}
+      <div className="editor-section">
+        <div className="section-header">Map Configuration</div>
+        <div className="settings-grid">
+          <div className="setting-item">
+            <label>Width</label>
+            <input
+              type="number"
+              className="dim-input"
+              value={mapSize.width}
+              onChange={(e) => onResize(parseInt(e.target.value) || 10, mapSize.height)}
+            />
+          </div>
+          <div className="setting-item">
+            <label>Height</label>
+            <input
+              type="number"
+              className="dim-input"
+              value={mapSize.height}
+              onChange={(e) => onResize(mapSize.width, parseInt(e.target.value) || 10)}
+            />
+          </div>
         </div>
 
-        <div className="settings-row" style={{ marginTop: '0.5rem' }}>
+        <div className="tool-grid">
            {(['brush', 'fill', 'eraser', 'area-eraser', 'spawn'] as ToolType[]).map(tool => {
-             const label = { brush: '🖌 brush', fill: '🪣 fill', eraser: '⌫ eraser', 'area-eraser': '🗑 area erase', spawn: '📍 spawn' }[tool];
+             const { icon, label } = {
+               brush: { icon: '🖌️', label: 'Brush' },
+               fill: { icon: '🪣', label: 'Fill' },
+               eraser: { icon: '⌫', label: 'Eraser' },
+               'area-eraser': { icon: '🗑️', label: 'Area' },
+               spawn: { icon: '📍', label: 'Spawn' }
+             }[tool];
+
              return (
                <button
                  key={tool}
-                 className={`layer-btn ${activeTool === tool ? 'active' : ''}`}
+                 className={`tool-btn ${activeTool === tool ? 'active' : ''}`}
                  onClick={() => onToolChange(tool)}
-                 title={tool}
+                 title={label}
                >
-                 {label}
+                 <span className="tool-icon">{icon}</span>
+                 <span className="tool-label">{label}</span>
                </button>
              );
            })}
