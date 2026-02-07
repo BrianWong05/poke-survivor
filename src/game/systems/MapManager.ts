@@ -25,8 +25,9 @@ export class MapManager {
   }
 
   public update(delta: number): void {
+    this.tileAnimator.preUpdate(delta);
     for (const layer of this.phaserLayers) {
-      this.tileAnimator.update(delta, layer);
+      this.tileAnimator.updateLayer(layer);
     }
   }
 

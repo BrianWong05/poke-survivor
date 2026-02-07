@@ -6,6 +6,7 @@ interface AnimationConfig {
   frameCount: number;
   duration: number;
   timer: number;
+  pendingUpdate: boolean;
 }
 
 export class TileAnimator {
@@ -21,20 +22,37 @@ export class TileAnimator {
       frameCount,
       duration,
       timer: 0,
+      pendingUpdate: false
     });
   }
 
-  public update(delta: number, layer: Phaser.Tilemaps.TilemapLayer): void {
-    if (!layer || !layer.active) return;
-
+  public preUpdate(delta: number): void {
     for (const anim of this.animations) {
+      // Reset flag from previous frame
+      anim.pendingUpdate = false;
+      
       anim.timer += delta;
-
       if (anim.timer >= anim.duration) {
         anim.timer -= anim.duration;
+        anim.pendingUpdate = true;
+      }
+    }
+  }
+
+  public updateLayer(layer: Phaser.Tilemaps.TilemapLayer): void {
+    if (!layer || !layer.active) return;
+    
+    for (const anim of this.animations) {
+      if (anim.pendingUpdate) {
         this.updateLayerTiles(anim, layer);
       }
     }
+  }
+
+  // Deprecated: kept for backward compatibility if needed during refactor, but should be removed
+  public update(delta: number, layer: Phaser.Tilemaps.TilemapLayer): void {
+      this.preUpdate(delta);
+      this.updateLayer(layer);
   }
 
   private updateLayerTiles(anim: AnimationConfig, layer: Phaser.Tilemaps.TilemapLayer): void {
@@ -54,3 +72,4 @@ export class TileAnimator {
     });
   }
 }
+

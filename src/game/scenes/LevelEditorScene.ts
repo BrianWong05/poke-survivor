@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { TileAnimator } from '@/game/utils/TileAnimator';
+import { TILE_ANIMATIONS } from '@/game/config/TileAnimations';
 
 export class LevelEditorScene extends Phaser.Scene {
   private tileAnimator!: TileAnimator;
@@ -16,13 +17,14 @@ export class LevelEditorScene extends Phaser.Scene {
     // 1. Initialize TileAnimator
     this.tileAnimator = new TileAnimator();
     
-    // 2. Register placeholder animations
-    // Flower (Id 0, 4 frames, 250ms)
-    this.tileAnimator.addAnimation('Outside.png', 0, 4, 250);
-    // Seaweed (Id 100, 4 frames, 250ms)
-    this.tileAnimator.addAnimation('Outside.png', 100, 4, 250);
-    // Water (Id 200, 4 frames, 250ms)
-    this.tileAnimator.addAnimation('Outside.png', 200, 4, 250);
+    // 2. Register animations from config
+    TILE_ANIMATIONS.forEach(anim => {
+        // Note: LevelEditorScene is a test scene using 'Outside.png' directly.
+        // We assume animations are relative to this tileset or generic.
+        // In a real scenario, we'd resolve GIDs properly like MapManager.
+        // For this test scene, we just register them as-is if they match the loaded tileset.
+        this.tileAnimator.addAnimation(anim.tileset, anim.startId, anim.frameCount, anim.duration);
+    });
 
     // 3. Setup Test Map
     // Create a simple map to visualize the animations
@@ -73,11 +75,12 @@ export class LevelEditorScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
+    this.tileAnimator.preUpdate(delta);
     if (this.groundLayer) {
-      this.tileAnimator.update(delta, this.groundLayer);
+      this.tileAnimator.updateLayer(this.groundLayer);
     }
     if (this.objectsLayer) {
-      this.tileAnimator.update(delta, this.objectsLayer);
+      this.tileAnimator.updateLayer(this.objectsLayer);
     }
   }
 }
