@@ -148,8 +148,9 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
   };
 
   return (
-    <div className="canvas-wrapper">
+    <div className="shadow-[0_0_20px_rgba(0,0,0,0.5)]">
       <canvas
+        className="[image-rendering:pixelated] bg-[#1a1a1a] cursor-crosshair"
         ref={canvasRef}
         width={mapSize.width * TILE_SIZE}
         height={mapSize.height * TILE_SIZE}

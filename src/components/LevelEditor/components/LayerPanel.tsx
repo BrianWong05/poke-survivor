@@ -59,11 +59,11 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
   };
 
   return (
-    <div className="layer-panel" onDragLeave={() => setDragOverIdx(null)}>
-      <div className="layer-panel-header">
+    <div className="bg-[#2a2a2a] border border-[#444] rounded p-2" onDragLeave={() => setDragOverIdx(null)}>
+      <div className="flex justify-between items-center mb-2 font-bold text-[0.85rem] text-[#ccc]">
         <span>Layers</span>
       </div>
-      <div className="layer-list">
+      <div className="flex flex-col gap-[2px] max-h-[200px] overflow-y-auto">
         {[...layers].reverse().map((layer) => {
           const idx = layers.indexOf(layer);
           const isActive = layer.id === currentLayerId;
@@ -73,7 +73,7 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
           return (
             <div
               key={layer.id}
-              className={`layer-row ${isActive ? 'active' : ''} ${isDragging ? 'dragging' : ''} ${isDragOver ? 'drag-over' : ''}`}
+              className={`flex items-center gap-1 p-1 px-1.5 bg-[#333] border border-transparent rounded cursor-pointer text-[0.8rem] transition-[background,transform,border] duration-150 ${isActive ? 'bg-[#2a4a2a] border-[#4CAF50]' : 'hover:bg-[#3a3a3a]'} ${isDragging ? 'opacity-50 bg-[#444] border-dashed border-[#777]' : ''} ${isDragOver ? 'border-t-2 border-t-[#4CAF50] translate-y-0.5 bg-[#3d3d3d]' : ''}`}
               onClick={() => onSelectLayer(layer.id)}
               draggable
               onDragStart={() => handleDragStart(idx)}
@@ -81,7 +81,7 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
               onDrop={() => handleDrop(idx)}
             >
               <button
-                className={`layer-visibility-btn ${layer.visible ? '' : 'hidden-layer'}`}
+                className={`bg-none border-none cursor-pointer p-0 text-[0.8rem] min-w-[20px] text-center ${layer.visible ? 'text-[#aaa]' : 'text-[#555]'}`}
                 onClick={(e) => { e.stopPropagation(); onToggleVisibility(layer.id); }}
                 title={layer.visible ? 'Hide layer' : 'Show layer'}
               >
@@ -90,7 +90,7 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
 
               {editingId === layer.id ? (
                 <input
-                  className="layer-name-input"
+                  className="flex-1 bg-[#1a1a1a] border border-[#4CAF50] text-white p-0 px-1 text-[0.8rem] rounded outline-none"
                   value={editName}
                   onChange={e => setEditName(e.target.value)}
                   onBlur={commitRename}
@@ -100,7 +100,7 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
                 />
               ) : (
                 <span
-                  className="layer-name"
+                  className="flex-1 text-[#ddd] whitespace-nowrap overflow-hidden text-ellipsis select-none"
                   onDoubleClick={(e) => { e.stopPropagation(); handleDoubleClick(layer); }}
                 >
                   {layer.name}
@@ -108,16 +108,16 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
               )}
 
               <button
-                className={`layer-collision-btn ${layer.collision ? 'collision-on' : ''}`}
+                className={`bg-none border cursor-pointer p-0 px-1 text-[0.7rem] font-bold rounded min-w-[18px] text-center ${layer.collision ? 'text-[#ff9800] border-[#ff9800]' : 'text-[#666] border-[#555]'}`}
                 onClick={(e) => { e.stopPropagation(); onToggleCollision(layer.id); }}
                 title={layer.collision ? 'Collision ON' : 'Collision OFF'}
               >
                 {layer.collision ? 'C' : '·'}
               </button>
 
-              <div className="layer-reorder-btns">
+              <div className="flex flex-col gap-0">
                 <button
-                  className="layer-reorder-btn"
+                  className="bg-none border-none text-[#888] cursor-pointer p-0 text-[0.5rem] leading-none hover:text-white disabled:text-[#444] disabled:cursor-not-allowed"
                   onClick={(e) => { e.stopPropagation(); onReorderLayer(layer.id, 'up'); }}
                   disabled={idx === 0}
                   title="Move down (render earlier)"
@@ -125,7 +125,7 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
                   ▼
                 </button>
                 <button
-                  className="layer-reorder-btn"
+                  className="bg-none border-none text-[#888] cursor-pointer p-0 text-[0.5rem] leading-none hover:text-white disabled:text-[#444] disabled:cursor-not-allowed"
                   onClick={(e) => { e.stopPropagation(); onReorderLayer(layer.id, 'down'); }}
                   disabled={idx === layers.length - 1}
                   title="Move up (render later)"
@@ -135,7 +135,7 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
               </div>
 
               <button
-                className="layer-delete-btn"
+                className="bg-none border-none text-[#666] cursor-pointer p-0 px-0.5 text-[0.75rem] hover:text-[#e74c3c] disabled:text-[#444] disabled:cursor-not-allowed"
                 onClick={(e) => { e.stopPropagation(); onRemoveLayer(layer.id); }}
                 disabled={layers.length <= 1}
                 title="Delete layer"
@@ -146,7 +146,7 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
           );
         })}
       </div>
-      <button className="layer-add-btn" onClick={onAddLayer}>+ Add Layer</button>
+      <button className="w-full p-1 mt-2 bg-[#333] border border-dashed border-[#555] text-[#aaa] cursor-pointer rounded text-[0.8rem] transition-all duration-150 hover:bg-[#3a3a3a] hover:border-[#4CAF50] hover:text-[#4CAF50]" onClick={onAddLayer}>+ Add Layer</button>
     </div>
   );
 };

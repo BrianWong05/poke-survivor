@@ -65,53 +65,56 @@ export const EditorSidebar: React.FC<SidebarProps> = (props) => {
     onPaletteSelection({ x, y, w: 1, h: 1 });
   };
 
+  const toolClasses = (tool: ToolType) => 
+    `flex flex-col items-center justify-center gap-1 p-2 bg-[#333] border border-[#444] text-[#aaa] cursor-pointer rounded-md transition-all duration-200 hover:bg-[#3d3d3d] hover:text-[#eee] ${activeTool === tool ? 'bg-[#4CAF50] text-white border-[#4CAF50] shadow-[0_0_8px_rgba(76,175,80,0.3)]' : ''}`;
+
   return (
-    <div className="sidebar">
-      <h2>Level Editor</h2>
+    <div className="w-[300px] bg-[#222] border-r border-[#444] p-4 flex flex-col gap-4 z-10 shadow-[2px_0_5px_rgba(0,0,0,0.5)] overflow-y-auto max-h-full">
+      <h2 className="text-xl font-bold">Level Editor</h2>
 
       {/* Main Controls */}
-      <div className="controls-group main-controls">
-        <button onClick={onPlay} className="control-btn play-btn">▶ Play</button>
-        <button onClick={onExit} className="control-btn exit-btn">✖ Exit</button>
+      <div className="flex gap-2 mb-2 shrink-0">
+        <button onClick={onPlay} className="flex-1 font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-[6px] text-white py-2 px-4 rounded-md bg-[#2ecc71] hover:brightness-110 active:translate-y-0 hover:-translate-y-[1px]">▶ Play</button>
+        <button onClick={onExit} className="flex-1 font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-[6px] text-white py-2 px-4 rounded-md bg-[#e74c3c] hover:brightness-110 active:translate-y-0 hover:-translate-y-[1px]">✖ Exit</button>
       </div>
 
       {/* IO Controls */}
-      <div className="controls-group io-controls">
-        <button onClick={onLoad} className="control-btn load-btn">📂 Load</button>
-        <button onClick={onSave} className="control-btn save-btn">💾 Save</button>
+      <div className="flex gap-2 mb-2 shrink-0">
+        <button onClick={onLoad} className="flex-1 font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-[6px] text-white py-2 px-4 rounded-md bg-[#3498db] hover:brightness-110 active:translate-y-0 hover:-translate-y-[1px]">📂 Load</button>
+        <button onClick={onSave} className="flex-1 font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-[6px] text-white py-2 px-4 rounded-md bg-[#9b59b6] hover:brightness-110 active:translate-y-0 hover:-translate-y-[1px]">💾 Save</button>
       </div>
 
       {/* History */}
-      <div className="controls-group history-controls">
-        <button onClick={onUndo} disabled={!canUndo} className="control-btn undo-btn">⎌ Undo</button>
-        <button onClick={onRedo} disabled={!canRedo} className="control-btn redo-btn">↻ Redo</button>
+      <div className="flex gap-2 mb-2 shrink-0">
+        <button onClick={onUndo} disabled={!canUndo} className="flex-1 font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-[6px] text-white py-2 px-4 rounded-md bg-[#f39c12] hover:brightness-110 active:translate-y-0 hover:-translate-y-[1px] disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale-[0.8]">⎌ Undo</button>
+        <button onClick={onRedo} disabled={!canRedo} className="flex-1 font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-[6px] text-white py-2 px-4 rounded-md bg-[#e67e22] hover:brightness-110 active:translate-y-0 hover:-translate-y-[1px] disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale-[0.8]">↻ Redo</button>
       </div>
 
       {/* Map Settings & Tools */}
-      <div className="editor-section">
-        <div className="section-header">Map Configuration</div>
-        <div className="settings-grid">
-          <div className="setting-item">
-            <label>Width</label>
+      <div className="bg-[#2a2a2a] p-3 rounded-lg border border-[#444] flex flex-col gap-3">
+        <div className="text-[0.75rem] font-bold text-[#888] uppercase tracking-wider">Map Configuration</div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex flex-col gap-1">
+            <label className="text-[0.7rem] text-[#aaa]">Width</label>
             <input
               type="number"
-              className="dim-input"
+              className="w-full p-1.5 bg-[#1a1a1a] border border-[#444] text-white rounded font-size-[0.85rem] transition-colors duration-200 focus:border-[#4CAF50] outline-none"
               value={mapSize.width}
               onChange={(e) => onResize(parseInt(e.target.value) || 10, mapSize.height)}
             />
           </div>
-          <div className="setting-item">
-            <label>Height</label>
+          <div className="flex flex-col gap-1">
+            <label className="text-[0.7rem] text-[#aaa]">Height</label>
             <input
               type="number"
-              className="dim-input"
+              className="w-full p-1.5 bg-[#1a1a1a] border border-[#444] text-white rounded font-size-[0.85rem] transition-colors duration-200 focus:border-[#4CAF50] outline-none"
               value={mapSize.height}
               onChange={(e) => onResize(mapSize.width, parseInt(e.target.value) || 10)}
             />
           </div>
         </div>
 
-        <div className="tool-grid">
+        <div className="grid grid-cols-3 gap-1">
            {(['brush', 'fill', 'eraser', 'area-eraser', 'spawn'] as ToolType[]).map(tool => {
              const { icon, label } = {
                brush: { icon: '🖌️', label: 'Brush' },
@@ -124,12 +127,12 @@ export const EditorSidebar: React.FC<SidebarProps> = (props) => {
              return (
                <button
                  key={tool}
-                 className={`tool-btn ${activeTool === tool ? 'active' : ''}`}
+                 className={toolClasses(tool)}
                  onClick={() => onToolChange(tool)}
                  title={label}
                >
-                 <span className="tool-icon">{icon}</span>
-                 <span className="tool-label">{label}</span>
+                 <span className="text-[1.1rem]">{icon}</span>
+                 <span className="text-[0.65rem] font-semibold">{label}</span>
                </button>
              );
            })}
@@ -151,12 +154,12 @@ export const EditorSidebar: React.FC<SidebarProps> = (props) => {
       />
 
       {/* Palette */}
-      <div className="palette-container">
-         <div className="tab-container">
+      <div className="flex-1 flex flex-col border border-[#444] p-2 bg-[#1a1a1a] min-h-[250px] overflow-hidden">
+         <div className="flex mb-2 border-b border-[#444] shrink-0">
            {(['tileset', 'autoset', 'animations'] as AssetTab[]).map(tab => (
              <button
                 key={tab}
-                className={`tab ${activeTab === tab ? 'active' : ''}`}
+                className={`flex-1 p-2 bg-[#2a2a2a] border-none text-[#888] cursor-pointer rounded-t-md font-bold ${activeTab === tab ? 'bg-[#444] text-white border-b-2 border-b-[#4CAF50]' : ''}`}
                 onClick={() => onTabChange(tab)}
              >
                {tab}
@@ -165,8 +168,8 @@ export const EditorSidebar: React.FC<SidebarProps> = (props) => {
          </div>
 
          {activeTab !== 'animations' && (
-            <div className="asset-selector">
-              <select className="asset-select" value={activeAsset} onChange={(e) => onAssetChange(e.target.value)}>
+            <div className="mb-2 shrink-0">
+              <select className="w-full p-2 bg-[#333] text-white border border-[#555] rounded-md" value={activeAsset} onChange={(e) => onAssetChange(e.target.value)}>
                  {(activeTab === 'tileset' ? assetOptions.tilesets : assetOptions.autosets).map(opt => (
                    <option key={opt} value={opt}>{opt}</option>
                  ))}
@@ -174,18 +177,18 @@ export const EditorSidebar: React.FC<SidebarProps> = (props) => {
             </div>
          )}
 
-         <div className="palette-scroll-area">
+         <div className="flex-1 overflow-auto">
            {activeTab !== 'animations' ? (
               paletteImageSource && (
-                <div className="palette-wrapper">
+                <div className="relative inline-block">
                   <img
                     src={paletteImageSource}
-                    className="palette-image"
+                    className="cursor-crosshair border border-[#555] block [image-rendering:pixelated]"
                     onMouseDown={handlePaletteMouseDown}
                     alt="Palette"
                   />
                   <div
-                    className="tile-selection-highlight"
+                    className="absolute border-2 border-red-600 box-border pointer-events-none bg-red-600/20 z-10"
                     style={{
                       left: selection.x * TILE_SIZE,
                       top: selection.y * TILE_SIZE,

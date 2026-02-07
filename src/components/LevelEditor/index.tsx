@@ -17,7 +17,6 @@ import { useMapPersistence } from '@/components/LevelEditor/hooks/useMapPersiste
 // Constants & Types
 import { TILE_SIZE, EMPTY_TILE } from '@/components/LevelEditor/constants';
 import type { ToolType, AssetTab, SelectionState } from '@/components/LevelEditor/types';
-import './styles.css';
 
 interface LevelEditorProps {
   onPlay: (data: CustomMapData) => void;
@@ -191,7 +190,7 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
   };
 
   return (
-    <div className="level-editor-container">
+    <div className="flex w-screen h-screen bg-[#111] text-white overflow-hidden font-sans">
       <EditorSidebar
         mapSize={mapState.mapSize}
         onResize={mapState.resizeMap}
@@ -229,7 +228,7 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
         imageCache={imageCache.current}
       />
 
-      <div className="main-area">
+      <div className="flex-1 overflow-auto relative bg-black flex justify-center items-start p-8">
         <EditorCanvas
            mapSize={mapState.mapSize}
            layers={mapState.layers}
