@@ -246,21 +246,23 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
         imageCache={imageCache.current}
       />
 
-      <div className="flex-1 overflow-auto relative bg-black flex justify-center items-center">
-        <EditorCanvas
-           mapSize={mapState.mapSize}
-           layers={mapState.layers}
-           currentLayerId={mapState.currentLayerId}
-           spawnPoint={mapState.spawnPoint}
-           activeTool={activeTool}
-           activeAsset={activeAsset}
-           activeTab={activeTab}
-           selection={selection}
-           imageCache={imageCache.current}
-           imagesLoaded={imagesLoaded}
-           onPaint={handlePaint}
-           onDragEnd={handleDragEnd}
-        />
+      <div className="flex-1 overflow-auto relative bg-black flex">
+        <div className="m-auto" style={{ padding: '20px' }}>
+          <EditorCanvas
+             mapSize={mapState.mapSize}
+             layers={mapState.layers}
+             currentLayerId={mapState.currentLayerId}
+             spawnPoint={mapState.spawnPoint}
+             activeTool={activeTool}
+             activeAsset={activeAsset}
+             activeTab={activeTab}
+             selection={selection}
+             imageCache={imageCache.current}
+             imagesLoaded={imagesLoaded}
+             onPaint={handlePaint}
+             onDragEnd={handleDragEnd}
+          />
+        </div>
       </div>
 
       <LoadModal
