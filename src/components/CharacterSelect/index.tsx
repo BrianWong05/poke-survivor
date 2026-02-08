@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getAllCharacters } from '@/game/entities/characters/registry';
 import type { CharacterConfig } from '@/game/entities/characters/types';
-import './styles.css';
 import { DexScreen } from '@/components/Menus/DexScreen';
 import { LanguageToggle } from '@/components/Shared/LanguageToggle';
+import { CharacterCard } from './CharacterCard';
 
 interface CharacterSelectProps {
   onSelect: (characterId: string) => void;
@@ -39,53 +39,45 @@ export function CharacterSelect({ onSelect, onOpenLevelEditor }: CharacterSelect
   }, [selectedId, showDex, onSelect]);
 
   return (
-    <div className="character-select-overlay">
-      <LanguageToggle />
-      <div className="character-select-container">
-        <h1 className="character-select-title">{t('choose_pokemon')}</h1>
+    <div className="fixed inset-0 bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] z-[1000] overflow-y-auto">
+      {/* Dynamic keyframes for sprite animation */}
+      <style>{`
+        @keyframes play-sprite {
+          from { background-position-x: 0; }
+          to { background-position-x: calc(-1 * var(--frame-width) * var(--frame-count)); }
+        }
+      `}</style>
+      
+      <div className="min-h-full flex flex-col items-center justify-center py-10 px-5">
+        <LanguageToggle />
+        <div className="max-w-[1200px] w-full text-center flex flex-col items-center gap-8">
+          <h1 className="text-[1.8rem] md:text-[2.5rem] text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.3)]">
+            {t('choose_pokemon')}
+          </h1>
         
-        <button className="dex-button" onClick={() => setShowDex(true)}>
+        <button 
+          className="bg-transparent border-2 border-white/30 rounded-lg px-6 py-3 text-base text-white cursor-pointer transition-all duration-200 inline-flex items-center gap-2 hover:bg-white/10 hover:border-white hover:-translate-y-0.5" 
+          onClick={() => setShowDex(true)}
+        >
           📖 {t('pokedex')}
         </button>
 
         {showDex && <DexScreen onClose={() => setShowDex(false)} />}
         
-        <div className="character-grid">
+        <div className="w-full grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] md:grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-6">
           {characters.map((character) => (
-            <button
+            <CharacterCard
               key={character.id}
-              className={`character-card ${selectedId === character.id ? 'selected' : ''}`}
-              onClick={() => handleSelect(character)}
-            >
-              <div className="character-sprite">
-                <div
-                  className="sprite-animator"
-                  style={{
-                    width: `${getSpriteMeta(character.id).w}px`,
-                    height: `${getSpriteMeta(character.id).h}px`,
-                    backgroundImage: `url(${getCharacterSprite(character.id)})`,
-                    '--frame-count': getSpriteMeta(character.id).frames,
-                    '--frame-width': `${getSpriteMeta(character.id).w}px`,
-                  } as React.CSSProperties}
-                />
-              </div>
-              <h2 className="character-name">{t(character.nameKey)}</h2>
-              <p className="character-archetype">{t(character.archetypeKey)}</p>
-              <div className="character-stats">
-                <span className="stat">❤️ {character.stats.maxHP}</span>
-                <span className="stat">⚡ {character.stats.speed}</span>
-                <span className="stat">⚔️ {character.stats.baseDamage}</span>
-              </div>
-              <p className="character-passive">
-                <strong>{t(character.passive.nameKey)}:</strong> {t(character.passive.descKey)}
-              </p>
-            </button>
+              character={character}
+              isSelected={selectedId === character.id}
+              onSelect={handleSelect}
+            />
           ))}
         </div>
 
-        <div className="button-group">
+        <div className="flex gap-4 justify-center flex-wrap">
           <button
-            className="confirm-button"
+            className="bg-gradient-to-br from-[#FFD700] to-[#FFA500] border-none rounded-xl h-16 min-w-[200px] px-8 flex items-center justify-center text-[1.2rem] font-bold text-[#1a1a2e] cursor-pointer transition-all duration-300 uppercase tracking-[2px] hover:scale-105 hover:shadow-[0_0_30px_rgba(255,215,0,0.5)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
             disabled={!selectedId}
             onClick={handleConfirm}
           >
@@ -93,7 +85,7 @@ export function CharacterSelect({ onSelect, onOpenLevelEditor }: CharacterSelect
           </button>
           {onOpenLevelEditor && (
             <button
-              className="editor-button"
+              className="bg-gradient-to-br from-[#10b981] to-[#059669] border-none rounded-xl h-16 min-w-[200px] px-8 flex items-center justify-center text-[1.1rem] font-bold text-white cursor-pointer transition-all duration-300 uppercase tracking-[1px] hover:scale-105 hover:shadow-[0_0_30px_rgba(16,185,129,0.5)]"
               onClick={onOpenLevelEditor}
             >
               🗺️ Level Editor
@@ -101,31 +93,8 @@ export function CharacterSelect({ onSelect, onOpenLevelEditor }: CharacterSelect
           )}
         </div>
       </div>
+      </div>
     </div>
   );
 }
 
-function getCharacterSprite(id: string): string {
-  // Map character IDs to their sprite assets (using idle-down frame)
-  const spriteMap: Record<string, string> = {
-    pikachu: 'assets/sprites/25-idle.png',
-    charmander: 'assets/sprites/4-idle.png',
-    squirtle: 'assets/sprites/7-idle.png',
-    gastly: 'assets/sprites/92-idle.png',
-    riolu: 'assets/sprites/447-idle.png',
-    snorlax: 'assets/sprites/143-idle.png',
-  };
-  return spriteMap[id] || 'assets/vite.svg';
-}
-
-function getSpriteMeta(id: string) {
-  const meta: Record<string, { w: number; h: number; frames: number }> = {
-    pikachu: { w: 40, h: 56, frames: 6 },
-    charmander: { w: 32, h: 40, frames: 4 },
-    squirtle: { w: 32, h: 32, frames: 8 },
-    gastly: { w: 48, h: 56, frames: 6 },
-    riolu: { w: 32, h: 40, frames: 4 },
-    snorlax: { w: 32, h: 64, frames: 6 },
-  };
-  return meta[id] || { w: 32, h: 32, frames: 1 };
-}
