@@ -112,10 +112,10 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
 
     if (activeTool === 'fill') {
       mapState.saveHistory();
-      const minX = Math.min(start.x, end.x);
-      const maxX = Math.max(start.x, end.x);
-      const minY = Math.min(start.y, end.y);
-      const maxY = Math.max(start.y, end.y);
+      const minX = Math.max(0, Math.min(start.x, end.x));
+      const maxX = Math.min(mapState.mapSize.width - 1, Math.max(start.x, end.x));
+      const minY = Math.max(0, Math.min(start.y, end.y));
+      const maxY = Math.min(mapState.mapSize.height - 1, Math.max(start.y, end.y));
 
       mapState.setCurrentLayerTiles((prev: TileData[][]) => {
         let newGrid = prev.map(row => [...row]);

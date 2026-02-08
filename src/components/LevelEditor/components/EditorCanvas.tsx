@@ -144,11 +144,59 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
   useEffect(() => { render(); }, [render]);
 
+  /* 
+     * MOUSE EVENT HANDLERS
+     * We use a "drag" model where mousedown on the canvas initiates a drag session.
+     * During the session, we listen to window events for move/up to track the mouse
+     * even if it leaves the canvas bounds.
+     */
+
+  const handleDragMove = useCallback((e: MouseEvent) => {
+    if (!isDragging.current || !canvasRef.current) return;
+    
+    const rect = canvasRef.current.getBoundingClientRect();
+    const clickX = (e.clientX - rect.left) / zoom;
+    const clickY = (e.clientY - rect.top) / zoom;
+    
+    // Allow coordinates outside the map for selection boxes
+    const x = Math.floor(clickX / TILE_SIZE);
+    const y = Math.floor(clickY / TILE_SIZE);
+
+    // Update drag current position if changed
+    if (x !== dragCurrent.current.x || y !== dragCurrent.current.y) {
+        dragCurrent.current = { x, y };
+        
+        // For brush/eraser interaction, we only paint if within bounds
+        if (x >= 0 && x < mapSize.width && y >= 0 && y < mapSize.height) {
+            if (activeTool === 'brush' || activeTool === 'eraser') {
+               onPaint(x, y, true);
+            }
+        }
+        
+        render();
+    }
+  }, [zoom, mapSize, activeTool, onPaint, render]);
+
+  const handleDragEnd = useCallback(() => {
+    if (isDragging.current) {
+        isDragging.current = false;
+        
+        // Cleanup global listeners
+        window.removeEventListener('mousemove', handleDragMove);
+        window.removeEventListener('mouseup', handleDragEnd);
+
+        onDragEnd(dragStart.current, dragCurrent.current);
+        render();
+    }
+  }, [onDragEnd, render, handleDragMove]);
+
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (!canvasRef.current) return;
+    // Prevent default to avoid text selection etc
+    e.preventDefault();
+
     const rect = canvasRef.current.getBoundingClientRect();
     
-    // Coordinates calculation
     const clickX = (e.clientX - rect.left) / zoom;
     const clickY = (e.clientY - rect.top) / zoom;
     
@@ -161,36 +209,21 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     dragStart.current = { x, y };
     dragCurrent.current = { x, y };
     
+    // Attach global listeners
+    window.addEventListener('mousemove', handleDragMove);
+    window.addEventListener('mouseup', handleDragEnd);
+    
     if (activeTool === 'brush' || activeTool === 'eraser') onPaint(x, y, false);
     render();
-  }, [zoom, mapSize, activeTool, onPaint, render]);
+  }, [zoom, mapSize, activeTool, onPaint, render, handleDragMove, handleDragEnd]);
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!isDragging.current || !canvasRef.current) return;
-    const rect = canvasRef.current.getBoundingClientRect();
-    
-    const clickX = (e.clientX - rect.left) / zoom;
-    const clickY = (e.clientY - rect.top) / zoom;
-    
-    const x = Math.floor(clickX / TILE_SIZE);
-    const y = Math.floor(clickY / TILE_SIZE);
-
-    if (x >= 0 && x < mapSize.width && y >= 0 && y < mapSize.height) {
-        if (x !== dragCurrent.current.x || y !== dragCurrent.current.y) {
-          dragCurrent.current = { x, y };
-          if (activeTool === 'brush' || activeTool === 'eraser') onPaint(x, y, true);
-          render();
-        }
-    }
-  }, [zoom, mapSize, activeTool, onPaint, render]);
-
-  const handleMouseUp = useCallback(() => {
-    if (isDragging.current) {
-      isDragging.current = false;
-      onDragEnd(dragStart.current, dragCurrent.current);
-      render();
-    }
-  }, [onDragEnd, render]);
+  // Cleanup listeners on unmount (just in case)
+  useEffect(() => {
+    return () => {
+        window.removeEventListener('mousemove', handleDragMove);
+        window.removeEventListener('mouseup', handleDragEnd);
+    };
+  }, [handleDragMove, handleDragEnd]);
 
   return (
     <div className={styles.container}>
@@ -199,22 +232,14 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         style={{ 
             width: mapSize.width * TILE_SIZE * zoom,
             height: mapSize.height * TILE_SIZE * zoom,
-            // Original used generic scale transform, but setting display size is often cleaner for canvas
-            // However, original code:
-            // style={{ transform: `scale(${zoom})`, transformOrigin: 'top left' }}
-            // width={mapSize.width * TILE_SIZE}
-            // height={mapSize.height * TILE_SIZE}
-            // If we change this, we change the coordinate logic.
-            // Let's STICK TO ORIGINAL TRANSFORM LOGIC to avoid breaking mouse events logic
             transform: `scale(${zoom})`
         }}
         ref={canvasRef}
         width={mapSize.width * TILE_SIZE}
         height={mapSize.height * TILE_SIZE}
         onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
+        // Removed onMouseMove, onMouseUp, onMouseLeave from canvas
+        // as they are handled by global listeners during drag
       />
     </div>
   );
