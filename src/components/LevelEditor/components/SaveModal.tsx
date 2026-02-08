@@ -25,23 +25,32 @@ export const SaveModal: React.FC<SaveModalProps> = ({ isOpen, onClose, onSave, e
     setMapName('');
   };
 
+  const filteredMaps = existingMaps.filter(name => 
+    name.toLowerCase().includes(mapName.toLowerCase())
+  );
+
   return (
     <div className={styles.overlay}>
       <div className={styles.modal}>
         <h3 className={styles.title}>Save Map</h3>
-        <input 
-          type="text" 
-          placeholder="Map Name" 
-          value={mapName} 
-          onChange={(e) => setMapName(e.target.value)}
-          className={styles.input}
-        />
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <input 
+            type="text" 
+            placeholder="Search or Enter Map Name" 
+            value={mapName} 
+            onChange={(e) => setMapName(e.target.value)}
+            className={styles.input}
+          />
+        </div>
 
         <div className={styles.list}>
-          {existingMaps.length === 0 ? (
-            <div className={styles.emptyMessage}>No saved maps</div>
+          {filteredMaps.length === 0 ? (
+            <div className={styles.emptyMessage}>
+              {existingMaps.length === 0 ? 'No saved maps' : 'No matches found'}
+            </div>
           ) : (
-            existingMaps.map((name) => (
+            filteredMaps.map((name) => (
               <button
                 type="button"
                 key={name}
