@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useCallback } from 'react';
 import type { TileData } from '@/game/types/map';
 import type { MapSize, ToolType, SelectionState, AssetTab, LayerData } from '@/components/LevelEditor/types';
 import { TILE_SIZE } from '@/components/LevelEditor/constants';
+import styles from './EditorCanvas.module.css';
 
 interface EditorCanvasProps {
   mapSize: MapSize;
@@ -80,15 +81,22 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
     // Preview / Drag
     if (isDragging.current) {
-       const minX = Math.min(dragStart.current.x, dragCurrent.current.x);
-       const minY = Math.min(dragStart.current.y, dragCurrent.current.y);
-       const maxX = Math.max(dragStart.current.x, dragCurrent.current.x);
-       const maxY = Math.max(dragStart.current.y, dragCurrent.current.y);
-
-       const w = (maxX - minX + 1) * TILE_SIZE;
-       const h = (maxY - minY + 1) * TILE_SIZE;
+        // Calculate bounds
+       const startX = dragStart.current.x;
+       const startY = dragStart.current.y;
+       const currX = dragCurrent.current.x;
+       const currY = dragCurrent.current.y;
+       
+       const minX = Math.min(startX, currX);
+       const minY = Math.min(startY, currY);
+       
+       // Note: maxX/maxY are inclusive indices in logic, but for drawing rectangle width/height:
+       // If dragging from 0,0 to 1,1 (2x2 tiles), width should be 2*TILE_SIZE.
+       const w = (Math.abs(currX - startX) + 1) * TILE_SIZE;
+       const h = (Math.abs(currY - startY) + 1) * TILE_SIZE;
 
        if (activeTool === 'eraser') {
+         // Eraser is single tile unless grouped? Original code suggests simple erasure at current position?
          const ex = dragCurrent.current.x;
          const ey = dragCurrent.current.y;
          ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
@@ -103,12 +111,16 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
        } else if (activeTool === 'brush') {
           const previewX = dragCurrent.current.x;
           const previewY = dragCurrent.current.y;
+          // Simple brush preview at current cursor
           const tile: TileData = { id: (selection.y * 100) + selection.x, set: activeAsset, type: activeTab };
+          // Note: selection logic might be more complex if multi-tile selection, but sticking to original simple preview
           drawTile(ctx, tile, previewX, previewY, 0.5);
        } else {
-         // Box Select Preview
-         ctx.strokeStyle = '#fff';
-         ctx.strokeRect(minX * TILE_SIZE, minY * TILE_SIZE, w, h);
+         // Box Select Preview (default or fallthrough)
+         if (activeTool === 'fill') {
+             ctx.strokeStyle = '#fff';
+             ctx.strokeRect(minX * TILE_SIZE, minY * TILE_SIZE, w, h);
+         }
        }
     }
 
@@ -116,43 +128,70 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
   useEffect(() => { render(); }, [render]);
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = Math.floor(((e.clientX - rect.left) / zoom) / TILE_SIZE);
-    const y = Math.floor(((e.clientY - rect.top) / zoom) / TILE_SIZE);
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (!canvasRef.current) return;
+    const rect = canvasRef.current.getBoundingClientRect();
+    
+    // Coordinates calculation
+    const clickX = (e.clientX - rect.left) / zoom;
+    const clickY = (e.clientY - rect.top) / zoom;
+    
+    const x = Math.floor(clickX / TILE_SIZE);
+    const y = Math.floor(clickY / TILE_SIZE);
+    
+    if (x < 0 || x >= mapSize.width || y < 0 || y >= mapSize.height) return;
+
     isDragging.current = true;
     dragStart.current = { x, y };
     dragCurrent.current = { x, y };
+    
     if (activeTool === 'brush' || activeTool === 'eraser') onPaint(x, y, false);
     render();
-  };
+  }, [zoom, mapSize, activeTool, onPaint, render]);
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging.current) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = Math.floor(((e.clientX - rect.left) / zoom) / TILE_SIZE);
-    const y = Math.floor(((e.clientY - rect.top) / zoom) / TILE_SIZE);
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isDragging.current || !canvasRef.current) return;
+    const rect = canvasRef.current.getBoundingClientRect();
+    
+    const clickX = (e.clientX - rect.left) / zoom;
+    const clickY = (e.clientY - rect.top) / zoom;
+    
+    const x = Math.floor(clickX / TILE_SIZE);
+    const y = Math.floor(clickY / TILE_SIZE);
 
-    if (x !== dragCurrent.current.x || y !== dragCurrent.current.y) {
-      dragCurrent.current = { x, y };
-      if (activeTool === 'brush' || activeTool === 'eraser') onPaint(x, y, true);
-      render();
+    if (x >= 0 && x < mapSize.width && y >= 0 && y < mapSize.height) {
+        if (x !== dragCurrent.current.x || y !== dragCurrent.current.y) {
+          dragCurrent.current = { x, y };
+          if (activeTool === 'brush' || activeTool === 'eraser') onPaint(x, y, true);
+          render();
+        }
     }
-  };
+  }, [zoom, mapSize, activeTool, onPaint, render]);
 
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
     if (isDragging.current) {
       isDragging.current = false;
       onDragEnd(dragStart.current, dragCurrent.current);
       render();
     }
-  };
+  }, [onDragEnd, render]);
 
   return (
-    <div className="shadow-[0_0_20px_rgba(0,0,0,0.5)]">
+    <div className={styles.container}>
       <canvas
-        className="[image-rendering:pixelated] bg-[#1a1a1a] cursor-crosshair transform-origin-top-left"
-        style={{ transform: `scale(${zoom})`, transformOrigin: 'top left' }}
+        className={styles.canvas}
+        style={{ 
+            width: mapSize.width * TILE_SIZE * zoom,
+            height: mapSize.height * TILE_SIZE * zoom,
+            // Original used generic scale transform, but setting display size is often cleaner for canvas
+            // However, original code:
+            // style={{ transform: `scale(${zoom})`, transformOrigin: 'top left' }}
+            // width={mapSize.width * TILE_SIZE}
+            // height={mapSize.height * TILE_SIZE}
+            // If we change this, we change the coordinate logic.
+            // Let's STICK TO ORIGINAL TRANSFORM LOGIC to avoid breaking mouse events logic
+            transform: `scale(${zoom})`
+        }}
         ref={canvasRef}
         width={mapSize.width * TILE_SIZE}
         height={mapSize.height * TILE_SIZE}

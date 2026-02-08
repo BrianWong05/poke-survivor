@@ -67,7 +67,15 @@
   justify-content: center;
   position: relative;
   z-index: 10;
-  animation: none !important; /* Prevent parent spin affecting content */
+  position: relative;
+  z-index: 10;
+}
+
+.sprite {
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  transform: scale(1.5);
+  animation: play-sprite 0.8s steps(var(--frameCount)) infinite;
 }
 
 /* Counter-rotate content to keep it upright if needed, but here we prefer simple */

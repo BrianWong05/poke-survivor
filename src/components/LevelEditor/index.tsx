@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import type { CustomMapData, TileData } from '@/game/types/map';
 import { updateAutoTileGrid } from '@/components/LevelEditor/utils';
 import { compressMapData } from '@/components/LevelEditor/utils/mapCompression';
+import styles from './index.module.css';
 
 // Components
 import { SaveModal } from '@/components/LevelEditor/components/SaveModal';
@@ -197,8 +198,14 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
     }
   };
 
+
+
+// ... (imports remain)
+
+// ... (component code)
+
   return (
-    <div className="flex w-screen h-screen bg-[#111] text-white overflow-hidden font-sans">
+    <div className={styles.container}>
       <EditorSidebar
         mapSize={mapState.mapSize}
         onResize={mapState.resizeMap}
@@ -210,7 +217,6 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
         onAddLayer={mapState.addLayer}
         onRemoveLayer={mapState.removeLayer}
         onRenameLayer={mapState.renameLayer}
-        onReorderLayer={mapState.reorderLayer}
         onMoveLayer={mapState.moveLayer}
         onToggleVisibility={mapState.toggleLayerVisibility}
         onToggleCollision={mapState.toggleLayerCollision}
@@ -251,8 +257,7 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
       />
 
       <div 
-        className="flex-1 overflow-auto relative bg-black grid place-items-center" 
-        style={{ padding: '20px' }}
+        className={styles.canvasArea} 
         onWheel={(e) => {
           if (e.ctrlKey || e.metaKey) {
             e.preventDefault();

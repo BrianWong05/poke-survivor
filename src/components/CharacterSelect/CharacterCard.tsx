@@ -21,14 +21,14 @@ export function CharacterCard({ character, isSelected, onSelect }: CharacterCard
         <div className={`${styles.avatarContainer} ${isSelected ? styles.avatarContainerSelected : ''}`}>
           <div className={styles.avatarInner}>
             <div
-              className="bg-no-repeat [image-rendering:pixelated] scale-150 animate-[play-sprite_0.8s_steps(var(--frame-count))_infinite]"
+              className={styles.sprite}
               style={
                 {
                   width: `${getSpriteMeta(character.id).w}px`,
                   height: `${getSpriteMeta(character.id).h}px`,
                   backgroundImage: `url(${getCharacterSprite(character.id)})`,
-                  '--frame-count': getSpriteMeta(character.id).frames,
-                  '--frame-width': `${getSpriteMeta(character.id).w}px`,
+                  '--frameCount': getSpriteMeta(character.id).frames,
+                  '--frameWidth': `${getSpriteMeta(character.id).w}px`,
                 } as React.CSSProperties
               }
             />

@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import type { ViteDevServer } from 'vite'
 import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
+
 import path from 'path'
 import fs from 'fs'
 import type { IncomingMessage, ServerResponse } from 'http' // Standard node types
@@ -88,7 +88,7 @@ const mapServerPlugin = () => ({
 // https://vite.dev/config/
 export default defineConfig({
   base: '/poke-survivor/',
-  plugins: [react(), tailwindcss(), mapServerPlugin()],
+  plugins: [react(), mapServerPlugin()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
