@@ -5,7 +5,6 @@ import type { JoystickManager } from 'nipplejs';
 import { createGameConfig, type GameCallbacks } from '@/game/config';
 import { MainScene } from '@/game/scenes/MainScene';
 import type { CustomMapData } from '@/game/types/map';
-import './styles.css';
 
 interface GameCanvasProps {
   selectedCharacter: string;
@@ -100,9 +99,12 @@ export const GameCanvas = ({
   }, [selectedCharacter, customMapData, onScoreUpdate, onGameOver, onQuit, onLevelUpdate, onTimeUpdate]);
 
   return (
-    <div className="game-container">
-      <div ref={containerRef} className="phaser-container" />
-      <div ref={joystickRef} className="joystick-zone" />
+    <div className="relative w-screen h-screen overflow-hidden">
+      <div ref={containerRef} className="w-full h-full [&_canvas]:block" />
+      <div 
+        ref={joystickRef} 
+        className="absolute left-0 bottom-0 w-[200px] h-[200px] z-[100] pointer-events-auto [@media(hover:hover)and(pointer:fine)]:hidden" 
+      />
     </div>
   );
 };
