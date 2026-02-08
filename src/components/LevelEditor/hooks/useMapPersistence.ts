@@ -11,7 +11,8 @@ export const useMapPersistence = () => {
       if (res.ok) {
         const files = await res.json() as string[];
         // Strip .json for display
-        setSavedMaps(files.map(f => f.replace(/\.json$/, '')));
+        const mapNames = files.map(f => f.replace(/\.json$/, ''));
+        setSavedMaps(Array.from(new Set(mapNames)));
         return true;
       }
       return false;

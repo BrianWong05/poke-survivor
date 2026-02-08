@@ -36,6 +36,23 @@ export const SaveModal: React.FC<SaveModalProps> = ({ isOpen, onClose, onSave, e
           onChange={(e) => setMapName(e.target.value)}
           className={styles.input}
         />
+
+        <div className={styles.list}>
+          {existingMaps.length === 0 ? (
+            <div className={styles.emptyMessage}>No saved maps</div>
+          ) : (
+            existingMaps.map((name) => (
+              <button
+                type="button"
+                key={name}
+                className={styles.listItem}
+                onClick={() => setMapName(name)} // Set name on click to streamline overwriting
+              >
+                {name}
+              </button>
+            ))
+          )}
+        </div>
         <div className={styles.buttonGroup}>
            <button onClick={handleSave} className={styles.saveButton}>Save</button>
            <button onClick={onClose} className={styles.cancelButton}>Cancel</button>
