@@ -63,7 +63,10 @@ export class MapManager {
   }
 
   private createCustomMap(data: CustomMapData): void {
-    const { width, height, tileSize } = data;
+    const width = Number(data.width);
+    const height = Number(data.height);
+    const tileSize = Number(data.tileSize);
+
     const mapWidthPixels = width * tileSize;
     const mapHeightPixels = height * tileSize;
 
@@ -88,10 +91,10 @@ export class MapManager {
 
     if (data.layers && data.layers.length > 0) {
       // New multi-layer format
-      this.populateFromLayers(data, map, tilesetObjects, tilesetGidMap);
+      this.populateFromLayers({ ...data, width, height }, map, tilesetObjects, tilesetGidMap);
     } else {
       // Legacy two-layer format
-      this.populateLegacyLayers(data, map, tilesetObjects, tilesetGidMap);
+      this.populateLegacyLayers({ ...data, width, height }, map, tilesetObjects, tilesetGidMap);
     }
   }
 
@@ -177,8 +180,30 @@ export class MapManager {
 
       for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
-          const gid = this.resolveGid(serializedLayer.tiles[y][x], data.palette, tilesetGidMap);
-          if (gid !== -1) phaserLayer.putTileAt(gid, x, y);
+          // Robust safety checks for layer bounds and data existence
+          if (!phaserLayer.layer || 
+              !phaserLayer.layer.data || 
+              y >= phaserLayer.layer.height || 
+              x >= phaserLayer.layer.width ||
+              !phaserLayer.layer.data[y]) {
+            continue;
+          }
+
+          const row = serializedLayer.tiles[y];
+          if (!row) continue;
+          
+          const cell = row[x];
+          // Allow 0 as valid tile ID, only skip empty
+          if (cell === undefined || cell === null) continue;
+
+          const gid = this.resolveGid(cell, data.palette, tilesetGidMap);
+          if (gid !== -1) {
+            try {
+              phaserLayer.putTileAt(gid, x, y);
+            } catch (err) {
+              console.warn(`[MapManager] Failed to put tile at ${x},${y} (gid: ${gid})`, err);
+            }
+          }
         }
       }
 
@@ -208,6 +233,7 @@ export class MapManager {
     if (groundLayer) {
       for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
+          if (!ground[y] || !ground[y][x]) continue;
           const gid = this.resolveGid(ground[y][x], data.palette, tilesetGidMap);
           if (gid !== -1) groundLayer.putTileAt(gid, x, y);
         }
@@ -219,6 +245,7 @@ export class MapManager {
     if (objectsLayer) {
       for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
+          if (!objects[y] || !objects[y][x]) continue;
           const gid = this.resolveGid(objects[y][x], data.palette, tilesetGidMap);
           if (gid !== -1) objectsLayer.putTileAt(gid, x, y);
         }
