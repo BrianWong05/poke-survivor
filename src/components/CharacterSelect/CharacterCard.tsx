@@ -1,5 +1,7 @@
-import type { CharacterConfig } from '@/game/entities/characters/types'; // Updated to use @ alias
+import type { CharacterConfig } from '@/game/entities/characters/types';
 import { useTranslation } from 'react-i18next';
+import { Heart, Zap, Sword, Flame } from 'lucide-react';
+import styles from './CharacterCard.module.css';
 
 interface CharacterCardProps {
   character: CharacterConfig;
@@ -12,53 +14,60 @@ export function CharacterCard({ character, isSelected, onSelect }: CharacterCard
 
   return (
     <button
-      className={`bg-white/5 border-2 border-white/10 rounded-2xl p-4 md:p-6 cursor-pointer transition-all duration-300 ease-out text-left hover:-translate-y-[5px] hover:border-white/30 hover:bg-white/10 ${
-        isSelected
-          ? 'border-[#FFD700] shadow-[0_0_30px_rgba(255,215,0,0.3)] bg-[#FFD700]/10'
-          : ''
-      }`}
+      className={`${styles.card} ${isSelected ? styles.cardSelected : ''}`}
       onClick={() => onSelect(character)}
     >
-      <div className="w-[60px] h-[60px] md:w-20 md:h-20 mx-auto mb-4 rounded-full overflow-hidden bg-black/30 flex items-center justify-center">
-        <div
-          className="bg-no-repeat [image-rendering:pixelated] scale-150 animate-[play-sprite_0.8s_steps(var(--frame-count))_infinite]"
-          style={
-            {
-              width: `${getSpriteMeta(character.id).w}px`,
-              height: `${getSpriteMeta(character.id).h}px`,
-              backgroundImage: `url(${getCharacterSprite(character.id)})`,
-              '--frame-count': getSpriteMeta(character.id).frames,
-              '--frame-width': `${getSpriteMeta(character.id).w}px`,
-            } as React.CSSProperties
-          }
-        />
+      <div className={styles.header}>
+        <div className={`${styles.avatarContainer} ${isSelected ? styles.avatarContainerSelected : ''}`}>
+          <div className={styles.avatarInner}>
+            <div
+              className="bg-no-repeat [image-rendering:pixelated] scale-150 animate-[play-sprite_0.8s_steps(var(--frame-count))_infinite]"
+              style={
+                {
+                  width: `${getSpriteMeta(character.id).w}px`,
+                  height: `${getSpriteMeta(character.id).h}px`,
+                  backgroundImage: `url(${getCharacterSprite(character.id)})`,
+                  '--frame-count': getSpriteMeta(character.id).frames,
+                  '--frame-width': `${getSpriteMeta(character.id).w}px`,
+                } as React.CSSProperties
+              }
+            />
+          </div>
+        </div>
+
+        <div className={styles.info}>
+          <h2 className={styles.name}>{t(character.nameKey)}</h2>
+          
+          <div className={styles.statsRow}>
+            <div className={styles.statItem}>
+              <Heart size={20} color="#f87171" fill="rgba(248, 113, 113, 0.2)" />
+              <span className={styles.statValue}>{character.stats.maxHP}</span>
+            </div>
+            <div className={styles.statItem}>
+              <Zap size={20} color="#fbbf24" fill="rgba(251, 191, 36, 0.2)" />
+              <span className={styles.statValue}>{character.stats.speed}</span>
+            </div>
+            <div className={styles.statItem}>
+              <Sword size={20} color="#a1a1aa" fill="rgba(161, 161, 170, 0.2)" />
+              <span className={styles.statValue}>{character.stats.baseDamage}</span>
+            </div>
+          </div>
+        </div>
       </div>
-      <h2 className="text-[1.2rem] md:text-[1.5rem] text-white m-0 mb-2">
-        {t(character.nameKey)}
-      </h2>
-      <p className="text-[0.9rem] text-[#888] m-0 mb-4 italic">
-        {t(character.archetypeKey)}
-      </p>
-      <div className="flex gap-4 mb-4">
-        <span className="text-[0.9rem] text-[#ddd] bg-black/30 px-2 py-1 rounded">
-          ❤️ {character.stats.maxHP}
-        </span>
-        <span className="text-[0.9rem] text-[#ddd] bg-black/30 px-2 py-1 rounded">
-          ⚡ {character.stats.speed}
-        </span>
-        <span className="text-[0.9rem] text-[#ddd] bg-black/30 px-2 py-1 rounded">
-          ⚔️ {character.stats.baseDamage}
-        </span>
+
+      <div className={styles.passiveBox}>
+        <div className={styles.passiveHeader}>
+          <Flame size={16} color="#fbbf24" />
+          <span className={styles.passiveLabel}>
+            {t('passive') || 'Passive'}: {t(character.passive.nameKey)}
+          </span>
+        </div>
+        <p className={styles.passiveDesc}>{t(character.passive.descKey)}</p>
       </div>
-      <p className="text-[0.85rem] text-[#aaa] m-0 leading-[1.4]">
-        <strong className="text-[#FFD700]">
-          {t(character.passive.nameKey)}:
-        </strong>{' '}
-        {t(character.passive.descKey)}
-      </p>
     </button>
   );
 }
+
 
 function getCharacterSprite(id: string): string {
   // Map character IDs to their sprite assets (using idle-down frame)

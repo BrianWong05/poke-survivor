@@ -48,9 +48,9 @@ export function CharacterSelect({ onSelect, onOpenLevelEditor }: CharacterSelect
         }
       `}</style>
       
-      <div className="min-h-full flex flex-col items-center justify-center py-10 px-5">
+      <div className="min-h-full flex flex-col items-center justify-center py-20 px-10">
         <LanguageToggle />
-        <div className="max-w-[1200px] w-full text-center flex flex-col items-center gap-8">
+        <div className="max-w-[1300px] w-full text-center flex flex-col items-center gap-12">
           <h1 className="text-[1.8rem] md:text-[2.5rem] text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.3)]">
             {t('choose_pokemon')}
           </h1>
@@ -64,7 +64,7 @@ export function CharacterSelect({ onSelect, onOpenLevelEditor }: CharacterSelect
 
         {showDex && <DexScreen onClose={() => setShowDex(false)} />}
         
-        <div className="w-full grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] md:grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-6">
+        <div className="w-full grid grid-cols-[repeat(auto-fit,minmax(340px,1fr))] gap-10 justify-items-center items-start">
           {characters.map((character) => (
             <CharacterCard
               key={character.id}

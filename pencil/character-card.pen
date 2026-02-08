@@ -1,0 +1,236 @@
+{
+  "version": "2.7",
+  "children": [
+    {
+      "type": "frame",
+      "id": "SJEFq",
+      "x": 0,
+      "y": 0,
+      "name": "Character Selection",
+      "width": 1440,
+      "height": 900,
+      "fill": "#09090b",
+      "layout": "vertical",
+      "justifyContent": "center",
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "frame",
+          "id": "MaqOM",
+          "name": "card",
+          "width": 340,
+          "fill": "#18181b",
+          "cornerRadius": 24,
+          "stroke": {
+            "thickness": 1,
+            "fill": "#27272a"
+          },
+          "layout": "vertical",
+          "gap": 24,
+          "padding": 24,
+          "children": [
+            {
+              "type": "frame",
+              "id": "x5hPK",
+              "name": "header",
+              "gap": 16,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "pEiuZ",
+                  "name": "avatarContainer",
+                  "width": 84,
+                  "height": 84,
+                  "cornerRadius": 100,
+                  "stroke": {
+                    "thickness": 2,
+                    "fill": "#fbbf24"
+                  },
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "qmZMg",
+                      "name": "avatar",
+                      "fill": {
+                        "type": "image",
+                        "enabled": true,
+                        "url": "./images/generated-1770541893017.png",
+                        "mode": "fill"
+                      },
+                      "width": 72,
+                      "height": 72
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "dNuz9",
+                  "name": "titles",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 12,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "M18Dg",
+                      "fill": "#fafafa",
+                      "content": "小火龍",
+                      "fontFamily": "Inter",
+                      "fontSize": 32,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "IUQwF",
+                      "name": "statsRow",
+                      "gap": 24,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "Ac7Bt",
+                          "name": "stat1",
+                          "layout": "vertical",
+                          "gap": 4,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon_font",
+                              "id": "BZrLT",
+                              "width": 20,
+                              "height": 20,
+                              "iconFontName": "heart",
+                              "iconFontFamily": "lucide",
+                              "fill": "#f87171"
+                            },
+                            {
+                              "type": "text",
+                              "id": "0f05M",
+                              "fill": "#fafafa",
+                              "content": "150",
+                              "fontFamily": "Inter",
+                              "fontSize": 16,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "9om1f",
+                          "name": "stat2",
+                          "layout": "vertical",
+                          "gap": 4,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon_font",
+                              "id": "8mrbH",
+                              "width": 20,
+                              "height": 20,
+                              "iconFontName": "zap",
+                              "iconFontFamily": "lucide",
+                              "fill": "#fbbf24"
+                            },
+                            {
+                              "type": "text",
+                              "id": "mVTpk",
+                              "fill": "#fafafa",
+                              "content": "180",
+                              "fontFamily": "Inter",
+                              "fontSize": 16,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "tydGw",
+                          "name": "stat3",
+                          "layout": "vertical",
+                          "gap": 4,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon_font",
+                              "id": "ciwsl",
+                              "width": 20,
+                              "height": 20,
+                              "iconFontName": "sword",
+                              "iconFontFamily": "lucide",
+                              "fill": "#a1a1aa"
+                            },
+                            {
+                              "type": "text",
+                              "id": "BSTRD",
+                              "fill": "#fafafa",
+                              "content": "20",
+                              "fontFamily": "Inter",
+                              "fontSize": 16,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "ybMcN",
+              "name": "passiveBox",
+              "width": 293,
+              "fill": "#27272a",
+              "cornerRadius": 12,
+              "layout": "vertical",
+              "gap": 6,
+              "padding": 12,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "zMasK",
+                  "name": "passiveHeader",
+                  "gap": 6,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "TJe4v",
+                      "width": 14,
+                      "height": 14,
+                      "iconFontName": "flame",
+                      "iconFontFamily": "lucide",
+                      "fill": "#fbbf24"
+                    },
+                    {
+                      "type": "text",
+                      "id": "dZEtf",
+                      "fill": "#fbbf24",
+                      "content": "被動技能：猛火",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "htQJk",
+                  "fill": "#a1a1aa",
+                  "content": "每損失 1% 生命值，增加 1% 傷害。",
+                  "lineHeight": 1.4,
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

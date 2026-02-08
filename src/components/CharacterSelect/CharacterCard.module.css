@@ -1,0 +1,158 @@
+.card {
+  width: 340px;
+  background-color: #18181b;
+  border: 2px solid #27272a;
+  border-radius: 24px;
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.3s ease-out;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  outline: none;
+}
+
+.card:hover {
+  border-color: #3f3f46;
+  background-color: rgba(39, 39, 42, 0.5);
+  transform: translateY(-4px);
+}
+
+.cardSelected {
+  border-color: #fbbf24;
+  box-shadow: 0 0 30px rgba(251, 191, 36, 0.2);
+  background-color: #18181b;
+}
+
+.header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+}
+
+.avatarContainer {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  border: 2px dashed #3f3f46;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.avatarContainerSelected {
+  border-color: #fbbf24;
+  animation: spin 10s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.avatarInner {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background-color: #000;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 10;
+  animation: none !important; /* Prevent parent spin affecting content */
+}
+
+/* Counter-rotate content to keep it upright if needed, but here we prefer simple */
+.avatarContainerSelected .avatarInner {
+  animation: counter-spin 10s linear infinite !important;
+}
+
+@keyframes counter-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+.name {
+  color: #fafafa;
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.statsRow {
+  display: flex;
+  flex-direction: row;
+  gap: 24px;
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.statValue {
+  color: #fafafa;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.passiveBox {
+  margin-top: auto;
+  background-color: #27272a;
+  border: 1px solid rgba(161, 161, 170, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: background-color 0.3s ease;
+}
+
+.cardSelected .passiveBox {
+  background-color: rgba(251, 191, 36, 0.1);
+  border-color: rgba(251, 191, 36, 0.2);
+}
+
+.passiveHeader {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.passiveLabel {
+  color: #f59e0b; /* accent_gold */
+  font-weight: 700;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.passiveDesc {
+  color: #a1a1aa;
+  font-size: 13px;
+  line-height: 1.4;
+  margin: 0;
+}
