@@ -115,12 +115,28 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           const tile: TileData = { id: (selection.y * 100) + selection.x, set: activeAsset, type: activeTab };
           // Note: selection logic might be more complex if multi-tile selection, but sticking to original simple preview
           drawTile(ctx, tile, previewX, previewY, 0.5);
-       } else {
-         // Box Select Preview (default or fallthrough)
-         if (activeTool === 'fill') {
-             ctx.strokeStyle = '#fff';
-             ctx.strokeRect(minX * TILE_SIZE, minY * TILE_SIZE, w, h);
-         }
+       } else if (activeTool === 'fill') {
+          const maxX = Math.max(startX, currX);
+          const maxY = Math.max(startY, currY);
+          
+          const asset = imageCache[activeAsset];
+          if (asset) {
+            const tilesPerRow = Math.floor(asset.width / TILE_SIZE);
+            
+            for (let y = minY; y <= maxY; y++) {
+               for (let x = minX; x <= maxX; x++) {
+                  const patternX = (x - minX) % selection.w;
+                  const patternY = (y - minY) % selection.h;
+                  const sourceId = (selection.y + patternY) * tilesPerRow + (selection.x + patternX);
+                  
+                  const tile: TileData = { id: sourceId, set: activeAsset, type: activeTab };
+                  drawTile(ctx, tile, x, y, 0.5);
+               }
+            }
+          }
+
+          ctx.strokeStyle = '#fff';
+          ctx.strokeRect(minX * TILE_SIZE, minY * TILE_SIZE, w, h);
        }
     }
 
