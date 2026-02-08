@@ -78,6 +78,11 @@
   animation: play-sprite 0.8s steps(var(--frameCount)) infinite;
 }
 
+@keyframes play-sprite {
+  from { background-position: 0px 0px; }
+  to { background-position: calc(var(--frameWidth) * var(--frameCount) * -1) 0px; }
+}
+
 /* Counter-rotate content to keep it upright if needed, but here we prefer simple */
 .avatarContainerSelected .avatarInner {
   animation: counter-spin 10s linear infinite !important;
