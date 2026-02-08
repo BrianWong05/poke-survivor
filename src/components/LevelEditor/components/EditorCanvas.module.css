@@ -1,12 +1,12 @@
 .container {
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-  display: inline-block; /* Ensure container fits canvas */
-  line-height: 0; /* Remove potential extra space */
+  display: inline-block;
+  line-height: 0;
 }
 
 .canvas {
   image-rendering: pixelated;
-  background-color: #1a1a1a;
+  background-color: #000000;
   cursor: crosshair;
   transform-origin: top left;
   display: block;

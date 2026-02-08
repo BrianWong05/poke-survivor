@@ -1,311 +1,297 @@
 .sidebar {
   width: 320px;
-  background-color: #111;
-  border-right: 1px solid #333;
+  background-color: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   height: 100%;
-  overflow: hidden;
+  padding: 12px;
+  gap: 16px;
+  overflow-y: auto;
 }
 
-.header {
-  padding: 16px;
-  border-bottom: 1px solid #333;
-  background-color: #1a1a1a;
+/* Scrollbar styling */
+.sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+.sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar::-webkit-scrollbar-thumb {
+  background-color: var(--border);
+  border-radius: 3px;
 }
 
-.titleRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-
-.title {
-  font-size: 1.25rem;
-  font-weight: bold;
-  color: white;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.backButton {
-  background: none;
-  border: none;
-  color: #888;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-
-.backButton:hover {
-  color: white;
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
-.headerActions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-.actionButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 8px;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  border: none;
-  transition: all 0.2s;
-}
-
-.saveButton {
-  background-color: #3b82f6;
-  color: white;
-}
-
-.saveButton:hover {
-  background-color: #2563eb;
-}
-
-.loadButton {
-  background-color: #2a2a2a;
-  color: #ccc;
-  border: 1px solid #444;
-}
-
-.loadButton:hover {
-  background-color: #333;
-  color: white;
-  border-color: #555;
-}
-
+/* --- Play Test Button --- */
 .playButton {
   width: 100%;
-  margin-top: 8px;
-  background-color: #10b981;
-  color: white;
+  height: 48px;
+  background-color: var(--accent-green);
+  color: #ffffff;
+  border-radius: var(--radius-l);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  flex-shrink: 0;
 }
 
 .playButton:hover {
-  background-color: #059669;
+  opacity: 0.9;
 }
 
-.playButtonHeader {
-  flex: 1;
-  height: 32px;
-  background-color: #10b981;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  font-weight: bold;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  padding: 0 12px;
+.playText {
+  font-family: "Inter", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
 }
 
-.playButtonHeader:hover {
-  background-color: #059669;
-}
-
-.content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.section {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.sectionTitle {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #888;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+/* --- Title --- */
+.title {
+  color: var(--fg-primary);
+  font-family: "Inter", sans-serif;
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 1px;
   margin: 0;
 }
 
-.toolsGrid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-}
-
-.toolButton {
-  aspect-ratio: 1;
+/* --- Generic Panel --- */
+.panel {
+  width: 100%;
+  background-color: var(--bg-panel);
+  border-radius: var(--radius-xl);
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  background-color: #2a2a2a;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  color: #888;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.toolButton:hover {
-  background-color: #333;
-  color: white;
-}
-
-.toolButtonActive {
-  background-color: #3b82f6;
-  color: white;
-  border-color: #2563eb;
-}
-
-.toolButtonActive:hover {
-  background-color: #2563eb;
-}
-
-.undoRedoGroup {
-  display: flex;
   gap: 8px;
 }
 
-.undoRedoButton {
-  flex: 1;
+.panelHeader {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 8px;
-  background-color: #2a2a2a;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  color: #ccc;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 0.9rem;
-}
-
-.undoRedoButton:hover:not(:disabled) {
-  background-color: #333;
-  color: white;
-}
-
-.undoRedoButton:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.mapSettings {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.settingGroup {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.label {
-  font-size: 0.8rem;
-  color: #888;
-}
-
-.input {
-  background-color: #111;
-  border: 1px solid #333;
-  color: white;
-  padding: 6px;
-  border-radius: 4px;
-  font-size: 0.9rem;
   width: 100%;
 }
 
-.input:focus {
-  border-color: #3b82f6;
+.panelLabel {
+  color: var(--fg-muted);
+  font-family: "Inter", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* --- Tools Section --- */
+.toolsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toolsRow {
+  display: grid;
+  gap: 8px;
+  /* Columns will be defined by inline styles or separate classes if needed, 
+     but flex/grid combination is used here. 
+     Top row: 3 cols. Bottom row: 2 cols. */
+}
+
+.toolsRow3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.toolsRow2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.toolCard {
+  background-color: var(--bg-card);
+  border-radius: var(--radius-l);
+  border: 1px solid var(--border);
+  height: 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.toolCard:hover {
+  border-color: var(--fg-muted);
+}
+
+.toolCardActive {
+  background-color: var(--bg-card); /* bg doesn't change in design, but maybe border or icon color? 
+  Actually design doesn't explicitly show active state styling difference in the JSON props provided,
+  but usually we want one. I'll use border color or accent fill. */
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 1px var(--accent-blue);
+}
+
+.toolLabel {
+  color: var(--fg-primary);
+  font-family: "Inter", sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* --- Configuration Section --- */
+.configRow {
+  display: flex;
+  gap: 16px;
+}
+
+.configCol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.configLabel {
+  color: var(--fg-muted);
+  font-family: "Inter", sans-serif;
+  font-size: 11px;
+  font-weight: normal;
+}
+
+.configInputWrapper {
+  width: 100%;
+  height: 32px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s); /* Not specified on input wrapper but implied by design consistency, .pen says stroke thickness 1 */
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+}
+
+.configInput {
+  background: transparent;
+  border: none;
+  color: var(--fg-primary);
+  font-family: "Inter", sans-serif;
+  font-size: 13px;
+  font-weight: normal;
+  width: 100%;
   outline: none;
 }
 
-.tabs {
+.actionRow {
   display: flex;
-  background-color: #1a1a1a;
-  padding: 4px;
-  border-radius: 6px;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.actionBtn {
+  flex: 1;
+  height: 36px;
+  border-radius: var(--radius-l);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  cursor: pointer;
+  font-family: "Inter", sans-serif;
+  font-size: 12px;
+  font-weight: normal;
+  transition: opacity 0.2s;
+}
+
+.loadBtn {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--fg-primary);
+}
+
+.saveBtn {
+  background-color: var(--accent-blue);
+  color: #ffffff;
+}
+
+.actionBtn:hover {
+  opacity: 0.9;
+}
+
+/* --- View Section --- */
+/* (Zoom controls handled by ZoomControls component, but we style the container here if needed) */
+
+/* --- Tileset Section --- */
+.tilesetTabs {
+  display: flex;
+  background: none;
+  border-radius: var(--radius-l);
   gap: 4px;
 }
 
 .tab {
   flex: 1;
-  padding: 6px;
-  text-align: center;
-  font-size: 0.9rem;
-  color: #888;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-l);
   cursor: pointer;
-  border-radius: 4px;
+  font-family: "Inter", sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--fg-muted);
+  background: transparent;
+  border: none;
   transition: all 0.2s;
 }
 
-.tab:hover {
-  color: white;
-  background-color: rgba(255, 255, 255, 0.05);
-}
-
 .tabActive {
-  background-color: #333;
-  color: white;
-  font-weight: 500;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  background-color: var(--border);
+  color: var(--fg-primary);
 }
 
-.assetSelect {
+.tilesetDropdown {
   width: 100%;
-  padding: 8px;
-  background-color: #2a2a2a;
-  border: 1px solid #333;
-  color: white;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  outline: none;
+  height: 32px;
+  padding: 0 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: none;
+  border: 1px solid transparent; /* or border? .pen says fill: none */
+  border-radius: var(--radius-s);
+  cursor: pointer;
 }
 
-.assetSelect:focus {
-  border-color: #3b82f6;
+.dropdownText {
+  color: var(--fg-primary);
+  font-family: "Inter", sans-serif;
+  font-size: 12px;
+  font-weight: normal;
 }
 
-.paletteContainer {
-  border: 1px solid #333;
-  border-radius: 6px;
-  background-color: #111; /* Checkboard pattern handled in component via dynamic style or specific class if needed */
+.selectInput {
+    /* Hidden select over the custom UI or styling the select itself */
+    appearance: none;
+    background: transparent;
+    border: none;
+    color: var(--fg-primary);
+    width: 100%;
+    font-family: "Inter", sans-serif;
+    font-size: 12px;
+    outline: none;
+}
+
+.tilesetGrid {
+  width: 100%;
+  height: 300px;
   overflow: auto;
-  position: relative;
-  /* height set dynamically or via style prop */
-  min-height: 200px;
-  display: grid;
-  place-items: center;
-}
-
-.paletteImage {
-  display: block;
-  image-rendering: pixelated;
-  /* transforms handled in style prop */
+  border-radius: var(--radius-s);
+  /* background-image set inline */
 }

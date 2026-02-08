@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, Lock, Unlock, Trash2, GripVertical, Footprints, Plus } from 'lucide-react';
+import { Eye, Lock, Unlock, Trash2, Footprints, Plus } from 'lucide-react';
 import type { LayerData } from '../types';
 import styles from './LayerPanel.module.css';
 
@@ -36,7 +36,6 @@ export const LayerPanel = ({
     setEditName(layer.name);
   };
 
-
   const commitRename = () => {
     if (editingId && editName.trim()) {
       onRenameLayer(editingId, editName.trim());
@@ -51,10 +50,6 @@ export const LayerPanel = ({
 
   return (
     <div className={styles.container}>
-      <div className={styles.header}>
-        <h3 className={styles.title}>Layers</h3>
-      </div>
-
       <div className={styles.list}>
         {/* Render in reverse order so top layers appear at top of list */}
         {[...layers].reverse().map((layer, index) => {
@@ -66,27 +61,34 @@ export const LayerPanel = ({
               key={layer.id}
               className={`${styles.layerItem} ${layer.id === currentLayerId ? styles.layerItemSelected : ''}`}
               onClick={() => onSelectLayer(layer.id)}
+              draggable
+              onDragStart={(e) => {
+                  e.dataTransfer.setData('text/plain', originalIndex.toString());
+              }}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                  e.preventDefault();
+                  const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+                  const layerId = layers[fromIndex]?.id;
+                  if (layerId) {
+                      onMoveLayer(layerId, originalIndex);
+                  }
+              }}
             >
-              <div 
-                className={styles.dragHandle}
-                draggable
-                onDragStart={(e) => {
-                   e.dataTransfer.setData('text/plain', originalIndex.toString());
-                }}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                   e.preventDefault();
-                   const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
-                   const layerId = layers[fromIndex]?.id;
-                   if (layerId) {
-                       onMoveLayer(layerId, originalIndex);
-                   }
-                }}
-              >
-                <GripVertical size={14} />
-              </div>
-
-              <div className={styles.layerInfo}>
+              <div className={styles.leftGroup}>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleVisibility(layer.id);
+                  }}
+                  className={`${styles.iconButton} ${layer.visible ? styles.activeIcon : ''}`}
+                  title={layer.visible ? "Hide" : "Show"}
+                >
+                   {/* Design uses Eye for both states, just color change. Or Eye/EyeOff. 
+                       .pen uses 'eye' for both. We'll use Eye for both but color change. */}
+                   <Eye size={14} />
+                </button>
+                
                 {editingId === layer.id ? (
                     <input
                       type="text"
@@ -111,14 +113,23 @@ export const LayerPanel = ({
                 )}
               </div>
 
-              <div className={styles.actions}>
+              <div className={styles.rightGroup}>
+                <button
+                   className={styles.iconButton}
+                   title="Visibility (Secondary)"
+                   style={{ opacity: 0.5, cursor: 'default' }}
+                >
+                   {/* Placeholder to match design visual of right-side eye */}
+                   <Eye size={14} />
+                </button>
+
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     onToggleLock(layer.id);
                   }}
-                  className={`${styles.actionButton} ${layer.locked ? styles.locked : ''}`}
-                  title={layer.locked ? "Unlock Layer" : "Lock Layer"}
+                  className={`${styles.iconButton} ${layer.locked ? '' : ''}`} // Locked state might need specific color? Design uses muted for both.
+                  title={layer.locked ? "Unlock" : "Lock"}
                 >
                   {layer.locked ? <Lock size={14} /> : <Unlock size={14} />}
                 </button>
@@ -126,23 +137,15 @@ export const LayerPanel = ({
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    onToggleVisibility(layer.id);
-                  }}
-                  className={`${styles.actionButton} ${!layer.visible ? styles.actionButtonActive : ''}`}
-                  title={layer.visible ? "Hide Layer" : "Show Layer"}
-                >
-                  {layer.visible ? <Eye size={14} /> : <EyeOff size={14} />}
-                </button>
-
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
                     onToggleCollision(layer.id);
                   }}
-                  className={`${styles.actionButton} ${layer.collision ? styles.collisionButtonActive : ''}`}
-                  title={layer.collision ? "Disable Collision" : "Enable Collision"}
+                  className={`${styles.walkBtn} ${layer.collision ? styles.walkBtnActive : ''}`}
+                  title="Toggle Collision"
                 >
-                  <Footprints size={14} />
+                  <div style={{ color: layer.collision ? '#fff' : '#ffffff', display:'flex' }}>
+                    {/* Design uses 'directions_walk' from Material Symbols. We use 'Footprints' or closest Lucide. */}
+                    <Footprints size={12} fill={layer.collision ? "white" : "none"} />
+                  </div>
                 </button>
 
                 <button
@@ -150,8 +153,8 @@ export const LayerPanel = ({
                     e.stopPropagation();
                     if(confirm('Delete layer?')) onRemoveLayer(layer.id);
                   }}
-                  className={`${styles.actionButton} ${styles.deleteButton}`}
-                  title="Delete Layer"
+                  className={styles.iconButton}
+                  title="Delete"
                   disabled={layers.length <= 1}
                 >
                   <Trash2 size={14} />
@@ -163,11 +166,11 @@ export const LayerPanel = ({
       </div>
 
        <button 
-        className={styles.addLayerButtonBottom}
+        className={styles.addLayerBtn}
         onClick={onAddLayer}
       >
-        <Plus size={14} />
-        <span>ADD LAYER</span>
+        <Plus size={14} className="text-[#a0a0a0]" />
+        <span className={styles.addLayerText}>ADD LAYER</span>
       </button>
     </div>
   );

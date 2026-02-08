@@ -1,4 +1,4 @@
-import { Minus, Plus } from 'lucide-react';
+import { ZoomIn, ZoomOut } from 'lucide-react';
 import styles from './ZoomControls.module.css';
 
 interface ZoomControlsProps {
@@ -16,7 +16,7 @@ export const ZoomControls = ({ zoom, onZoomIn, onZoomOut, onReset }: ZoomControl
         className={styles.button}
         title="Zoom Out"
       >
-        <Minus size={14} />
+        <ZoomOut size={18} />
       </button>
       
       <span 
@@ -32,7 +32,7 @@ export const ZoomControls = ({ zoom, onZoomIn, onZoomOut, onReset }: ZoomControl
         className={styles.button}
         title="Zoom In"
       >
-        <Plus size={14} />
+        <ZoomIn size={18} />
       </button>
     </div>
   );

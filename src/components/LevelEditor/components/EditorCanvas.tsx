@@ -51,7 +51,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     if (!ctx) return;
 
     // Clear
-    ctx.fillStyle = '#1a1a1a';
+    ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, mapSize.width * TILE_SIZE, mapSize.height * TILE_SIZE);
 
     // Render layers in order, skipping hidden ones; dim non-active layers
