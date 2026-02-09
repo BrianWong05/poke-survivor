@@ -231,7 +231,8 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
         onExit={onExit}
         activeTab={activeTab}
         onTabChange={(t) => { 
-          setActiveTab(t); 
+          setActiveTab(t);
+          setSelection({ x: 0, y: 0, w: 1, h: 1 });
           if(t === 'animations') {
              setActiveAsset('');
           } else {
@@ -241,7 +242,10 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
           }
         }}
         activeAsset={activeAsset}
-        onAssetChange={setActiveAsset}
+        onAssetChange={(asset) => {
+          setActiveAsset(asset);
+          setSelection({ x: 0, y: 0, w: 1, h: 1 });
+        }}
         assetOptions={{
             tilesets: Object.keys(assets.tilesets).sort(),
             autosets: Object.keys(assets.autosets).sort()
