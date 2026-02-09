@@ -405,63 +405,175 @@ async function generateOutdoorMap() {
     }
   }
 
-  const numPaths = 15; 
+  // BSP Path Generation
+  const MIN_LEAF_SIZE = 50; 
+  const MAX_LEAF_SIZE = 80;
+
+  class Leaf {
+      x: number; y: number; width: number; height: number;
+      leftChild?: Leaf;
+      rightChild?: Leaf;
+      
+      constructor(x: number, y: number, width: number, height: number) {
+          this.x = x; this.y = y; this.width = width; this.height = height;
+      }
+
+      get center() {
+          return { x: Math.floor(this.x + this.width / 2), y: Math.floor(this.y + this.height / 2) };
+      }
+
+      split(): boolean {
+         if (this.leftChild || this.rightChild) return false;
+         
+         // Determine direction
+         let splitH = Math.random() > 0.5;
+         if (this.width > this.height && this.width / this.height >= 1.25) splitH = false;
+         else if (this.height > this.width && this.height / this.width >= 1.25) splitH = true;
+
+         const max = (splitH ? this.height : this.width) - MIN_LEAF_SIZE;
+         if (max <= MIN_LEAF_SIZE) return false;
+
+         const split = randomInt(max - MIN_LEAF_SIZE) + MIN_LEAF_SIZE;
+
+         if (splitH) {
+             this.leftChild = new Leaf(this.x, this.y, this.width, split);
+             this.rightChild = new Leaf(this.x, this.y + split, this.width, this.height - split);
+         } else {
+             this.leftChild = new Leaf(this.x, this.y, split, this.height);
+             this.rightChild = new Leaf(this.x + split, this.y, this.width - split, this.height);
+         }
+         return true;
+      }
+  }
   
-  for (let i = 0; i < numPaths; i++) {
-    let x = randomInt(MAP_WIDTH);
-    let y = randomInt(MAP_HEIGHT);
-    
-    // Find a valid start (not water, not dirt)
-    let attempts = 0;
-    while(attempts < 100 && (groundTiles[y][x] === TEMP_WATER_MARKER || groundTiles[y][x] === TEMP_DIRT_MARKER)) {
-        x = randomInt(MAP_WIDTH);
-        y = randomInt(MAP_HEIGHT);
-        attempts++;
-    }
-    
-    if (groundTiles[y][x] === TEMP_WATER_MARKER || groundTiles[y][x] === TEMP_DIRT_MARKER) continue;
-
-    const length = 500 + randomInt(1000);
-
-    for (let j = 0; j < length; j++) {
-       groundTiles[y][x] = TEMP_PATH_MARKER;
-
-       let validMove = false;
-       let nextX = x;
-       let nextY = y;
-       
-       const moves = [
-           {dx:0, dy:-1}, {dx:1, dy:-1}, {dx:1, dy:0}, {dx:1, dy:1},
-           {dx:0, dy:1}, {dx:-1, dy:1}, {dx:-1, dy:0}, {dx:-1, dy:-1}
-       ];
-       for (let k = moves.length - 1; k > 0; k--) {
-           const r = Math.floor(Math.random() * (k + 1));
-           [moves[k], moves[r]] = [moves[r], moves[k]];
-       }
-       
-       for (const move of moves) {
-           const nx = x + move.dx;
-           const ny = y + move.dy;
-           
-           if (nx >= 0 && nx < MAP_WIDTH && ny >= 0 && ny < MAP_HEIGHT) {
-               // Avoid Water and Dirt
-               if (groundTiles[ny][nx] !== TEMP_WATER_MARKER && groundTiles[ny][nx] !== TEMP_DIRT_MARKER) {
-                   nextX = nx;
-                   nextY = ny;
-                   validMove = true;
-                   break;
-               }
-           }
-       }
-       
-       if (validMove) {
-           x = nextX;
-           y = nextY;
-       } else {
-           break;
-       }
+  // Initialize Terrain Cost Map for A* Wiggle
+  const terrainCosts = createEmptyLayer(MAP_WIDTH, MAP_HEIGHT, 0);
+  for(let y=0; y<MAP_HEIGHT; y++) {
+    for(let x=0; x<MAP_WIDTH; x++) {
+        terrainCosts[y][x] = 1.0 + Math.random() * 2.0; // Higher variance = more wiggle
     }
   }
+
+  interface Point { x: number, y: number }
+  interface Node { x: number, y: number, g: number, f: number, parent?: Node }
+
+  function findPath(start: Point, end: Point): Point[] | null {
+      const openList: Node[] = [];
+      const closedSet = new Set<string>();
+      
+      const startNode: Node = { x: start.x, y: start.y, g: 0, f: 0 };
+      openList.push(startNode);
+      
+      // Safety break
+      let ops = 0;
+      
+      while(openList.length > 0 && ops < 20000) {
+          ops++;
+          // Get lowest f
+          openList.sort((a, b) => a.f - b.f);
+          const current = openList.shift()!;
+          
+          if (Math.abs(current.x - end.x) < 2 && Math.abs(current.y - end.y) < 2) {
+              // Reconstruct
+              const path: Point[] = [];
+              let curr: Node | undefined = current;
+              while(curr) {
+                  path.push({x: curr.x, y: curr.y});
+                  curr = curr.parent;
+              }
+              return path.reverse();
+          }
+          
+          closedSet.add(`${current.x},${current.y}`);
+          
+          const neighbors = [
+              {x: current.x, y: current.y - 1},
+              {x: current.x + 1, y: current.y},
+              {x: current.x, y: current.y + 1},
+              {x: current.x - 1, y: current.y}
+          ];
+          
+          for(const n of neighbors) {
+              if (n.x < 0 || n.x >= MAP_WIDTH || n.y < 0 || n.y >= MAP_HEIGHT) continue;
+              if (closedSet.has(`${n.x},${n.y}`)) continue;
+              
+              // Obstacle check: Water is wall
+              if (groundTiles[n.y][n.x] === TEMP_WATER_MARKER) continue;
+              
+              const gScore = current.g + terrainCosts[n.y][n.x]; // Use random cost
+              const hScore = Math.abs(n.x - end.x) + Math.abs(n.y - end.y);
+              const fScore = gScore + hScore;
+              
+              const existing = openList.find(node => node.x === n.x && node.y === n.y);
+              if (existing) {
+                  if (gScore < existing.g) {
+                      existing.g = gScore;
+                      existing.f = fScore;
+                      existing.parent = current;
+                  }
+              } else {
+                  openList.push({ x: n.x, y: n.y, g: gScore, f: fScore, parent: current });
+              }
+          }
+      }
+      return null;
+  }
+
+  function drawThickPath(pathPoints: Point[]) {
+      const thickness = 2; // Radius
+      for (const p of pathPoints) {
+          for (let dy = -thickness; dy <= thickness; dy++) {
+              for (let dx = -thickness; dx <= thickness; dx++) {
+                  // Make it roughly circular or just square
+                  if (Math.abs(dx) + Math.abs(dy) <= 3) {
+                      const px = p.x + dx;
+                      const py = p.y + dy;
+                      if (px >= 0 && px < MAP_WIDTH && py >= 0 && py < MAP_HEIGHT) {
+                          // Don't overwrite water
+                          if (groundTiles[py][px] !== TEMP_WATER_MARKER) {
+                            groundTiles[py][px] = TEMP_PATH_MARKER;
+                          }
+                      }
+                  }
+              }
+          }
+      }
+  }
+
+  function createPath(l: Leaf) {
+      if (l.leftChild && l.rightChild) {
+          const p1 = l.leftChild.center;
+          const p2 = l.rightChild.center;
+          
+          // Use A* Pathfinding
+          const pathPoints = findPath(p1, p2);
+          if (pathPoints) {
+              drawThickPath(pathPoints);
+          }
+
+          createPath(l.leftChild);
+          createPath(l.rightChild);
+      }
+  }
+
+  function buildBSP() {
+      const root = new Leaf(0, 0, MAP_WIDTH, MAP_HEIGHT);
+      
+      const queue = [root];
+      while(queue.length > 0) {
+          const l = queue.shift()!;
+          if (l.width > MAX_LEAF_SIZE || l.height > MAX_LEAF_SIZE || Math.random() > 0.25) {
+              if (l.split()) {
+                  queue.push(l.leftChild!);
+                  queue.push(l.rightChild!);
+              }
+          }
+      }
+      return root;
+  }
+
+  const bspRoot = buildBSP();
+  createPath(bspRoot);
   
   // Post-process: Resolve Autotiles
   
