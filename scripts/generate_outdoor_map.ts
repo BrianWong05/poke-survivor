@@ -269,31 +269,128 @@ async function generateOutdoorMap() {
   const TEMP_DIRT_MARKER = -997;
   const TEMP_PATH_MARKER = -999; 
   
-  // A. Generate Lakes
-  const numLakes = 5 + randomInt(5);
-  for (let i = 0; i < numLakes; i++) {
-    let x = randomInt(MAP_WIDTH);
-    let y = randomInt(MAP_HEIGHT);
-    const size = 500 + randomInt(1000); 
-    
-    for (let j = 0; j < size; j++) {
-      if (x >= 0 && x < MAP_WIDTH && y >= 0 && y < MAP_HEIGHT) {
-        groundTiles[y][x] = TEMP_WATER_MARKER;
+  // Helper: Generate Organic Blobs
+  function generateBlob(marker: number, count: number, minSize: number, maxSize: number, avoidMarkers: number[] = []) {
+      for (let i = 0; i < count; i++) {
+        let cx = randomInt(MAP_WIDTH);
+        let cy = randomInt(MAP_HEIGHT);
+        
+        // Ensure start is valid
+        if (avoidMarkers.includes(groundTiles[cy][cx])) continue;
+
+        const size = minSize + randomInt(maxSize - minSize);
+        const openList = [{x: cx, y: cy}];
+        groundTiles[cy][cx] = marker;
+        
+        let currentSize = 1;
+        while (currentSize < size && openList.length > 0) {
+            // Pick a random point from the "edge" (or just active list) to grow from
+            const idx = randomInt(openList.length);
+            const {x, y} = openList[idx];
+            
+            // Try to grow to a neighbor
+            const moves = [
+                {dx:0, dy:-1}, {dx:1, dy:0}, {dx:0, dy:1}, {dx:-1, dy:0}
+            ];
+            
+            let grown = false;
+            // distinct randomization for spread
+            for (let k = moves.length - 1; k > 0; k--) {
+                const r = Math.floor(Math.random() * (k + 1));
+                [moves[k], moves[r]] = [moves[r], moves[k]];
+            }
+
+            for (const m of moves) {
+                const nx = x + m.dx;
+                const ny = y + m.dy;
+                
+                if (nx >= 0 && nx < MAP_WIDTH && ny >= 0 && ny < MAP_HEIGHT) {
+                    if (groundTiles[ny][nx] !== marker && !avoidMarkers.includes(groundTiles[ny][nx])) {
+                        groundTiles[ny][nx] = marker;
+                        openList.push({x: nx, y: ny});
+                        currentSize++;
+                        grown = true;
+                        break; // Grow one at a time per iteration per parent choice to keep it somewhat compact
+                    }
+                }
+            }
+            
+            // Optimization: If we failed to grow from this node multiple times, maybe remove it? 
+            // For simple blob, just letting it stay in list is fine, but might be slow.
+            // Let's rely on high randomness.
+            if (!grown && Math.random() < 0.1) {
+                openList.splice(idx, 1);
+            }
+        }
       }
-      x += randomInt(3) - 1;
-      y += randomInt(3) - 1;
-      x = Math.max(0, Math.min(MAP_WIDTH - 1, x));
-      y = Math.max(0, Math.min(MAP_HEIGHT - 1, y));
-    }
   }
 
+  // A. Generate Lakes
+  
+  // Large Lakes
+  generateBlob(TEMP_WATER_MARKER, 2 + randomInt(2), 2000, 3500, []);
+
+  // Medium Lakes
+  generateBlob(TEMP_WATER_MARKER, 3 + randomInt(3), 800, 1500, []);
+
+  // Small Ponds
+  generateBlob(TEMP_WATER_MARKER, 5 + randomInt(5), 150, 500, []);
+
+  // Helper: Smooth terrain to remove sawtooth edges
+  function smoothMap(marker: number, iterations: number) {
+      for (let i = 0; i < iterations; i++) {
+          const newTiles = groundTiles.map(row => [...row]);
+          for (let y = 1; y < MAP_HEIGHT - 1; y++) {
+              for (let x = 1; x < MAP_WIDTH - 1; x++) {
+                  let neighbors = 0;
+                  for (let dy = -1; dy <= 1; dy++) {
+                      for (let dx = -1; dx <= 1; dx++) {
+                          if (dx === 0 && dy === 0) continue;
+                          if (groundTiles[y + dy][x + dx] === marker) {
+                              neighbors++;
+                          }
+                      }
+                  }
+
+                  if (neighbors > 4) {
+                      newTiles[y][x] = marker;
+                  } else if (neighbors < 4) {
+                      if (newTiles[y][x] === marker) {
+                          newTiles[y][x] = grassIndex;
+                      }
+                  }
+              }
+          }
+          // Apply changes
+          for(let y=0; y<MAP_HEIGHT; y++) {
+            for(let x=0; x<MAP_WIDTH; x++) {
+                groundTiles[y][x] = newTiles[y][x];
+            }
+          }
+      }
+  }
+
+  // Smooth the lakes
+  smoothMap(TEMP_WATER_MARKER, 2);
+
   // A2. Generate Dirt Patches
+  // Avoid water
   const numDirtPatches = 15;
   for (let i = 0; i < numDirtPatches; i++) {
     let x = randomInt(MAP_WIDTH);
     let y = randomInt(MAP_HEIGHT);
     const size = 200 + randomInt(400); 
     
+    // Find valid start
+    let attempts = 0;
+    while (attempts < 50 && groundTiles[y][x] === TEMP_WATER_MARKER) {
+        x = randomInt(MAP_WIDTH);
+        y = randomInt(MAP_HEIGHT);
+        attempts++;
+    }
+
+    if (groundTiles[y][x] === TEMP_WATER_MARKER) continue;
+
     for (let j = 0; j < size; j++) {
       if (x >= 0 && x < MAP_WIDTH && y >= 0 && y < MAP_HEIGHT) {
         // Don't overwrite water
@@ -314,15 +411,15 @@ async function generateOutdoorMap() {
     let x = randomInt(MAP_WIDTH);
     let y = randomInt(MAP_HEIGHT);
     
-    // Find a valid start (not water)
+    // Find a valid start (not water, not dirt)
     let attempts = 0;
-    while(attempts < 100 && groundTiles[y][x] === TEMP_WATER_MARKER) {
+    while(attempts < 100 && (groundTiles[y][x] === TEMP_WATER_MARKER || groundTiles[y][x] === TEMP_DIRT_MARKER)) {
         x = randomInt(MAP_WIDTH);
         y = randomInt(MAP_HEIGHT);
         attempts++;
     }
     
-    if (groundTiles[y][x] === TEMP_WATER_MARKER) continue;
+    if (groundTiles[y][x] === TEMP_WATER_MARKER || groundTiles[y][x] === TEMP_DIRT_MARKER) continue;
 
     const length = 500 + randomInt(1000);
 
@@ -347,8 +444,8 @@ async function generateOutdoorMap() {
            const ny = y + move.dy;
            
            if (nx >= 0 && nx < MAP_WIDTH && ny >= 0 && ny < MAP_HEIGHT) {
-               // Avoid Water
-               if (groundTiles[ny][nx] !== TEMP_WATER_MARKER) {
+               // Avoid Water and Dirt
+               if (groundTiles[ny][nx] !== TEMP_WATER_MARKER && groundTiles[ny][nx] !== TEMP_DIRT_MARKER) {
                    nextX = nx;
                    nextY = ny;
                    validMove = true;
