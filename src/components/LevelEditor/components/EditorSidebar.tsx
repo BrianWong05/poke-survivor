@@ -73,7 +73,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
       
       {/* Back Button */}
       <button className={styles.backButton} onClick={onExit}>
-        <ArrowLeft size={14} className="text-[#a0a0a0]" />
+        <ArrowLeft size={14} color="#a0a0a0" />
         <span className={styles.backText}>Back to Home</span>
       </button>
 
@@ -93,7 +93,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
           onClick={onUndo} 
           disabled={!canUndo}
         >
-          <Undo size={14} className="text-white" />
+          <Undo size={14} color="white" />
           <span className={styles.editText}>Undo</span>
         </button>
         <button 
@@ -101,7 +101,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
           onClick={onRedo}
           disabled={!canRedo}
         >
-          <Redo size={14} className="text-white" />
+          <Redo size={14} color="white" />
           <span className={styles.editText}>Redo</span>
         </button>
       </div>
