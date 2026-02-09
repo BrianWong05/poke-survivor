@@ -32,6 +32,44 @@
           "children": [
             {
               "type": "frame",
+              "id": "B48zx",
+              "name": "Back Button",
+              "width": "fill_container",
+              "height": 40,
+              "fill": "none",
+              "cornerRadius": "$radius_l",
+              "stroke": {
+                "thickness": 1,
+                "fill": "$border"
+              },
+              "gap": 8,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon_font",
+                  "id": "Htsm7",
+                  "name": "backIcon",
+                  "width": 14,
+                  "height": 14,
+                  "iconFontName": "arrow-left",
+                  "iconFontFamily": "lucide",
+                  "fill": "$fg_muted"
+                },
+                {
+                  "type": "text",
+                  "id": "XKxGw",
+                  "name": "backText",
+                  "fill": "$fg_muted",
+                  "content": "Back to Home",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "600"
+                }
+              ]
+            },
+            {
+              "type": "frame",
               "id": "6Mane",
               "name": "Play Test Button",
               "width": "fill_container",
@@ -74,6 +112,91 @@
               "fontSize": 22,
               "fontWeight": "900",
               "letterSpacing": 1
+            },
+            {
+              "type": "frame",
+              "id": "IFNKS",
+              "name": "Edit Actions",
+              "width": "fill_container",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "gYkOw",
+                  "name": "Undo Button",
+                  "width": "fill_container",
+                  "height": 36,
+                  "fill": "$bg_card",
+                  "cornerRadius": "$radius_l",
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "$border"
+                  },
+                  "gap": 6,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "4gilG",
+                      "name": "undoIcon",
+                      "width": 14,
+                      "height": 14,
+                      "iconFontName": "undo",
+                      "iconFontFamily": "lucide",
+                      "fill": "$fg_primary"
+                    },
+                    {
+                      "type": "text",
+                      "id": "b6hgL",
+                      "name": "undoText",
+                      "fill": "$fg_primary",
+                      "content": "Undo",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "LPPsL",
+                  "name": "Redo Button",
+                  "width": "fill_container",
+                  "height": 36,
+                  "fill": "$bg_card",
+                  "cornerRadius": "$radius_l",
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "$border"
+                  },
+                  "gap": 6,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "oMENA",
+                      "name": "redoIcon",
+                      "width": 14,
+                      "height": 14,
+                      "iconFontName": "redo",
+                      "iconFontFamily": "lucide",
+                      "fill": "$fg_primary"
+                    },
+                    {
+                      "type": "text",
+                      "id": "yjbz4",
+                      "name": "redoText",
+                      "fill": "$fg_primary",
+                      "content": "Redo",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
             },
             {
               "type": "frame",

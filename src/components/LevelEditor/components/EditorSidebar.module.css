@@ -22,6 +22,34 @@
   border-radius: 3px;
 }
 
+/* --- Back Button --- */
+.backButton {
+  width: 100%;
+  height: 40px;
+  background-color: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-l);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.backButton:hover {
+  background-color: var(--bg-card);
+  border-color: var(--fg-muted);
+}
+
+.backText {
+  color: var(--fg-muted);
+  font-family: "Inter", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+}
+
 /* --- Play Test Button --- */
 .playButton {
   width: 100%;
@@ -57,6 +85,43 @@
   font-weight: 900;
   letter-spacing: 1px;
   margin: 0;
+}
+
+/* --- Edit Actions (Undo/Redo) --- */
+.editActions {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.editBtn {
+  flex: 1;
+  height: 36px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-l);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.editBtn:hover {
+  border-color: var(--fg-muted);
+}
+
+.editBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.editText {
+  color: var(--fg-primary);
+  font-family: "Inter", sans-serif;
+  font-size: 12px;
+  font-weight: normal;
 }
 
 /* --- Generic Panel --- */

@@ -9,7 +9,10 @@ import {
   FolderOpen,
   Save,
   RefreshCw,
-  ChevronDown
+  ChevronDown,
+  ArrowLeft,
+  Undo,
+  Redo
 } from 'lucide-react';
 import { LayerPanel } from './LayerPanel';
 import { AnimationSelector } from '../AnimationSelector';
@@ -59,7 +62,8 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
   mapSize, onResize, activeTool, onToolChange,
   layers, currentLayerId, onSelectLayer, onAddLayer, onRemoveLayer,
   onRenameLayer, onMoveLayer, onToggleVisibility, onToggleCollision, onToggleLock,
-  onSave, onLoad, onPlay,
+  canUndo, canRedo, onUndo, onRedo,
+  onSave, onLoad, onPlay, onExit,
   activeTab, onTabChange, activeAsset, onAssetChange, assetOptions,
   paletteImageSource, selection, onPaletteSelection, imageCache,
   zoom, onZoomIn, onZoomOut, onZoomReset
@@ -67,6 +71,12 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
   return (
     <div className={styles.sidebar}>
       
+      {/* Back Button */}
+      <button className={styles.backButton} onClick={onExit}>
+        <ArrowLeft size={14} className="text-[#a0a0a0]" />
+        <span className={styles.backText}>Back to Home</span>
+      </button>
+
       {/* Play Test Button */}
       <button className={styles.playButton} onClick={onPlay}>
         <Play size={16} fill="white" />
@@ -75,6 +85,26 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
 
       {/* Title */}
       <h1 className={styles.title}>LEVEL EDITOR</h1>
+
+      {/* Undo/Redo */}
+      <div className={styles.editActions}>
+        <button 
+          className={styles.editBtn} 
+          onClick={onUndo} 
+          disabled={!canUndo}
+        >
+          <Undo size={14} className="text-white" />
+          <span className={styles.editText}>Undo</span>
+        </button>
+        <button 
+          className={styles.editBtn} 
+          onClick={onRedo}
+          disabled={!canRedo}
+        >
+          <Redo size={14} className="text-white" />
+          <span className={styles.editText}>Redo</span>
+        </button>
+      </div>
 
       {/* TOOLS Section */}
       <div className={styles.panel}>
