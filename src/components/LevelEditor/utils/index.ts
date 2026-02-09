@@ -28,7 +28,7 @@ export const generateAutoTileTexture = (sourceImg: HTMLImageElement): HTMLCanvas
   canvas.width = 8 * TILE;
   canvas.height = 6 * TILE;
 
-  for (let i = 0; i < 47; i++) {
+  for (let i = 0; i < 48; i++) {
     const dx = (i % 8) * TILE;
     const dy = Math.floor(i / 8) * TILE;
     drawTileByShape(ctx, sourceImg, dx, dy, i);
