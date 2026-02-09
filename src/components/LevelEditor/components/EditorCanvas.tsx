@@ -151,6 +151,11 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
      * even if it leaves the canvas bounds.
      */
 
+  // STABLE REFS FOR EVENT HANDLERS
+  // This prevents stale closures in window event listeners
+  const dragMoveRef = useRef<(e: MouseEvent) => void>(() => {});
+  const dragEndRef = useRef<() => void>(() => {});
+
   const handleDragMove = useCallback((e: MouseEvent) => {
     if (!isDragging.current || !canvasRef.current) return;
     
@@ -182,13 +187,28 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         isDragging.current = false;
         
         // Cleanup global listeners
-        window.removeEventListener('mousemove', handleDragMove);
-        window.removeEventListener('mouseup', handleDragEnd);
+        window.removeEventListener('mousemove', handleWindowMouseMove);
+        window.removeEventListener('mouseup', handleWindowMouseUp);
 
         onDragEnd(dragStart.current, dragCurrent.current);
         render();
     }
-  }, [onDragEnd, render, handleDragMove]);
+  }, [onDragEnd, render]);
+
+  // Update refs on every render
+  useEffect(() => {
+    dragMoveRef.current = handleDragMove;
+    dragEndRef.current = handleDragEnd;
+  });
+
+  // Stable listeners that just call the current ref
+  const handleWindowMouseMove = useCallback((e: MouseEvent) => {
+      dragMoveRef.current(e);
+  }, []);
+
+  const handleWindowMouseUp = useCallback(() => {
+      dragEndRef.current();
+  }, []);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (!canvasRef.current) return;
@@ -210,20 +230,20 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     dragCurrent.current = { x, y };
     
     // Attach global listeners
-    window.addEventListener('mousemove', handleDragMove);
-    window.addEventListener('mouseup', handleDragEnd);
+    window.addEventListener('mousemove', handleWindowMouseMove);
+    window.addEventListener('mouseup', handleWindowMouseUp);
     
     if (activeTool === 'brush' || activeTool === 'eraser') onPaint(x, y, false);
     render();
-  }, [zoom, mapSize, activeTool, onPaint, render, handleDragMove, handleDragEnd]);
+  }, [zoom, mapSize, activeTool, onPaint, render, handleWindowMouseMove, handleWindowMouseUp]);
 
   // Cleanup listeners on unmount (just in case)
   useEffect(() => {
     return () => {
-        window.removeEventListener('mousemove', handleDragMove);
-        window.removeEventListener('mouseup', handleDragEnd);
+        window.removeEventListener('mousemove', handleWindowMouseMove);
+        window.removeEventListener('mouseup', handleWindowMouseUp);
     };
-  }, [handleDragMove, handleDragEnd]);
+  }, [handleWindowMouseMove, handleWindowMouseUp]);
 
   return (
     <div className={styles.container}>
