@@ -40,6 +40,23 @@ export const TILE_IDS = {
   FLOWER: 31,  
   FLOWERS_1: 0,
   FLOWERS_2: 0,
+  
+  BRIDGE: {
+    // Horizontal Span (Using 1232-1234 set)
+    H_TOP: 1232,
+    H_MID: 1233,
+    H_BOT: 1234,
+
+    // Vertical Span (Using 1243-1259 set)
+    V_LEFT: 1243,
+    V_MID: 1251,
+    V_RIGHT: 1259,
+
+    // Intersection (3x3 Block)
+    CROSS_TL: 1240, CROSS_TM: 1241, CROSS_TR: 1242,
+    CROSS_ML: 1248, CROSS_MM: 1249, CROSS_MR: 1250,
+    CROSS_BL: 1256, CROSS_BM: 1257, CROSS_BR: 1258,
+  }
 };
 
 // Internal Markers for generation phases

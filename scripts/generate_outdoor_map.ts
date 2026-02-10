@@ -11,6 +11,7 @@ import { generateLakes, smoothWater, resolveWaterTiles } from './map-gen/generat
 import { generateDirt, resolveDirtTiles } from './map-gen/generators/ground.js';
 import { generatePaths, resolvePathTiles } from './map-gen/generators/paths.js';
 import { generateObjects } from './map-gen/generators/objects.js';
+import { generateBridges } from './map-gen/generators/bridges.js';
 import { generateFlowers } from './map-gen/generators/decorations.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -86,6 +87,9 @@ async function generateOutdoorMap() {
 
   // C. Paths
   generatePaths(groundTiles, palette, getPaletteIndex);
+
+  // C2. Bridges (Generate BEFORE resolution to detect Water Markers)
+  generateBridges(groundTiles, objectTiles, palette, getPaletteIndex);
 
   // Resolution Phase (Auto-Tiles)
   resolveWaterTiles(groundTiles, getPaletteIndex);
