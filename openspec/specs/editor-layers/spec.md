@@ -122,6 +122,21 @@ The editor SHALL allow the user to select which layer is the active editing targ
 
 ---
 
+### Requirement: Interaction Constraints
+The system MUST distinguish between pointer gestures intended for selection versus reordering.
+
+#### Scenario: Selection Threshold
+- **WHEN** the user presses and releases the pointer on a layer item without moving more than 8 pixels
+- **THEN** the gesture SHALL be interpreted as a click for selection
+- **AND** the corresponding layer SHALL become the active editing layer
+
+#### Scenario: Drag Threshold
+- **WHEN** the user presses on a layer item and moves the pointer more than 8 pixels
+- **THEN** the gesture SHALL be interpreted as the start of a drag-reorder operation
+- **AND** the drag operation SHALL initiate instead of an immediate selection change
+
+---
+
 ### Requirement: Layer Panel UI
 The editor sidebar SHALL display a layer management panel.
 
