@@ -44,10 +44,31 @@ const hydrateLayersFromData = (data: CustomMapData): LayerData[] => {
     }));
   }
   // Legacy: construct from ground/objects
-  return [
+  const layers: LayerData[] = [
     { id: generateLayerId(), name: 'Ground', tiles: normalizeGrid(data.ground, data.palette), visible: true, collision: false, locked: false },
-    { id: generateLayerId(), name: 'Objects', tiles: normalizeGrid(data.objects, data.palette), visible: true, collision: true, locked: false },
   ];
+
+  layers.push({
+    id: generateLayerId(),
+    name: 'Objects',
+    tiles: normalizeGrid(data.objects, data.palette),
+    visible: true,
+    collision: true,
+    locked: false,
+  });
+
+  if (data.decorations) {
+    layers.push({
+      id: generateLayerId(),
+      name: 'Decorations',
+      tiles: normalizeGrid(data.decorations, data.palette),
+      visible: true,
+      collision: false,
+      locked: false,
+    });
+  }
+
+  return layers;
 };
 
 export const useMapState = (initialData?: CustomMapData) => {
