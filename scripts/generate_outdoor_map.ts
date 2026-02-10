@@ -68,6 +68,9 @@ const TILE_IDS = {
   TREE_ML: 428, TREE_MR: 429,
   TREE_BL: 436, TREE_BR: 437,
 
+  // Stacked Tree Joiner (2x1)
+  TREE_STACK_L: 422, TREE_STACK_R: 423,
+
   // Pine Tree (1x3)
   // Pine Tree 1 (Light)
   TREE_PINE_1_TOP: 470,
@@ -259,6 +262,10 @@ async function generateOutdoorMap() {
   const treeMidRight = getPaletteIndex(TILE_IDS.TREE_MR, TILESET_NAME, 'tileset');
   const treeBotLeft = getPaletteIndex(TILE_IDS.TREE_BL, TILESET_NAME, 'tileset');
   const treeBotRight = getPaletteIndex(TILE_IDS.TREE_BR, TILESET_NAME, 'tileset');
+
+  // Stacked Tree Joiner
+  const treeStackL = getPaletteIndex(TILE_IDS.TREE_STACK_L, TILESET_NAME, 'tileset');
+  const treeStackR = getPaletteIndex(TILE_IDS.TREE_STACK_R, TILESET_NAME, 'tileset');
 
   // Pine Tree Palette Indices
   // Pine Tree Palette Indices
@@ -709,12 +716,56 @@ async function generateOutdoorMap() {
   // C. Generate Objects (Trees & Rocks)
   for (let i = 0; i < 2000; i++) { 
       const x = randomInt(MAP_WIDTH - 1); // Ensure space for 2-wide
-      const y = randomInt(MAP_HEIGHT - 3); // Ensure space for 3-high
+      const y = randomInt(MAP_HEIGHT - 5); // Ensure space for 5-high (max possible)
       
+
+
       const rand = Math.random();
       let canPlace = true;
 
-      if (rand < 0.15) {
+      if (rand < 0.1) {
+          // Stacked Tree (2 to 5 units high) - 10% Chance
+          // Height calc: 
+          // 2 units = 5 tiles (Top, Mid, Joiner, Mid, Bot)
+          // 3 units = 7 tiles (Top, Mid, Joiner, Mid, Joiner, Mid, Bot)
+          // Formula: 2 (Top,Mid) + (Units-1)*2 (Joiner,Mid) + 1 (Bot) -> 3 + (Units-1)*2
+          
+          const units = 2 + randomInt(4); // 2 to 5
+          const totalHeight = 3 + (units - 1) * 2;
+          
+          if (x >= MAP_WIDTH - 1) continue;
+          if (y >= MAP_HEIGHT - totalHeight) continue; // Boundary check
+
+          for (let ty = 0; ty < totalHeight; ty++) {
+              for (let tx = 0; tx < 2; tx++) {
+                   if (groundTiles[y+ty][x+tx] !== grassIndex || objectTiles[y+ty][x+tx] !== -1) {
+                       canPlace = false;
+                       break;
+                   }
+              }
+              if (!canPlace) break;
+          }
+
+          if (canPlace) {
+              let cy = y;
+              
+              // Top Section
+              objectTiles[cy][x] = treeTopLeft;     objectTiles[cy][x+1] = treeTopRight; cy++;
+              objectTiles[cy][x] = treeMidLeft;     objectTiles[cy][x+1] = treeMidRight; cy++;
+              
+              // Middle Sections (Units-1 times)
+              for (let k = 0; k < units - 1; k++) {
+                  // Joiner
+                  objectTiles[cy][x] = treeStackL;    objectTiles[cy][x+1] = treeStackR; cy++;
+                  // Mid
+                  objectTiles[cy][x] = treeMidLeft;   objectTiles[cy][x+1] = treeMidRight; cy++;
+              }
+              
+              // Bottom Section
+              objectTiles[cy][x] = treeBotLeft;   objectTiles[cy][x+1] = treeBotRight;
+          }
+
+      } else if (rand < 0.25) {
           // Big Tree (3x3) - 15% Chance
           if (x >= MAP_WIDTH - 2) continue; // Need 3 width
           
