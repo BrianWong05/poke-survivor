@@ -4,6 +4,8 @@ import { randomInt } from '../utils/common.js';
 
 export function generateFlowers(
   groundTiles: number[][],
+  waterTiles: number[][],
+  bridgeTiles: number[][],
   objectTiles: number[][], 
   decorationTiles: number[][], 
   grassIndex: number, 
@@ -16,9 +18,11 @@ export function generateFlowers(
       const x = randomInt(MAP_WIDTH);
       const y = randomInt(MAP_HEIGHT);
 
-      // Only place on grass, and ensure no object is already there
+      // Only place on grass, and ensure no object/water/bridge is already there
       if (
         groundTiles[y][x] === grassIndex && 
+        waterTiles[y][x] === -1 &&
+        bridgeTiles[y][x] === -1 &&
         decorationTiles[y][x] === -1 &&
         objectTiles[y][x] === -1
       ) {

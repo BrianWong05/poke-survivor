@@ -113,7 +113,7 @@ async function generateOutdoorMap() {
   carveBridges(groundTiles, waterTiles, bridgeTiles);
 
   // D. Objects
-  generateObjects(groundTiles, objectTiles, grassIndex, getPaletteIndex, treeIndices);
+  generateObjects(groundTiles, waterTiles, bridgeTiles, objectTiles, grassIndex, getPaletteIndex, treeIndices);
   
   // E. Decorations (Flowers)
   const flowerIndices = [
@@ -122,7 +122,7 @@ async function generateOutdoorMap() {
     getPaletteIndex(TILE_IDS.FLOWERS_2, 'Flowers2.png', 'animations')
   ];
   
-  generateFlowers(groundTiles, objectTiles, decorationTiles, grassIndex, flowerIndices);
+  generateFlowers(groundTiles, waterTiles, bridgeTiles, objectTiles, decorationTiles, grassIndex, flowerIndices);
 
   // 4. Serialize & Save
   const mapData = {

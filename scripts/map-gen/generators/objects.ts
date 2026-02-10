@@ -3,9 +3,11 @@ import { MAP_WIDTH, MAP_HEIGHT, TILE_IDS, TILESET_NAME } from '../constants.js';
 import { randomInt } from '../utils/common.js';
 
 export function generateObjects(
-  groundTiles: number[][], 
-  objectTiles: number[][], 
-  grassIndex: number, 
+  groundTiles: number[][],
+  waterTiles: number[][],
+  bridgeTiles: number[][],
+  objectTiles: number[][],
+  grassIndex: number,
   getPaletteIndex: any,
   paletteIds: any // Pass the resolved palette IDs for trees
 ) {
@@ -29,6 +31,21 @@ export function generateObjects(
       const rand = Math.random();
       let canPlace = true;
 
+      // Helper to check if a tile is blocked
+      const isBlocked = (cx: number, cy: number) => {
+          if (cx < 0 || cy < 0 || cx >= MAP_WIDTH || cy >= MAP_HEIGHT) return true;
+          // Must be grass
+          if (groundTiles[cy][cx] !== grassIndex) return true;
+          // Must not be water
+          if (waterTiles[cy][cx] !== -1) return true;
+          // Must not be bridge
+          if (bridgeTiles[cy][cx] !== -1) return true;
+          // Must not have existing object
+          if (objectTiles[cy][cx] !== -1) return true;
+          
+          return false;
+      };
+
       if (rand < 0.1) {
           // Stacked Tree
           const units = 2 + randomInt(4); // 2 to 5
@@ -39,8 +56,7 @@ export function generateObjects(
 
           for (let ty = 0; ty < totalHeight; ty++) {
               for (let tx = 0; tx < 2; tx++) {
-                   // Check collision with ground (must be grass) and objects (must be empty)
-                   if (groundTiles[y+ty][x+tx] !== grassIndex || objectTiles[y+ty][x+tx] !== -1) {
+                   if (isBlocked(x + tx, y + ty)) {
                        canPlace = false;
                        break;
                    }
@@ -71,7 +87,7 @@ export function generateObjects(
           
           for (let ty = 0; ty < 3; ty++) {
               for (let tx = 0; tx < 3; tx++) {
-                   if (groundTiles[y+ty][x+tx] !== grassIndex || objectTiles[y+ty][x+tx] !== -1) {
+                   if (isBlocked(x + tx, y + ty)) {
                        canPlace = false;
                        break;
                    }
@@ -88,7 +104,7 @@ export function generateObjects(
       } else if (rand < 0.6) {
            // Pine Tree (1x3)
            for (let ty = 0; ty < 3; ty++) {
-               if (groundTiles[y+ty][x] !== grassIndex || objectTiles[y+ty][x] !== -1) {
+               if (isBlocked(x, y + ty)) {
                    canPlace = false;
                    break;
                }
@@ -113,7 +129,7 @@ export function generateObjects(
           
           for (let ty = 0; ty < 3; ty++) {
               for (let tx = 0; tx < 2; tx++) {
-                   if (groundTiles[y+ty][x+tx] !== grassIndex || objectTiles[y+ty][x+tx] !== -1) {
+                   if (isBlocked(x + tx, y + ty)) {
                        canPlace = false;
                        break;
                    }
