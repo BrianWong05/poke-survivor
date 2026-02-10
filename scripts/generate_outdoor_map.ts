@@ -81,6 +81,7 @@ const TILE_IDS = {
   TREE_PINE_2_TOP: 494,
   TREE_PINE_2_MID: 502,
   TREE_PINE_2_BOT: 510,
+  TREE_PINE_2_JOINER: 495,
 
   // Big Tree (3x3)
   TREE_BIG_TL: 440, TREE_BIG_TM: 441, TREE_BIG_TR: 442,
@@ -276,6 +277,7 @@ async function generateOutdoorMap() {
   const treePine2Top = getPaletteIndex(TILE_IDS.TREE_PINE_2_TOP, TILESET_NAME, 'tileset');
   const treePine2Mid = getPaletteIndex(TILE_IDS.TREE_PINE_2_MID, TILESET_NAME, 'tileset');
   const treePine2Bot = getPaletteIndex(TILE_IDS.TREE_PINE_2_BOT, TILESET_NAME, 'tileset');
+  const treePine2Joiner = getPaletteIndex(TILE_IDS.TREE_PINE_2_JOINER, TILESET_NAME, 'tileset');
 
   // Big Tree Palette Indices
   const treeBigTL = getPaletteIndex(TILE_IDS.TREE_BIG_TL, TILESET_NAME, 'tileset');
@@ -796,13 +798,54 @@ async function generateOutdoorMap() {
            if (canPlace) {
                // Randomly pick Pine Variant
                if (Math.random() < 0.5) {
-                   objectTiles[y][x] = treePine1Top;
-                   objectTiles[y+1][x] = treePine1Mid;
-                   objectTiles[y+2][x] = treePine1Bot;
+                   // Light Pine (Normal 1x3)
+                   if (y < MAP_HEIGHT - 3) {
+                       objectTiles[y][x] = treePine1Top;
+                       objectTiles[y+1][x] = treePine1Mid;
+                       objectTiles[y+2][x] = treePine1Bot;
+                   }
                } else {
-                   objectTiles[y][x] = treePine2Top;
-                   objectTiles[y+1][x] = treePine2Mid;
-                   objectTiles[y+2][x] = treePine2Bot;
+                   // Dark Pine (Variable Stack)
+                   // Heights: 3, 4, 5, 6, 7...
+                   // Pattern:
+                   // 3: Top, Mid, Bot
+                   // 4: Top, Mid, Joiner, Bot
+                   // 5: Top, Mid, Joiner, Mid, Bot
+                   // 6: Top, Mid, Joiner, Mid, Joiner, Bot
+                   // Logic: Top, Mid, then alternate Joiner/Mid, then Bot.
+                   
+                   const pineHeight = 3 + randomInt(5); // 3 to 7 tiles
+                   
+                   if (y < MAP_HEIGHT - pineHeight) {
+                       let pCanPlace = true;
+                       for(let pH = 0; pH < pineHeight; pH++) {
+                           if (groundTiles[y+pH][x] !== grassIndex || objectTiles[y+pH][x] !== -1) {
+                               pCanPlace = false;
+                               break;
+                           }
+                       }
+                       
+                       if (pCanPlace) {
+                           let cy = y;
+                           // Top Section
+                           objectTiles[cy][x] = treePine2Top; cy++;
+                           objectTiles[cy][x] = treePine2Mid; cy++;
+                           
+                           // Middle Sections (Alternating Joiner/Mid)
+                           const innerCount = pineHeight - 3;
+                           for(let k=0; k < innerCount; k++) {
+                               if (k % 2 === 0) {
+                                   objectTiles[cy][x] = treePine2Joiner;
+                               } else {
+                                   objectTiles[cy][x] = treePine2Mid;
+                               }
+                               cy++;
+                           }
+                           
+                           // Bottom
+                           objectTiles[cy][x] = treePine2Bot;
+                       }
+                   }
                }
            }
       } else {
