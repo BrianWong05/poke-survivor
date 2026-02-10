@@ -11,7 +11,7 @@ import { generateLakes, smoothWater, resolveWaterTiles } from './map-gen/generat
 import { generateDirt, resolveDirtTiles } from './map-gen/generators/ground.js';
 import { generatePaths, resolvePathTiles } from './map-gen/generators/paths.js';
 import { generateObjects } from './map-gen/generators/objects.js';
-import { generateBridges } from './map-gen/generators/bridges.js';
+import { generateBridges, carveBridges } from './map-gen/generators/bridges.js';
 import { generateFlowers } from './map-gen/generators/decorations.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -72,29 +72,45 @@ async function generateOutdoorMap() {
   };
 
   // 2. Create Layers
+  // Ground: Grass, Dirt, Paths, Safe Water (under bridges)
   const groundTiles = createEmptyLayer(MAP_WIDTH, MAP_HEIGHT, grassIndex);
-  const objectTiles = createEmptyLayer(MAP_WIDTH, MAP_HEIGHT, -1); 
+  
+  // Water: Lakes (Collidable)
+  const waterTiles = createEmptyLayer(MAP_WIDTH, MAP_HEIGHT, -1);
+  
+  // Bridges: Walkable bridges
+  const bridgeTiles = createEmptyLayer(MAP_WIDTH, MAP_HEIGHT, -1);
+
+  // Decorations: Flowers
   const decorationTiles = createEmptyLayer(MAP_WIDTH, MAP_HEIGHT, -1);
+
+  // Objects: Trees, Rocks (Collidable)
+  const objectTiles = createEmptyLayer(MAP_WIDTH, MAP_HEIGHT, -1); 
   
   // 3. Procedural Generation Steps
   
-  // A. Lakes
-  generateLakes(groundTiles, palette, getPaletteIndex);
-  smoothWater(groundTiles, grassIndex);
+  // A. Lakes (Write to Water Layer)
+  // We pass waterTiles directly where it used to be groundTiles
+  generateLakes(waterTiles, palette, getPaletteIndex);
+  smoothWater(waterTiles, -1); // smooth with empty
 
-  // B. Dirt
+  // B. Dirt (Write to Ground Layer)
   generateDirt(groundTiles, grassIndex, getPaletteIndex);
 
-  // C. Paths
+  // C. Paths (Write to Ground Layer)
   generatePaths(groundTiles, palette, getPaletteIndex);
 
-  // C2. Bridges (Generate BEFORE resolution to detect Water Markers)
-  generateBridges(groundTiles, objectTiles, palette, getPaletteIndex);
+  // C2. Bridges (Generate tiles but defer carving/patching)
+  // Needs access to waterTiles to find lakes, and bridgeTiles to write bridges.
+  generateBridges(groundTiles, waterTiles, bridgeTiles, objectTiles, palette, getPaletteIndex);
 
   // Resolution Phase (Auto-Tiles)
-  resolveWaterTiles(groundTiles, getPaletteIndex);
+  resolveWaterTiles(waterTiles, getPaletteIndex);
   resolveDirtTiles(groundTiles, getPaletteIndex);
   resolvePathTiles(groundTiles, getPaletteIndex);
+
+  // C3. Carve Bridges (Patch holes in Water Layer with tiles on Ground Layer)
+  carveBridges(groundTiles, waterTiles, bridgeTiles);
 
   // D. Objects
   generateObjects(groundTiles, objectTiles, grassIndex, getPaletteIndex, treeIndices);
@@ -114,9 +130,13 @@ async function generateOutdoorMap() {
     height: MAP_HEIGHT,
     tileSize: TILE_SIZE,
     palette: palette,
-    ground: groundTiles,
-    objects: objectTiles,
-    decorations: decorationTiles,
+    layers: [
+      { id: 'Ground', name: 'Ground', tiles: groundTiles, collision: false },
+      { id: 'Water', name: 'Water', tiles: waterTiles, collision: true },
+      { id: 'Bridges', name: 'Bridges', tiles: bridgeTiles, collision: false },
+      { id: 'Decorations', name: 'Decorations', tiles: decorationTiles, collision: false },
+      { id: 'Objects', name: 'Objects', tiles: objectTiles, collision: true }
+    ],
     spawnPoint: { x: Math.floor(MAP_WIDTH / 2), y: Math.floor(MAP_HEIGHT / 2) } 
   };
 
