@@ -26,8 +26,8 @@ interface EditorSidebarProps {
   activeTool: ToolType;
   onToolChange: (tool: ToolType) => void;
   layers: LayerData[];
-  currentLayerId: string;
-  onSelectLayer: (id: string) => void;
+  currentLayerId: string | null;
+  onSelectLayer: (id: string | null) => void;
   onAddLayer: () => void;
   onRemoveLayer: (id: string) => void;
   onRenameLayer: (id: string, name: string) => void;

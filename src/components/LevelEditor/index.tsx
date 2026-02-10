@@ -46,7 +46,8 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
   const handlePaint = useCallback((x: number, y: number, isDragging: boolean) => {
     if (x < 0 || x >= mapState.mapSize.width || y < 0 || y >= mapState.mapSize.height) return;
     
-    // Check if current layer is locked
+    // Check if current layer is locked or not selected
+    if (!mapState.currentLayerId) return;
     const currentLayer = mapState.layers.find(l => l.id === mapState.currentLayerId);
     if (currentLayer?.locked) return;
 
@@ -83,6 +84,7 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
 
   const handleDragEnd = useCallback((start: {x:number, y:number}, end: {x:number, y:number}) => {
     // Check if current layer is locked (except for spawn tool which is global/meta)
+    if (activeTool !== 'spawn' && !mapState.currentLayerId) return;
     const currentLayer = mapState.layers.find(l => l.id === mapState.currentLayerId);
     if (activeTool !== 'spawn' && currentLayer?.locked) return;
 

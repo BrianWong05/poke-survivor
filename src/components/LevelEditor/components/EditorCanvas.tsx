@@ -7,7 +7,7 @@ import styles from './EditorCanvas.module.css';
 interface EditorCanvasProps {
   mapSize: MapSize;
   layers: LayerData[];
-  currentLayerId: string;
+  currentLayerId: string | null;
   spawnPoint: { x: number, y: number } | null;
   activeTool: ToolType;
   activeAsset: string;
@@ -57,7 +57,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     // Render layers in order, skipping hidden ones; dim non-active layers
     for (const layer of layers) {
       if (!layer.visible) continue;
-      const alpha = layer.id === currentLayerId ? 1.0 : 0.4;
+      // Dim other layers if a layer is selected; full opacity if no selection or active layer
+      const alpha = (!currentLayerId || layer.id === currentLayerId) ? 1.0 : 0.4;
       layer.tiles.forEach((row, y) => row.forEach((tile, x) => drawTile(ctx, tile, x, y, alpha)));
     }
 

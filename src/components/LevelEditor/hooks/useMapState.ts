@@ -83,7 +83,7 @@ export const useMapState = (initialData?: CustomMapData) => {
     initialData ? hydrateLayersFromData(initialData) : createDefaultLayers(DEFAULT_WIDTH, DEFAULT_HEIGHT)
   );
 
-  const [currentLayerId, setCurrentLayerId] = useState<string>(() => layers[0]?.id ?? '');
+  const [currentLayerId, setCurrentLayerId] = useState<string | null>(() => layers[0]?.id ?? null);
   
   // Zoom State
   const [zoom, setZoomState] = useState(1.0);
@@ -105,7 +105,7 @@ export const useMapState = (initialData?: CustomMapData) => {
       setSpawnPoint(initialData.spawnPoint || null);
       const newLayers = hydrateLayersFromData(initialData);
       setLayers(newLayers);
-      setCurrentLayerId(newLayers[0]?.id ?? '');
+      setCurrentLayerId(newLayers[0]?.id ?? null);
     }
   }, [initialData]);
 
@@ -144,8 +144,8 @@ export const useMapState = (initialData?: CustomMapData) => {
     setSpawnPoint(last.spawnPoint);
     // Ensure currentLayerId is valid after undo
     setCurrentLayerId(prev => {
-      if (last.layers.some(l => l.id === prev)) return prev;
-      return last.layers[0]?.id ?? '';
+      if (prev && last.layers.some(l => l.id === prev)) return prev;
+      return last.layers[0]?.id ?? null;
     });
   }, [history, layers, mapSize, spawnPoint]);
 
@@ -165,8 +165,8 @@ export const useMapState = (initialData?: CustomMapData) => {
     setMapSize(next.mapSize);
     setSpawnPoint(next.spawnPoint);
     setCurrentLayerId(prev => {
-      if (next.layers.some(l => l.id === prev)) return prev;
-      return next.layers[0]?.id ?? '';
+      if (prev && next.layers.some(l => l.id === prev)) return prev;
+      return next.layers[0]?.id ?? null;
     });
   }, [redoStack, layers, mapSize, spawnPoint]);
 
@@ -209,7 +209,7 @@ export const useMapState = (initialData?: CustomMapData) => {
       setCurrentLayerId(curr => {
         if (curr !== id) return curr;
         const nearestIdx = Math.min(idx, next.length - 1);
-        return next[nearestIdx]?.id ?? '';
+        return next[nearestIdx]?.id ?? null;
       });
       return next;
     });

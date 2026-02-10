@@ -113,12 +113,15 @@ The editor SHALL allow the user to select which layer is the active editing targ
 
 #### Scenario: Click to select layer
 - **WHEN** the user clicks on a layer row in the layer panel
-- **THEN** that layer SHALL become the active editing layer
-- **AND** the layer row SHALL be visually highlighted
+- **THEN** if the layer was not already selected, it SHALL become the active editing layer
+- **AND** if the layer WAS already selected, it SHALL be deselected (active layer set to `null`)
+- **AND** the active layer row SHALL be visually highlighted (or highlight removed if deselected)
 
 #### Scenario: Paint targets active layer
 - **WHEN** the user paints on the canvas
+- **AND** there is an active editing layer
 - **THEN** tile changes SHALL only be applied to the active layer's tile grid
+- **AND** if no layer is selected, the painting operation SHALL be ignored (or show a warning)
 
 ---
 
@@ -148,6 +151,20 @@ The editor sidebar SHALL display a layer management panel.
 #### Scenario: Active layer indicator
 - **WHEN** a layer is the active editing layer
 - **THEN** its row in the layer panel SHALL be visually distinguished (e.g., highlighted background)
+
+---
+
+### Requirement: Layer Opacity and Focus Mode
+The editor SHALL provide visual focus by adjusting layer opacity based on selection state.
+
+#### Scenario: Full visibility in view mode
+- **WHEN** no layer is selected as the active editing target
+- **THEN** all visible layers SHALL be rendered at 100% opacity
+
+#### Scenario: Focus mode dimming
+- **WHEN** a specific layer is selected as the active editing target
+- **THEN** that layer SHALL be rendered at 100% opacity
+- **AND** all other visible layers SHALL be rendered at 40% opacity (0.4) to provide editing focus
 
 ---
 

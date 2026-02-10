@@ -22,8 +22,8 @@ import { SortableLayerItem, LayerItem } from './SortableLayerItem';
 
 interface LayerPanelProps {
   layers: LayerData[];
-  currentLayerId: string;
-  onSelectLayer: (id: string) => void;
+  currentLayerId: string | null;
+  onSelectLayer: (id: string | null) => void;
   onAddLayer: () => void;
   onRemoveLayer: (id: string) => void;
   onRenameLayer: (id: string, name: string) => void;
@@ -124,7 +124,7 @@ export const LayerPanel = ({
                 isActive={layer.id === currentLayerId}
                 isEditing={editingId === layer.id}
                 editName={editingId === layer.id ? editName : ''}
-                onSelect={() => onSelectLayer(layer.id)}
+                onSelect={() => onSelectLayer(layer.id === currentLayerId ? null : layer.id)}
                 onToggleVisibility={() => onToggleVisibility(layer.id)}
                 onToggleLock={() => onToggleLock(layer.id)}
                 onToggleCollision={() => onToggleCollision(layer.id)}
