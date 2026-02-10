@@ -68,6 +68,9 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
   paletteImageSource, selection, onPaletteSelection, imageCache,
   zoom, onZoomIn, onZoomOut, onZoomReset
 }) => {
+  const [isSelecting, setIsSelecting] = React.useState(false);
+  const [selectionStart, setSelectionStart] = React.useState<{x: number, y: number} | null>(null);
+
   return (
     <div className={styles.sidebar}>
       
@@ -283,24 +286,55 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                   {paletteImageSource && (
                      <div 
                         style={{ position: 'relative', cursor: 'crosshair', width: 'fit-content', height: 'fit-content' }}
-                        onClick={(e) => {
+                        onMouseDown={(e) => {
+                           // Prevent default to avoid image dragging ghost
+                           e.preventDefault();
                            const rect = e.currentTarget.getBoundingClientRect();
                            const x = Math.floor((e.clientX - rect.left) / 32); 
                            const y = Math.floor((e.clientY - rect.top) / 32);
-                           if (x >= 0 && y >= 0) onPaletteSelection({ x, y, w: 1, h: 1 });
+                           if (x >= 0 && y >= 0) {
+                              setIsSelecting(true);
+                              setSelectionStart({ x, y });
+                              // Immediate feedback for 1x1 selection start
+                              onPaletteSelection({ x, y, w: 1, h: 1 });
+                           }
+                        }}
+                        onMouseMove={(e) => {
+                           if (!isSelecting || !selectionStart) return;
+                           const rect = e.currentTarget.getBoundingClientRect();
+                           const currentX = Math.floor((e.clientX - rect.left) / 32); 
+                           const currentY = Math.floor((e.clientY - rect.top) / 32);
+                           
+                           if (currentX >= 0 && currentY >= 0) {
+                              // Calculate normalized rectangle
+                              const x = Math.min(selectionStart.x, currentX);
+                              const y = Math.min(selectionStart.y, currentY);
+                              const w = Math.abs(currentX - selectionStart.x) + 1;
+                              const h = Math.abs(currentY - selectionStart.y) + 1;
+                              
+                              onPaletteSelection({ x, y, w, h });
+                           }
+                        }}
+                        onMouseUp={() => {
+                           setIsSelecting(false);
+                           setSelectionStart(null);
+                        }}
+                        onMouseLeave={() => {
+                           if (isSelecting) {
+                              setIsSelecting(false);
+                              setSelectionStart(null);
+                           }
                         }}
                      >
                         <img 
                            src={paletteImageSource} 
                            alt="palette" 
                            style={{ display: 'block', imageRendering: 'pixelated' }}
+                           draggable={false}
                         />
                         <div 
+                            className={styles.selectionBox}
                             style={{
-                               position: 'absolute',
-                               border: '2px solid white',
-                               pointerEvents: 'none',
-                               boxShadow: '0 0 0 1px rgba(0,0,0,0.5)',
                                left: selection.x * 32,
                                top: selection.y * 32,
                                width: selection.w * 32,
