@@ -94,8 +94,10 @@ const TILE_IDS = {
   WATER: 250, 
   
   PATH: 25, 
-  ROCK: 85,    
-  FLOWER: 15,  
+
+  FLOWER: 31,  
+  FLOWERS_1: 0,
+  FLOWERS_2: 0,
 };
 
 
@@ -213,7 +215,7 @@ async function generateOutdoorMap() {
   const palette: TileData[] = [];
   const paletteMap = new Map<string, number>(); // Key: SetName + Type
 
-  function getPaletteIndex(tileId: number, set: string, type: 'tileset' | 'autoset'): number {
+  function getPaletteIndex(tileId: number, set: string, type: 'tileset' | 'autoset' | 'animations'): number {
     // For tilesets, we often reuse the same set/type combo, but ID varies.
     // The palette entry usually defines the SET and TYPE, and the ID in the map data references THIS palette entry.
     // WAIT. In the map data: `ground: (number | TileData)[][]`.
@@ -253,8 +255,11 @@ async function generateOutdoorMap() {
   const grassIndex = getPaletteIndex(TILE_IDS.GRASS, TILESET_NAME, 'tileset');
   const waterIndex = getPaletteIndex(TILE_IDS.WATER, TILESET_NAME, 'tileset'); // Placeholder
   // Path will be dynamic
-  const rockIndex = getPaletteIndex(TILE_IDS.ROCK, TILESET_NAME, 'tileset');
+
   const flowerIndex = getPaletteIndex(TILE_IDS.FLOWER, TILESET_NAME, 'tileset');
+
+  const flowers1Index = getPaletteIndex(TILE_IDS.FLOWERS_1, 'Flowers1.png', 'animations');
+  const flowers2Index = getPaletteIndex(TILE_IDS.FLOWERS_2, 'Flowers2.png', 'animations');
 
   // Tree Palette Indices
   const treeTopLeft = getPaletteIndex(TILE_IDS.TREE_TL, TILESET_NAME, 'tileset');
@@ -875,16 +880,19 @@ async function generateOutdoorMap() {
       }
   }
 
-  // Rocks & Flowers
+  // Flowers
   for (let y = 0; y < MAP_HEIGHT; y++) {
     for (let x = 0; x < MAP_WIDTH; x++) {
       if (groundTiles[y][x] === grassIndex && objectTiles[y][x] === -1) {
-        const rand = Math.random();
-        if (rand < 0.01) {
-          objectTiles[y][x] = rockIndex;
-        }
-        else if (rand < 0.03) {
-          decorationTiles[y][x] = flowerIndex;
+        if (Math.random() < 0.02) {
+          const flowerType = Math.random();
+          if (flowerType < 0.33) {
+             decorationTiles[y][x] = flowerIndex;
+          } else if (flowerType < 0.66) {
+             decorationTiles[y][x] = flowers1Index;
+          } else {
+             decorationTiles[y][x] = flowers2Index;
+          }
         }
       }
     }
