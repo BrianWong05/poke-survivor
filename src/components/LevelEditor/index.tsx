@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import type { CustomMapData, TileData } from '@/game/types/map';
 import { updateAutoTileGrid } from '@/components/LevelEditor/utils';
 import { compressMapData } from '@/components/LevelEditor/utils/mapCompression';
@@ -206,6 +206,34 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
 
 // ... (component code)
 
+  // Ref for the scrollable canvas area
+  const viewAreaRef = useRef<HTMLDivElement>(null);
+
+  const handleToolDoubleClick = useCallback((tool: ToolType) => {
+      if (tool === 'spawn' && mapState.spawnPoint && viewAreaRef.current) {
+          const { x, y } = mapState.spawnPoint;
+          const { zoom } = mapState;
+          
+          // Calculate target center in pixels
+          const targetX = (x + 0.5) * TILE_SIZE * zoom;
+          const targetY = (y + 0.5) * TILE_SIZE * zoom;
+          
+          // Get viewport dimensions
+          const viewportW = viewAreaRef.current.clientWidth;
+          const viewportH = viewAreaRef.current.clientHeight;
+          
+          // Calculate scroll position to center the target
+          const scrollLeft = targetX - viewportW / 2;
+          const scrollTop = targetY - viewportH / 2;
+          
+          viewAreaRef.current.scrollTo({
+              left: scrollLeft,
+              top: scrollTop,
+              behavior: 'smooth'
+          });
+      }
+  }, [mapState.spawnPoint, mapState.zoom]);
+
   return (
     <div className={styles.container}>
       <EditorSidebar
@@ -257,12 +285,14 @@ export const LevelEditor = ({ onPlay, onExit, initialData }: LevelEditorProps) =
         onPaletteSelection={setSelection}
         imageCache={imageCache.current}
         zoom={mapState.zoom}
-        onZoomIn={() => mapState.setZoom(z => z + 0.1)} // Using hardcoded step or export constant
+        onZoomIn={() => mapState.setZoom(z => z + 0.1)} 
         onZoomOut={() => mapState.setZoom(z => z - 0.1)}
         onZoomReset={() => mapState.setZoom(1.0)}
+        onToolDoubleClick={handleToolDoubleClick}
       />
 
       <div 
+        ref={viewAreaRef}
         className={styles.canvasArea} 
         onWheel={(e) => {
           if (e.ctrlKey || e.metaKey) {

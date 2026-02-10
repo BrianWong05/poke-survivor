@@ -56,6 +56,7 @@ interface EditorSidebarProps {
   onZoomIn: () => void;
   onZoomOut: () => void;
   onZoomReset: () => void;
+  onToolDoubleClick: (tool: ToolType) => void;
 }
 
 export const EditorSidebar: React.FC<EditorSidebarProps> = ({
@@ -66,7 +67,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
   onSave, onLoad, onPlay, onExit,
   activeTab, onTabChange, activeAsset, onAssetChange, assetOptions,
   paletteImageSource, selection, onPaletteSelection, imageCache,
-  zoom, onZoomIn, onZoomOut, onZoomReset
+  zoom, onZoomIn, onZoomOut, onZoomReset, onToolDoubleClick
 }) => {
   const [isSelecting, setIsSelecting] = React.useState(false);
   const [selectionStart, setSelectionStart] = React.useState<{x: number, y: number} | null>(null);
@@ -122,18 +123,21 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
             <ToolCard
               active={activeTool === 'brush'}
               onClick={() => onToolChange('brush')}
+              onDoubleClick={() => onToolDoubleClick('brush')}
               icon={<Paintbrush size={20} />}
               label="BRUSH"
             />
             <ToolCard
               active={activeTool === 'fill'}
               onClick={() => onToolChange('fill')}
+              onDoubleClick={() => onToolDoubleClick('fill')}
               icon={<PaintBucket size={20} />}
               label="FILL"
             />
             <ToolCard
               active={activeTool === 'eraser'}
               onClick={() => onToolChange('eraser')}
+              onDoubleClick={() => onToolDoubleClick('eraser')}
               icon={<Eraser size={20} />}
               label="ERASER"
             />
@@ -143,12 +147,14 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
             <ToolCard
               active={activeTool === 'area-eraser'}
               onClick={() => onToolChange('area-eraser')}
+              onDoubleClick={() => onToolDoubleClick('area-eraser')}
               icon={<Grid3x3 size={20} />}
               label="AREA"
             />
             <ToolCard
               active={activeTool === 'spawn'}
               onClick={() => onToolChange('spawn')}
+              onDoubleClick={() => onToolDoubleClick('spawn')}
               icon={<MapPin size={20} />}
               label="SPAWN"
             />
@@ -354,13 +360,15 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
 interface ToolCardProps {
     active: boolean;
     onClick: () => void;
+    onDoubleClick?: () => void;
     icon: React.ReactNode;
     label: string;
 }
 
-const ToolCard: React.FC<ToolCardProps> = ({ active, onClick, icon, label }) => (
+const ToolCard: React.FC<ToolCardProps> = ({ active, onClick, onDoubleClick, icon, label }) => (
     <div
         onClick={onClick}
+        onDoubleClick={onDoubleClick}
         className={`${styles.toolCard} ${active ? styles.toolCardActive : ''}`}
     >
         <div style={{ color: active ? '#3b82f6' : '#ffffff' }}>{icon}</div>
