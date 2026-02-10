@@ -68,6 +68,22 @@ const TILE_IDS = {
   TREE_ML: 428, TREE_MR: 429,
   TREE_BL: 436, TREE_BR: 437,
 
+  // Pine Tree (1x3)
+  // Pine Tree 1 (Light)
+  TREE_PINE_1_TOP: 470,
+  TREE_PINE_1_MID: 478,
+  TREE_PINE_1_BOT: 486,
+
+  // Pine Tree 2 (Dark)
+  TREE_PINE_2_TOP: 494,
+  TREE_PINE_2_MID: 502,
+  TREE_PINE_2_BOT: 510,
+
+  // Big Tree (3x3)
+  TREE_BIG_TL: 440, TREE_BIG_TM: 441, TREE_BIG_TR: 442,
+  TREE_BIG_ML: 448, TREE_BIG_MM: 449, TREE_BIG_MR: 450,
+  TREE_BIG_BL: 456, TREE_BIG_BM: 457, TREE_BIG_BR: 458,
+
   // Water (Guessing based on typical sets, or I can try 50?)
   // Let's use 160 for water for now? Or 1?
   // Actually, I'll stick to a placeholder for water (e.g. 50) and users can fix it.
@@ -243,6 +259,29 @@ async function generateOutdoorMap() {
   const treeMidRight = getPaletteIndex(TILE_IDS.TREE_MR, TILESET_NAME, 'tileset');
   const treeBotLeft = getPaletteIndex(TILE_IDS.TREE_BL, TILESET_NAME, 'tileset');
   const treeBotRight = getPaletteIndex(TILE_IDS.TREE_BR, TILESET_NAME, 'tileset');
+
+  // Pine Tree Palette Indices
+  // Pine Tree Palette Indices
+  const treePine1Top = getPaletteIndex(TILE_IDS.TREE_PINE_1_TOP, TILESET_NAME, 'tileset');
+  const treePine1Mid = getPaletteIndex(TILE_IDS.TREE_PINE_1_MID, TILESET_NAME, 'tileset');
+  const treePine1Bot = getPaletteIndex(TILE_IDS.TREE_PINE_1_BOT, TILESET_NAME, 'tileset');
+
+  const treePine2Top = getPaletteIndex(TILE_IDS.TREE_PINE_2_TOP, TILESET_NAME, 'tileset');
+  const treePine2Mid = getPaletteIndex(TILE_IDS.TREE_PINE_2_MID, TILESET_NAME, 'tileset');
+  const treePine2Bot = getPaletteIndex(TILE_IDS.TREE_PINE_2_BOT, TILESET_NAME, 'tileset');
+
+  // Big Tree Palette Indices
+  const treeBigTL = getPaletteIndex(TILE_IDS.TREE_BIG_TL, TILESET_NAME, 'tileset');
+  const treeBigTM = getPaletteIndex(TILE_IDS.TREE_BIG_TM, TILESET_NAME, 'tileset');
+  const treeBigTR = getPaletteIndex(TILE_IDS.TREE_BIG_TR, TILESET_NAME, 'tileset');
+  
+  const treeBigML = getPaletteIndex(TILE_IDS.TREE_BIG_ML, TILESET_NAME, 'tileset');
+  const treeBigMM = getPaletteIndex(TILE_IDS.TREE_BIG_MM, TILESET_NAME, 'tileset');
+  const treeBigMR = getPaletteIndex(TILE_IDS.TREE_BIG_MR, TILESET_NAME, 'tileset');
+
+  const treeBigBL = getPaletteIndex(TILE_IDS.TREE_BIG_BL, TILESET_NAME, 'tileset');
+  const treeBigBM = getPaletteIndex(TILE_IDS.TREE_BIG_BM, TILESET_NAME, 'tileset');
+  const treeBigBR = getPaletteIndex(TILE_IDS.TREE_BIG_BR, TILESET_NAME, 'tileset');
 
 
   // 2. Create Layers
@@ -669,28 +708,76 @@ async function generateOutdoorMap() {
 
   // C. Generate Objects (Trees & Rocks)
   for (let i = 0; i < 2000; i++) { 
-      const x = randomInt(MAP_WIDTH - 1);
-      const y = randomInt(MAP_HEIGHT - 2);
+      const x = randomInt(MAP_WIDTH - 1); // Ensure space for 2-wide
+      const y = randomInt(MAP_HEIGHT - 3); // Ensure space for 3-high
       
+      const rand = Math.random();
       let canPlace = true;
-      for (let ty = 0; ty < 3; ty++) {
-          for (let tx = 0; tx < 2; tx++) {
-              // Now we also check if it's NOT a path (path is an autoset index, not grass)
-              if (groundTiles[y+ty][x+tx] !== grassIndex || objectTiles[y+ty][x+tx] !== -1) {
-                  canPlace = false;
-                  break;
-              }
-          }
-          if (!canPlace) break;
-      }
 
-      if (canPlace) {
-          objectTiles[y][x] = treeTopLeft;
-          objectTiles[y][x+1] = treeTopRight;
-          objectTiles[y+1][x] = treeMidLeft;
-          objectTiles[y+1][x+1] = treeMidRight;
-          objectTiles[y+2][x] = treeBotLeft;
-          objectTiles[y+2][x+1] = treeBotRight;
+      if (rand < 0.15) {
+          // Big Tree (3x3) - 15% Chance
+          if (x >= MAP_WIDTH - 2) continue; // Need 3 width
+          
+          for (let ty = 0; ty < 3; ty++) {
+              for (let tx = 0; tx < 3; tx++) {
+                   if (groundTiles[y+ty][x+tx] !== grassIndex || objectTiles[y+ty][x+tx] !== -1) {
+                       canPlace = false;
+                       break;
+                   }
+              }
+              if (!canPlace) break;
+          }
+
+          if (canPlace) {
+              objectTiles[y][x] = treeBigTL;   objectTiles[y][x+1] = treeBigTM;   objectTiles[y][x+2] = treeBigTR;
+              objectTiles[y+1][x] = treeBigML; objectTiles[y+1][x+1] = treeBigMM; objectTiles[y+1][x+2] = treeBigMR;
+              objectTiles[y+2][x] = treeBigBL; objectTiles[y+2][x+1] = treeBigBM; objectTiles[y+2][x+2] = treeBigBR;
+          }
+
+      } else if (rand < 0.6) {
+           // Pine Tree (1x3) - 45% Chance
+           for (let ty = 0; ty < 3; ty++) {
+               if (groundTiles[y+ty][x] !== grassIndex || objectTiles[y+ty][x] !== -1) {
+                   canPlace = false;
+                   break;
+               }
+           }
+           if (canPlace) {
+               // Randomly pick Pine Variant
+               if (Math.random() < 0.5) {
+                   objectTiles[y][x] = treePine1Top;
+                   objectTiles[y+1][x] = treePine1Mid;
+                   objectTiles[y+2][x] = treePine1Bot;
+               } else {
+                   objectTiles[y][x] = treePine2Top;
+                   objectTiles[y+1][x] = treePine2Mid;
+                   objectTiles[y+2][x] = treePine2Bot;
+               }
+           }
+      } else {
+           // Round Tree (2x3) - 40% Chance
+           // Check x+1 bound explicitly although initial randomInt handles up to MAP_WIDTH-1
+           if (x >= MAP_WIDTH - 1) continue;
+
+           for (let ty = 0; ty < 3; ty++) {
+               for (let tx = 0; tx < 2; tx++) {
+                   // Now we also check if it's NOT a path (path is an autoset index, not grass)
+                   if (groundTiles[y+ty][x+tx] !== grassIndex || objectTiles[y+ty][x+tx] !== -1) {
+                       canPlace = false;
+                       break;
+                   }
+               }
+               if (!canPlace) break;
+           }
+    
+           if (canPlace) {
+               objectTiles[y][x] = treeTopLeft;
+               objectTiles[y][x+1] = treeTopRight;
+               objectTiles[y+1][x] = treeMidLeft;
+               objectTiles[y+1][x+1] = treeMidRight;
+               objectTiles[y+2][x] = treeBotLeft;
+               objectTiles[y+2][x+1] = treeBotRight;
+           }
       }
   }
 
