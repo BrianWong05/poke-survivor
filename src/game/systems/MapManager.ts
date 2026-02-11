@@ -67,6 +67,16 @@ export class MapManager {
     const height = Number(data.height);
     const tileSize = Number(data.tileSize);
 
+    console.log('[MapManager] Creating custom map:', {
+      width, height, tileSize,
+      paletteSize: data.palette?.length ?? 0,
+      layerCount: data.layers?.length ?? 0,
+      layerNames: data.layers?.map(l => l.name) ?? [],
+      hasGround: !!data.ground?.length,
+      hasObjects: !!data.objects?.length,
+      spawnPoint: data.spawnPoint,
+    });
+
     const mapWidthPixels = width * tileSize;
     const mapHeightPixels = height * tileSize;
 
@@ -127,7 +137,10 @@ export class MapManager {
       if (tileset) {
         tilesetObjects.push(tileset);
         tilesetGidMap.set(filename, tileset.firstgid);
+        console.log(`[MapManager] Tileset '${filename}': firstGid=${tileset.firstgid}, total=${tileset.total}`);
         currentGidOffset += tileset.total;
+      } else {
+        console.warn(`[MapManager] Failed to add tileset '${filename}' — texture may not be loaded`);
       }
     });
 
@@ -207,8 +220,8 @@ export class MapManager {
         }
       }
 
-      // Depth: first layer is -10, subsequent layers increment by 1
-      phaserLayer.setDepth(-10 + index);
+      // Depth: use a low base (-100) so map layers are always behind game entities
+      phaserLayer.setDepth(-100 + index);
 
       this.phaserLayers.push(phaserLayer);
 
@@ -238,7 +251,7 @@ export class MapManager {
           if (gid !== -1) groundLayer.putTileAt(gid, x, y);
         }
       }
-      groundLayer.setDepth(-10);
+      groundLayer.setDepth(-100);
       this.phaserLayers.push(groundLayer);
     }
 
@@ -250,7 +263,7 @@ export class MapManager {
           if (gid !== -1) objectsLayer.putTileAt(gid, x, y);
         }
       }
-      objectsLayer.setDepth(0);
+      objectsLayer.setDepth(-99);
       objectsLayer.setCollisionByExclusion([-1]);
       this.phaserLayers.push(objectsLayer);
       this.collisionLayers.push(objectsLayer);

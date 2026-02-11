@@ -99,7 +99,11 @@ export class Preloader extends Phaser.Scene {
     const autosets = import.meta.glob('/src/assets/Autotiles/*.png', { eager: true });
     for (const path in autosets) {
         const filename = path.split('/').pop() || '';
-        this.load.image(filename, (autosets[path] as any).default);
+        // Load with _raw_ prefix so AutoTileGenerator.generate can safely
+        // read from this source while writing to the final filename key
+        const rawKey = `_raw_${filename}`;
+        this.load.image(rawKey, (autosets[path] as any).default);
+        this.autosetFilenames.push(filename);
     }
 
     const animations = import.meta.glob('/src/assets/Animations/*.png', { eager: true });
@@ -115,9 +119,24 @@ export class Preloader extends Phaser.Scene {
     this.load.json('manifest', 'assets/manifest.json');
   }
 
+  // Store autotile filenames for post-load generation
+  private autosetFilenames: string[] = [];
+
   create(): void {
-    // Generate AutoTiles
+    // Generate AutoTiles (legacy)
     AutoTileGenerator.generate(this, 'cave_raw', 'cave_auto');
+
+    // Generate autotile textures for ALL autotile source images.
+    // The Level Editor generates 47-tile canvases (8×6 grid at 32px = 256×192) from
+    // the raw autotile sources and uses tile IDs 0-47 within those canvases.
+    // We use _raw_ prefixed source keys so generate() can safely remove the
+    // destination key without destroying the source texture.
+    for (const filename of this.autosetFilenames) {
+      const rawKey = `_raw_${filename}`;
+      if (this.textures.exists(rawKey)) {
+        AutoTileGenerator.generate(this, rawKey, filename);
+      }
+    }
 
     // Get manifest data
     this.manifest = this.cache.json.get('manifest') as SpriteManifestEntry[];

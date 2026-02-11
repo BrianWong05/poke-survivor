@@ -17,17 +17,17 @@ export class AutoTileGenerator {
         if (scene.textures.exists(newKey)) scene.textures.remove(newKey);
         const rt = scene.add.renderTexture(0, 0, 8 * 32, 6 * 32);
 
-        // We iterate 0-47. 
-        // BUT, instead of relying on a broken mask table, we define the SHAPE explicitly.
-        // (Standard 47-tile blob order used by bitmasking libraries)
+        // Generate all 48 autotile variants (0-47) to match the Level Editor's
+        // generateAutoTileTexture which also generates 48 tiles.
         
-        for (let i = 0; i < 47; i++) {
+        for (let i = 0; i < 48; i++) {
             const dx = (i % 8) * 32;
             const dy = Math.floor(i / 8) * 32;
             this.drawTileByShape(rt, sourceKey, dx, dy, i);
         }
 
         rt.saveTexture(newKey);
+        rt.destroy();
     }
 
     private static drawTileByShape(rt: Phaser.GameObjects.RenderTexture, key: string, dx: number, dy: number, index: number) {
